@@ -1,0 +1,267 @@
+{
+    "structure": [
+        {
+            "name": "app",
+            "children": []
+        },
+        {
+            "name": "features",
+            "children": []
+        },
+        {
+            "name": "components",
+            "children": []
+        },
+        {
+            "name": "lib",
+            "children": []
+        },
+        {
+            "name": "types",
+            "children": []
+        },
+        {
+            "name": "public",
+            "children": []
+        },
+        {
+            "name": "scripts",
+            "children": []
+        },
+        {
+            "name": "e2e",
+            "children": []
+        },
+        {
+            "name": "prisma",
+            "children": []
+        },
+        {
+            "name": "pages",
+            "children": []
+        },
+        {
+            "name": "hooks",
+            "children": []
+        },
+        {
+            "name": "services",
+            "children": []
+        },
+        {
+            "name": "middleware",
+            "children": []
+        },
+        {
+            "name": "docs",
+            "children": []
+        },
+        {
+            "name": "styles",
+            "children": []
+        },
+        {
+            "name": "build-utilities",
+            "children": []
+        },
+        {
+            "name": "temp",
+            "children": []
+        },
+        {
+            "name": "test-results",
+            "children": []
+        },
+        {
+            "name": "__tests__",
+            "children": []
+        },
+        {
+            "name": "actions",
+            "children": []
+        },
+        {
+            "name": "playwright-report",
+            "children": []
+        },
+        {
+            "name": ".git",
+            "children": []
+        },
+        {
+            "name": ".next",
+            "children": []
+        },
+        {
+            "name": ".swc",
+            "children": []
+        },
+        {
+            "name": "node_modules",
+            "children": []
+        },
+        {
+            "name": ".antigravityignore"
+        },
+        {
+            "name": ".dependency-cruiser.js"
+        },
+        {
+            "name": ".dockerignore"
+        },
+        {
+            "name": ".env"
+        },
+        {
+            "name": ".env.local"
+        },
+        {
+            "name": ".gitignore"
+        },
+        {
+            "name": "DESIGN_SYSTEM.md"
+        },
+        {
+            "name": "Dockerfile"
+        },
+        {
+            "name": "OAuth_Setup_Guide.md"
+        },
+        {
+            "name": "Payment_Setup_Guide.md"
+        },
+        {
+            "name": "README.md"
+        },
+        {
+            "name": "api_stubs_created.md"
+        },
+        {
+            "name": "api_testing_guide.md"
+        },
+        {
+            "name": "auth.config.ts"
+        },
+        {
+            "name": "auth.ts"
+        },
+        {
+            "name": "build.log"
+        },
+        {
+            "name": "components.json"
+        },
+        {
+            "name": "debug-output.txt"
+        },
+        {
+            "name": "deps.log"
+        },
+        {
+            "name": "dev-server.log"
+        },
+        {
+            "name": "docker-compose.yml"
+        },
+        {
+            "name": "email-logs.txt"
+        },
+        {
+            "name": "env.example"
+        },
+        {
+            "name": "env.local.example"
+        },
+        {
+            "name": "eslint.config.mjs"
+        },
+        {
+            "name": "full-tree.txt"
+        },
+        {
+            "name": "git"
+        },
+        {
+            "name": "init.sql"
+        },
+        {
+            "name": "jest.config.ts"
+        },
+        {
+            "name": "jest.setup.ts"
+        },
+        {
+            "name": "last_otp.txt"
+        },
+        {
+            "name": "lint_error.log"
+        },
+        {
+            "name": "middleware.ts"
+        },
+        {
+            "name": "missing_api_routes.md"
+        },
+        {
+            "name": "next-env.d.ts"
+        },
+        {
+            "name": "next.config.mjs"
+        },
+        {
+            "name": "nextauth_configuration_complete.md"
+        },
+        {
+            "name": "package-lock.json"
+        },
+        {
+            "name": "package.json"
+        },
+        {
+            "name": "playwright.config.ts"
+        },
+        {
+            "name": "postcss.config.mjs"
+        },
+        {
+            "name": "postgresql_migration_guide.md"
+        },
+        {
+            "name": "postgresql_setup_resolution.md"
+        },
+        {
+            "name": "projectStructure.cache.json"
+        },
+        {
+            "name": "projectStructure.json"
+        },
+        {
+            "name": "project_status_report.md"
+        },
+        {
+            "name": "server.js"
+        },
+        {
+            "name": "server.ts"
+        },
+        {
+            "name": "setup_postgres.md"
+        },
+        {
+            "name": "tailwind.config.ts"
+        },
+        {
+            "name": "ts_errors.txt"
+        },
+        {
+            "name": "tsconfig.json"
+        },
+        {
+            "name": "tsconfig.tsbuildinfo"
+        },
+        {
+            "name": "violations.log"
+        }
+    ],
+    "rules": {}
+}

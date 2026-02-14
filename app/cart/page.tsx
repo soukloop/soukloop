@@ -1,45 +1,53 @@
-"use client"
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import CartFlow from "./components/cart-flow";
+import { Suspense } from "react";
+import { Address } from "@prisma/client";
+import { getCart } from "@/features/cart/queries";
+import FooterSection from "@/components/footer-section";
+import { CartSkeleton } from "./components/skeletons";
 
-import { useState } from "react"
-import Header from "../cart/components/header"
-import CartPage from "../cart/components/cart-page"
-import CheckoutPage from "../cart/components/checkout-page"
-import OrderCompletePage from "../cart/components/order-complete-page"
-import FooterSection from "../cart/components/footer-section"
-import ProgressSteps from "../cart/components/progress-steps"
+export const dynamic = 'force-dynamic';
 
-export default function CartFlowPage() {
-  const [currentStep, setCurrentStep] = useState(1)
+async function CartContent() {
+  const session = await auth();
 
-  const handleNextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 3))
-  const handleStepChange = (step: number) => setCurrentStep(step)
+  // Artificial delay to demonstrate skeleton if needed, but best to remove for production speed
+  // await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 1:
-        return <CartPage onNext={handleNextStep} />
-      case 2:
-        return <CheckoutPage onNext={handleNextStep} />
-      case 3:
-        return <OrderCompletePage />
-      default:
-        return <CartPage onNext={handleNextStep} />
+  let savedAddresses: Address[] = [];
+  let cartData = null;
+
+  if (session?.user?.id) {
+    // Parallel fetch for optimal performance
+    const [userWithAddresses, cart] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: { addresses: true }
+      }),
+      getCart(session.user.id)
+    ]);
+
+    if (userWithAddresses?.addresses) {
+      savedAddresses = userWithAddresses.addresses;
     }
+    cartData = cart;
   }
 
+  return <CartFlow savedAddresses={savedAddresses} initialCartData={cartData} />;
+}
+
+export default function CartPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
 
-      {/* Progress shown ONCE at the top */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <ProgressSteps currentStep={currentStep} onStepChange={handleStepChange} />
+      <Suspense fallback={<CartSkeleton />}>
+        <CartContent />
+      </Suspense>
+
+      <div className="mt-auto">
+        <FooterSection />
       </div>
-
-      {/* Current step content */}
-      {renderCurrentStep()}
-
-      <FooterSection />
     </div>
-  )
+  );
 }

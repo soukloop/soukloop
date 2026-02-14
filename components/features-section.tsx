@@ -25,36 +25,31 @@ export default function FeaturesSection() {
   ]
 
   return (
-    <div className="bg-[#f9f9f9] py-16">
+    <div className="bg-white py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Made responsive: max-w instead of fixed width/height */}
-        <div className="bg-white rounded-2xl py-12 px-6 md:px-12 shadow-sm border border-gray-100 max-w-[1248px] mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-start">
+        {/* Full width to match standard page layout components */}
+        <div className="w-full rounded-2xl border border-gray-100 bg-white px-4 py-6 shadow-md md:px-12">
+          {/* Mobile: Stacked 2 per row (grid-cols-2) */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className={`flex items-start space-x-3 ${
-                  index === 0
-                    ? "justify-self-start sm:-ml-7"
-                    : index === 1
-                    ? "justify-self-start sm:-ml-7 sm:-mr-4"
-                    : ""
-                }`}
+                className="flex flex-col items-center text-center sm:flex-row sm:text-left sm:space-x-3"
               >
-                <div className="flex-shrink-0 mt-1">
+                <div className="mt-1 shrink-0 mb-2 sm:mb-0">
                   <Image
                     src={feature.icon || "/placeholder.svg"}
                     alt={feature.title}
                     width={40}
                     height={40}
-                    className="w-10 h-10"
+                    className="size-8 sm:size-10"
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1 leading-tight whitespace-nowrap">
+                  <h3 className="mb-1 whitespace-nowrap text-xs sm:text-sm font-bold leading-tight text-gray-900">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 text-xs leading-relaxed whitespace-nowrap">
+                  <p className="whitespace-normal text-[10px] sm:text-xs leading-relaxed text-gray-600 sm:whitespace-nowrap">
                     {feature.description}
                   </p>
                 </div>

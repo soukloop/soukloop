@@ -1,6 +1,13 @@
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import Link from "next/link";
 
 const faqData = [
   {
@@ -39,11 +46,6 @@ const faqData = [
       "Absolutely. All transactions go through our secure platform, and we're here to support both buyers and sellers every step of the way.",
   },
   {
-    question: "How is shipping handled?",
-    answer:
-      "Once you buy something, the seller ships it directly to you. You'll get tracking info so you can follow your order every step of the way.",
-  },
-  {
     question: "What if I have a problem with my order?",
     answer:
       "No worries — just reach out to us at support@soukloop.com or start a live chat. We'll help sort things out as quickly as possible.",
@@ -57,68 +59,56 @@ const faqData = [
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50/50">
       <EcommerceHeader />
 
       {/* Main FAQ Content */}
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* FAQ Header */}
-        <div className="mb-16">
-          <h1 className="text-5xl font-bold text-[#E87A3F] mb-4">FAQs</h1>
-          <p className="text-gray-600 text-lg">
-            Quick answers to common questions — all in one place.
-          </p>
-        </div>
+      <main className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
 
-        {/* FAQ Items */}
-        {/* <div className="space-y-12 mb-20">
-          {faqData.map((faq, index) => (
-            <div key={index}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                <div className="lg:pr-8">
-                  <h3 className="text-xl font-semibold text-gray-900 leading-relaxed">{faq.question}</h3>
-                </div>
-                <div className="lg:pl-8">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                </div>
-              </div>
-              {index < faqData.length - 1 && <div className="border-b border-gray-200 mt-12"></div>}
-            </div>
-          ))}
-        </div> */}
+        <div className="mx-auto max-w-3xl">
+          {/* FAQ Header */}
+          <div className="mb-10 text-center">
+            <h1 className="mb-4 text-4xl font-bold tracking-tight text-[#E87A3F] sm:text-5xl">
+              FAQs
+            </h1>
+            <p className="text-lg text-gray-600">
+              Quick answers to common questions — all in one place.
+            </p>
+          </div>
 
-        <div className="space-y-12 mb-20">
-          {faqData.map((faq, index) => (
-            <div key={index}>
-              <div className="grid grid-cols-2 gap-8 items-start">
-                <div className="pr-8">
-                  <h3 className="text-xl font-semibold text-gray-900 leading-relaxed">
+          {/* FAQ Items - Stacked Rectangular Boxes */}
+          <div className="mb-16">
+            <Accordion type="single" collapsible className="space-y-4">
+              {faqData.map((faq, index) => (
+                <AccordionItem
+                  key={index}
+                  value={`item-${index}`}
+                  className="rounded-lg border border-gray-200 bg-white px-6 shadow-sm transition-all hover:shadow-md"
+                >
+                  <AccordionTrigger className="text-left text-lg font-semibold text-gray-900 hover:text-[#E87A3F] hover:no-underline">
                     {faq.question}
-                  </h3>
-                </div>
-                <div className="pl-8">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                </div>
-              </div>
-              {index < faqData.length - 1 && (
-                <div className="border-b border-gray-200 mt-12"></div>
-              )}
-            </div>
-          ))}
-        </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-base leading-relaxed text-gray-600">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
 
-        {/* Still Have Questions Section */}
-        <div className="bg-white py-12">
-          <div className="text-left">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          {/* Still Have Questions Section */}
+          <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-200 sm:p-12">
+            <h2 className="mb-3 text-2xl font-bold text-gray-900">
               Still have questions?
             </h2>
-            <p className="text-gray-600 text-lg mb-8">
+            <p className="mb-8 text-gray-600">
               No worries — chat with us live or email us anytime.
             </p>
-            <Button className="bg-[#E87A3F] hover:bg-[#d96d34] text-white text-base font-semibold w-[200px] h-[56px] rounded-[8px]">
-              Contact Us
-            </Button>
+            <Link href="/contact-us">
+              <Button className="h-12 rounded-full bg-[#E87A3F] px-8 text-base font-semibold text-white transition-colors hover:bg-[#d96d34]">
+                Contact Us
+              </Button>
+            </Link>
           </div>
         </div>
       </main>

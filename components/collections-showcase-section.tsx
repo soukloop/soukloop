@@ -1,57 +1,79 @@
-import Image from "next/image"
-import { ArrowRight } from 'lucide-react'
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+const collections = [
+  {
+    id: 1,
+    image: "/collections/man-formal-coat.png", // Keeping original image or need update? User didn't specify new images, just text replacements. I'll keep images for now or use placeholders if specific logic needed.
+    // Actually user says "replace Groom with Sherwani in mens". Assuming just text for now as I don't have new assets.
+    title: "Sherwani",
+    subtitle: "Men's",
+    link: "/products?query=Sherwani",
+  },
+  {
+    id: 2,
+    image: "/collections/woman-pink-gown.png",
+    title: "Sherara/Gharara",
+    subtitle: "Women's",
+    link: "/products?query=Sherara",
+  },
+  {
+    id: 3,
+    image: "/collections/woman-argyle-vest.png",
+    title: "Suit",
+    subtitle: "Men's",
+    link: "/products?query=Suit",
+  },
+  {
+    id: 4,
+    image: "/collections/man-gray-cardigan.png",
+    title: "Saree",
+    subtitle: "Women's",
+    link: "/products?query=Saree",
+  },
+];
 
 export default function CollectionsShowcaseSection() {
-  const collections = [
-    {
-      id: 1,
-      image: "/collections/man-formal-coat.png",
-      title: "Shop by Season",
-      subtitle: "Collections",
-      link: "/collections/seasonal",
-    },
-    {
-      id: 2,
-      image: "/collections/woman-pink-gown.png",
-      title: "Trending Now",
-      subtitle: "Collections",
-      link: "/collections/trending",
-    },
-  ]
-
   return (
     <div className="bg-white py-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-2 lg:gap-6">
           {collections.map((collection) => (
-            <div
+            <Link
               key={collection.id}
-              className="relative group cursor-pointer overflow-hidden rounded-2xl aspect-[4/5] bg-gray-100 
-              p-12 sm:p-20 md:p-32 lg:p-[160px]"
+              href={collection.link}
+              className="group relative aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl bg-gray-100 sm:aspect-[3/4] h-[300px] sm:h-[500px] lg:h-[600px]"
             >
               {/* Background Image */}
               <Image
                 src={collection.image || "/placeholder.svg"}
                 alt={collection.title}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <div className="absolute inset-0 bg-black/20 transition-colors duration-300 group-hover:bg-black/30" />
 
               {/* Content */}
-              <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8 text-white">
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{collection.title}</h3>
-                <div className="flex items-center group-hover:translate-x-2 transition-transform duration-300">
-                  <span className="text-[#e0622c] text-base sm:text-lg font-semibold mr-2">{collection.subtitle}</span>
-                  <ArrowRight className="h-5 w-5 text-[#e0622c]" />
+              <div className="absolute bottom-4 left-4 text-white sm:bottom-8 sm:left-8">
+                <h3 className="mb-1 text-xl font-bold sm:mb-2 sm:text-3xl lg:text-4xl">
+                  {collection.title}
+                </h3>
+                <div className="flex items-center transition-transform duration-300 group-hover:translate-x-2">
+                  <span className="mr-1 text-sm font-semibold text-[#e0622c] sm:mr-2 sm:text-lg">
+                    {collection.subtitle}
+                  </span>
+                  <ArrowRight className="size-4 text-[#e0622c] sm:size-5" />
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
     </div>
-  )
+  );
 }

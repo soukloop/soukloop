@@ -1,0 +1,1108 @@
+{
+  "explanation": "I'll explain Einstein's General Relativity using a simple trip to the playground. We'll see how a stretchy trampoline and a heavy ball can teach us how planets move and why 'gravity' isn't what you might think it is.",
+  "whiteboard": [
+    {
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "stepName": "A Normal Playground",
+      "explanation": "Let's start at a playground. Imagine the ground is perfectly flat and even. It's easy to run in a straight line here.",
+      "drawingPlan": [
+        {
+          "type": "rectangle",
+          "center": {
+            "x": 0,
+            "y": 50
+          },
+          "width": 600,
+          "height": 300,
+          "color": "#a3e635",
+          "id": "flat-ground"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Flat Playground",
+          "point": {
+            "x": 0,
+            "y": -180
+          },
+          "fontSize": 24,
+          "color": "#FFFFFF",
+          "id": "label_flat_ground"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": []
+    },
+    {
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "stepName": "Running in a Straight Line",
+      "explanation": "If a kid runs from one side to the other, they'll naturally follow a straight path. Nothing is there to change their direction.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": -250,
+            "y": 50
+          },
+          "radius": 20,
+          "color": "#d946ef",
+          "id": "kid",
+          "isFilled": true
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Kid",
+          "point": {
+            "x": -250,
+            "y": -10
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_kid"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": [
+        "label_flat_ground"
+      ]
+    },
+    {
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "stepName": "A Straight Path",
+      "explanation": "See? A perfectly straight line. Easy peasy.",
+      "drawingPlan": [
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -230,
+              "y": 50
+            },
+            {
+              "x": 250,
+              "y": 50
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "straight-path"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "arrow",
+          "start": {
+            "x": 0,
+            "y": 20
+          },
+          "end": {
+            "x": 0,
+            "y": 45
+          },
+          "color": "#FFFFFF",
+          "id": "arrow_to_path"
+        },
+        {
+          "type": "text",
+          "text": "Straight Path",
+          "point": {
+            "x": 0,
+            "y": -10
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_straight_path"
+        }
+      ],
+      "highlightIds": [
+        "straight-path"
+      ],
+      "retainedLabelIds": [
+        "label_flat_ground",
+        "label_kid"
+      ]
+    },
+    {
+      "origin": {
+        "x": 2000,
+        "y": 0
+      },
+      "stepName": "The Trampoline",
+      "explanation": "Now, let's switch things up. Instead of flat ground, we have a big, stretchy trampoline. It's like a bouncy, flexible surface.",
+      "drawingPlan": [
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -300,
+              "y": 0
+            },
+            {
+              "x": 300,
+              "y": 0
+            }
+          ],
+          "color": "#a3e635",
+          "id": "trampoline_surface_flat"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Stretchy Trampoline",
+          "point": {
+            "x": 0,
+            "y": -180
+          },
+          "fontSize": 24,
+          "color": "#FFFFFF",
+          "id": "label_trampoline"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": []
+    },
+    {
+      "origin": {
+        "x": 2000,
+        "y": 0
+      },
+      "stepName": "Adding Weight",
+      "explanation": "What happens if we put something really heavy, like a bowling ball, right in the middle? The trampoline surface sinks down, creating a dip.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": 0,
+            "y": 100
+          },
+          "radius": 40,
+          "color": "#06b6d4",
+          "id": "heavy-ball",
+          "isFilled": true
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -300,
+              "y": 0
+            },
+            {
+              "x": -150,
+              "y": 10
+            },
+            {
+              "x": 0,
+              "y": 60
+            },
+            {
+              "x": 150,
+              "y": 10
+            },
+            {
+              "x": 300,
+              "y": 0
+            }
+          ],
+          "color": "#a3e635",
+          "id": "trampoline_surface_warped"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Heavy Ball",
+          "point": {
+            "x": 0,
+            "y": 155
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_heavy_ball"
+        }
+      ],
+      "highlightIds": [
+        "heavy-ball"
+      ],
+      "retainedLabelIds": [
+        "label_trampoline"
+      ]
+    },
+    {
+      "origin": {
+        "x": 2000,
+        "y": 0
+      },
+      "stepName": "Rolling a Marble",
+      "explanation": "Now, let's roll a little marble across the trampoline. It's trying to go in a straight line, just like the kid running before.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": -250,
+            "y": 5
+          },
+          "radius": 10,
+          "color": "#d946ef",
+          "id": "marble",
+          "isFilled": true
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Marble",
+          "point": {
+            "x": -250,
+            "y": -25
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_marble"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": [
+        "label_trampoline",
+        "label_heavy_ball"
+      ]
+    },
+    {
+      "origin": {
+        "x": 2000,
+        "y": 0
+      },
+      "stepName": "A Curved Path!",
+      "explanation": "But look! As the marble gets close to the heavy ball, its path is guided by the curve in the trampoline. It's not being 'pulled' by the ball; it's just following the shape of the surface.",
+      "drawingPlan": [
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -240,
+              "y": 5
+            },
+            {
+              "x": -100,
+              "y": 40
+            },
+            {
+              "x": 0,
+              "y": 55
+            },
+            {
+              "x": 100,
+              "y": 40
+            },
+            {
+              "x": 240,
+              "y": 5
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "curved-path"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Path is now curved!",
+          "point": {
+            "x": 0,
+            "y": -50
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_curved_path"
+        }
+      ],
+      "highlightIds": [
+        "curved-path"
+      ],
+      "retainedLabelIds": [
+        "label_trampoline",
+        "label_heavy_ball",
+        "label_marble"
+      ]
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 0
+      },
+      "stepName": "The Universe as a Grid",
+      "explanation": "Okay, let's connect this to the universe. Imagine the universe isn't empty, but is a giant, flat grid called 'spacetime'. It's like the flat playground ground.",
+      "drawingPlan": [
+        {
+          "type": "rectangle",
+          "center": {
+            "x": 0,
+            "y": 50
+          },
+          "width": 700,
+          "height": 500,
+          "color": "#FFFFFF",
+          "id": "grid-border"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": -150
+            },
+            {
+              "x": 350,
+              "y": -150
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-h1"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": -50
+            },
+            {
+              "x": 350,
+              "y": -50
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-h2"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 50
+            },
+            {
+              "x": 350,
+              "y": 50
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-h3"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 150
+            },
+            {
+              "x": 350,
+              "y": 150
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-h4"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 250
+            },
+            {
+              "x": 350,
+              "y": 250
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-h5"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -250,
+              "y": -200
+            },
+            {
+              "x": -250,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v1"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -150,
+              "y": -200
+            },
+            {
+              "x": -150,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v2"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -50,
+              "y": -200
+            },
+            {
+              "x": -50,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v3"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": 50,
+              "y": -200
+            },
+            {
+              "x": 50,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v4"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": 150,
+              "y": -200
+            },
+            {
+              "x": 150,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v5"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": 250,
+              "y": -200
+            },
+            {
+              "x": 250,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "grid-v6"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Flat Spacetime",
+          "point": {
+            "x": 0,
+            "y": -280
+          },
+          "fontSize": 24,
+          "color": "#FFFFFF",
+          "id": "label_spacetime"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": []
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 0
+      },
+      "stepName": "An Object in Space",
+      "explanation": "If a planet is moving through empty, flat spacetime, it travels in a perfectly straight line, just like the kid on the playground.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": -300,
+            "y": -100
+          },
+          "radius": 15,
+          "color": "#d946ef",
+          "id": "planet",
+          "isFilled": true
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -280,
+              "y": -100
+            },
+            {
+              "x": 300,
+              "y": -100
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "planet-straight-path"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Planet",
+          "point": {
+            "x": -300,
+            "y": -140
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_planet"
+        }
+      ],
+      "highlightIds": [
+        "planet",
+        "planet-straight-path"
+      ],
+      "retainedLabelIds": [
+        "label_spacetime"
+      ]
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 0
+      },
+      "stepName": "Adding a Star",
+      "explanation": "Now for the amazing part! Let's add something massive, like our Sun. The Sun is like the heavy bowling ball for the universe.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": 0,
+            "y": 50
+          },
+          "radius": 50,
+          "color": "#facc15",
+          "id": "sun",
+          "isFilled": true
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "The Sun",
+          "point": {
+            "x": 0,
+            "y": 120
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_sun"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": [
+        "label_spacetime",
+        "label_planet"
+      ]
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 0
+      },
+      "stepName": "Spacetime Bends!",
+      "explanation": "Because the Sun is so massive, it bends and warps the very fabric of spacetime around it, just like the ball bent the trampoline!",
+      "drawingPlan": [
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": -150
+            },
+            {
+              "x": -200,
+              "y": -140
+            },
+            {
+              "x": 0,
+              "y": -100
+            },
+            {
+              "x": 200,
+              "y": -140
+            },
+            {
+              "x": 350,
+              "y": -150
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-h1"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": -50
+            },
+            {
+              "x": -200,
+              "y": -40
+            },
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 200,
+              "y": -40
+            },
+            {
+              "x": 350,
+              "y": -50
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-h2"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 150
+            },
+            {
+              "x": -200,
+              "y": 140
+            },
+            {
+              "x": 0,
+              "y": 100
+            },
+            {
+              "x": 200,
+              "y": 140
+            },
+            {
+              "x": 350,
+              "y": 150
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-h4"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 250
+            },
+            {
+              "x": -200,
+              "y": 240
+            },
+            {
+              "x": 0,
+              "y": 200
+            },
+            {
+              "x": 200,
+              "y": 240
+            },
+            {
+              "x": 350,
+              "y": 250
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-h5"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -250,
+              "y": -200
+            },
+            {
+              "x": -240,
+              "y": 0
+            },
+            {
+              "x": -200,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-v1"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -50,
+              "y": -200
+            },
+            {
+              "x": -40,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-v3"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": 50,
+              "y": -200
+            },
+            {
+              "x": 40,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-v4"
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": 250,
+              "y": -200
+            },
+            {
+              "x": 240,
+              "y": 0
+            },
+            {
+              "x": 200,
+              "y": 300
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "warped-v6"
+        }
+      ],
+      "annotations": [],
+      "highlightIds": [],
+      "retainedLabelIds": [
+        "label_spacetime",
+        "label_sun",
+        "label_planet"
+      ]
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 0
+      },
+      "stepName": "The Orbit",
+      "explanation": "Now, the planet tries to move in a straight line, but spacetime itself is curved. So its path becomes a curve around the Sun. This is what we call an orbit, and it's what we feel as gravity!",
+      "drawingPlan": [
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -280,
+              "y": -100
+            },
+            {
+              "x": -150,
+              "y": 20
+            },
+            {
+              "x": 0,
+              "y": 90
+            },
+            {
+              "x": 150,
+              "y": 20
+            },
+            {
+              "x": 280,
+              "y": -100
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "planet-curved-path"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "This path is an ORBIT!",
+          "point": {
+            "x": 0,
+            "y": 200
+          },
+          "fontSize": 20,
+          "color": "#facc15",
+          "id": "label_orbit"
+        },
+        {
+          "type": "text",
+          "text": "It's just following the curve in spacetime!",
+          "point": {
+            "x": 0,
+            "y": 230
+          },
+          "fontSize": 18,
+          "color": "#FFFFFF",
+          "id": "label_orbit_expl"
+        }
+      ],
+      "highlightIds": [
+        "planet-curved-path"
+      ],
+      "retainedLabelIds": [
+        "label_spacetime",
+        "label_sun",
+        "label_planet"
+      ]
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 2000
+      },
+      "stepName": "What About Light?",
+      "explanation": "Here's something really cool. This idea doesn't just apply to planets. It even applies to light!",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": 0,
+            "y": 50
+          },
+          "radius": 50,
+          "color": "#facc15",
+          "id": "sun_context",
+          "isFilled": true
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -350,
+              "y": 50
+            },
+            {
+              "x": -200,
+              "y": 40
+            },
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 200,
+              "y": 40
+            },
+            {
+              "x": 350,
+              "y": 50
+            }
+          ],
+          "color": "#FFFFFF",
+          "id": "spacetime_context_warped"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Warped Spacetime",
+          "point": {
+            "x": 0,
+            "y": -100
+          },
+          "fontSize": 24,
+          "color": "#FFFFFF",
+          "id": "label_spacetime_context",
+          "isContextual": true
+        },
+        {
+          "type": "text",
+          "text": "Sun",
+          "point": {
+            "x": 0,
+            "y": 120
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_sun_context",
+          "isContextual": true
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": []
+    },
+    {
+      "origin": {
+        "x": 4000,
+        "y": 2000
+      },
+      "stepName": "Light Bends Too!",
+      "explanation": "A beam of light traveling past the Sun also has to follow the curve in spacetime. Its path gets bent! This was a huge prediction of Einstein's theory.",
+      "drawingPlan": [
+        {
+          "type": "circle",
+          "center": {
+            "x": -300,
+            "y": -50
+          },
+          "radius": 8,
+          "color": "#06b6d4",
+          "id": "light-particle",
+          "isFilled": true
+        },
+        {
+          "type": "path",
+          "points": [
+            {
+              "x": -290,
+              "y": -50
+            },
+            {
+              "x": -150,
+              "y": -10
+            },
+            {
+              "x": 0,
+              "y": 20
+            },
+            {
+              "x": 150,
+              "y": -10
+            },
+            {
+              "x": 290,
+              "y": -50
+            }
+          ],
+          "color": "#06b6d4",
+          "id": "light-path"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Light particle",
+          "point": {
+            "x": -300,
+            "y": -80
+          },
+          "fontSize": 20,
+          "color": "#FFFFFF",
+          "id": "label_light"
+        },
+        {
+          "type": "text",
+          "text": "Light's path gets bent!",
+          "point": {
+            "x": 0,
+            "y": 180
+          },
+          "fontSize": 24,
+          "color": "#06b6d4",
+          "id": "label_light_bent"
+        }
+      ],
+      "highlightIds": [
+        "light-path"
+      ],
+      "retainedLabelIds": [
+        "label_spacetime_context",
+        "label_sun_context"
+      ]
+    },
+    {
+      "origin": {
+        "x": 2000,
+        "y": 2000
+      },
+      "stepName": "The Big Idea",
+      "explanation": "So, that's the core idea! Gravity isn't a mysterious 'force' pulling things. It's just the effect of massive objects bending the 'playground' of the universe, and other things, even light, following those curves as they travel.",
+      "drawingPlan": [],
+      "annotations": [
+        {
+          "type": "text",
+          "text": "Heavy things BEND spacetime.",
+          "point": {
+            "x": 0,
+            "y": -50
+          },
+          "fontSize": 28,
+          "color": "#facc15",
+          "id": "summary1"
+        },
+        {
+          "type": "text",
+          "text": "Other things FOLLOW the bends.",
+          "point": {
+            "x": 0,
+            "y": 0
+          },
+          "fontSize": 28,
+          "color": "#06b6d4",
+          "id": "summary2"
+        },
+        {
+          "type": "text",
+          "text": "That's General Relativity!",
+          "point": {
+            "x": 0,
+            "y": 50
+          },
+          "fontSize": 28,
+          "color": "#FFFFFF",
+          "id": "summary3"
+        }
+      ],
+      "highlightIds": [],
+      "retainedLabelIds": []
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import AuthPopup from "../../signin/components/auth-popup";
+import AuthPopup from "@/components/auth/auth-popup";
 import {
   Check,
   ChevronDown,
@@ -42,11 +42,11 @@ export default function EcommerceHeader() {
   // }, [showProfile]);
 
   const menuItems = [
-    { icon: "/icons/dashboard.png", label: "Dashboard", href: "/userdashboard" },
+    { icon: "/icons/dashboard.png", label: "Dashboard", href: "/dashboard" },
     {
       icon: "/icons/account-settings.png",
       label: "Account settings",
-      href: "/editprofile",
+      href: "/edit-profile",
     },
     {
       icon: "/icons/notification-settings.png",
@@ -56,25 +56,25 @@ export default function EcommerceHeader() {
     {
       icon: "/icons/refunds-returns.png",
       label: "Refunds & Returns",
-      href: "/refundsandreturns",
+      href: "/refunds-and-returns",
     },
-    { icon: "/icons/my-orders.png", label: "My Orders", href: "/editprofile" },
+    { icon: "/icons/my-orders.png", label: "My Orders", href: "/edit-profile" },
     {
       icon: "/icons/track-order.png",
       label: "Track Order",
-      href: "/trackorders",
+      href: "/track-orders",
     },
-    { icon: "/icons/rewards.png", label: "Rewards", href: "/rewardpoints" },
+    { icon: "/icons/rewards.png", label: "Rewards", href: "/reward-points" },
     { icon: "/icons/chat-box.png", label: "Chat box", href: "/chats" },
   ];
 
   return (
     <header className="w-full bg-white text-gray-800">
       {/* Top Bar */}
-      <div className="bg-[#E87A3F] text-white text-sm h-11">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center flex-wrap items-center h-10 md:justify-between lg:justify-between">
+      <div className="h-11 bg-[#E87A3F] text-sm text-white">
+        <div className="container mx-auto flex h-10 flex-wrap items-center justify-center px-4 sm:px-6 md:justify-between lg:justify-between lg:px-8">
           <div className="flex items-center space-x-2 text-xs sm:text-sm">
-            <Check className="h-4 w-4" />
+            <Check className="size-4" />
             <span className="hidden sm:inline">
               Free Shipping On All Orders Over $50
             </span>
@@ -82,23 +82,23 @@ export default function EcommerceHeader() {
               Free Shipping On All Orders Over $50
             </span>
           </div>
-          <div className="flex flex-wrap justify-center md:justify-end gap-4 mt-2 md:mt-0 text-sm">
-            <div className="flex items-center space-x-1 cursor-pointer hover:opacity-80">
+          <div className="mt-2 flex flex-wrap justify-center gap-4 text-sm md:mt-0 md:justify-end">
+            <div className="flex cursor-pointer items-center space-x-1 hover:opacity-80">
               <span>Eng</span>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="size-4" />
             </div>
-            <div className="flex items-center space-x-1 cursor-pointer hover:opacity-80">
+            <div className="flex cursor-pointer items-center space-x-1 hover:opacity-80">
               <span>USD</span>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="size-4" />
             </div>
-            <a href="/privacypolicy" className="hover:opacity-80">
+            <a href="/privacy-policy" className="hover:opacity-80">
               Privacy Policy
             </a>
             <a
               href="#"
               className="flex items-center space-x-1 hover:opacity-80"
             >
-              <Info className="h-4 w-4" />
+              <Info className="size-4" />
               <span>Need Help</span>
             </a>
           </div>
@@ -106,24 +106,24 @@ export default function EcommerceHeader() {
       </div>
 
       {/* Main Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20 sm:h-24">
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container mx-auto flex h-20 items-center justify-between px-4 sm:h-24 sm:px-6 lg:px-8">
           {/* Logo */}
-          <div className="text-2xl sm:text-3xl font-bold">
+          <div className="text-2xl font-bold sm:text-3xl">
             <span className="text-[#E87A3F]">Souk</span>
             <span className="text-[#008080]">Loop</span>
           </div>
 
           {/* Desktop Icons */}
-          <div className="hidden sm:flex items-center space-x-2">
+          <div className="hidden items-center space-x-2 sm:flex">
             <Link href="/cart">
               <Button
                 variant="outline"
-                className="relative h-11 px-4 rounded-lg bg-transparent"
+                className="relative h-11 rounded-lg bg-transparent px-4"
               >
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="size-6" />
                 <span className="ml-2 hidden md:inline">Cart</span>
-                <span className="absolute -top-1 -right-1 bg-[#E87A3F] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#E87A3F] text-xs text-white">
                   2
                 </span>
               </Button>
@@ -131,30 +131,30 @@ export default function EcommerceHeader() {
             <Button
               variant="outline"
               size="icon"
-              className="h-11 w-11 rounded-lg bg-transparent"
+              className="size-11 rounded-lg bg-transparent"
             >
-              <Heart className="h-6 w-6" />
+              <Heart className="size-6" />
             </Button>
             {/* User + Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <Button
                 variant="outline"
                 size="icon"
-                className="h-11 w-11 rounded-lg bg-transparent"
+                className="size-11 rounded-lg bg-transparent"
                 onClick={() => setShowProfile(!showProfile)}
               >
-                <User className="h-6 w-6" />
+                <User className="size-6" />
               </Button>
 
               {showProfile && (
                 <div
-                  className="absolute right-0 mt-2 z-[9999] w-[250px] max-h-[80vh] bg-white rounded-lg shadow-lg border border-gray-100 flex flex-col overflow-y-auto"
+                  className="absolute right-0 z-[9999] mt-2 flex max-h-[80vh] w-[250px] flex-col overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg"
                   onClick={(e) => e.stopPropagation()} // ✅ Prevent outside click from closing immediately
                 >
                   {/* Profile Section */}
-                  <div className="p-2 border-b border-gray-100 flex-shrink-0">
+                  <div className="shrink-0 border-b border-gray-100 p-2">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                      <div className="relative size-12 overflow-hidden rounded-full">
                         <Image
                           src="/icons/user-avatar.png"
                           alt="User avatar"
@@ -166,28 +166,28 @@ export default function EcommerceHeader() {
                         <h3 className="text-base font-medium text-gray-900">
                           User name
                         </h3>
-                        <Link href="/userprofile">
-                        <button>
-                        <p className="text-sm text-gray-500">
-                          View public profile
-                        </p>
-                        </button>
+                        <Link href="/profile">
+                          <button>
+                            <p className="text-sm text-gray-500">
+                              View public profile
+                            </p>
+                          </button>
                         </Link>
                       </div>
                     </div>
                   </div>
 
                   {/* Menu Items */}
-                  <div className="py-1 flex-1">
+                  <div className="flex-1 py-1">
                     {menuItems.map((item, index) => (
                       <Link
                         key={index}
                         href={item.href}
                         onClick={() => setShowProfile(false)} // ✅ Close dropdown on click
-                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-md"
+                        className="flex w-full items-center justify-between rounded-md px-4 py-3 transition-colors hover:bg-gray-50"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 relative flex-shrink-0">
+                          <div className="relative size-4 shrink-0">
                             <Image
                               src={item.icon}
                               alt={item.label}
@@ -195,38 +195,38 @@ export default function EcommerceHeader() {
                               className="object-contain"
                             />
                           </div>
-                          <span className="text-[14px] text-gray-900 font-normal">
+                          <span className="text-[14px] font-normal text-gray-900">
                             {item.label}
                           </span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <ChevronRight className="size-5 text-gray-400" />
                       </Link>
                     ))}
 
                     {/* Wishlist */}
                     <Link
-                      href="/editprofile"
+                      href="/edit-profile"
                       onClick={() => setShowProfile(false)} // ✅ Close dropdown on click
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-md"
+                      className="flex w-full items-center justify-between rounded-md px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        <Heart className="w-5 h-5 text-gray-600" />
-                        <span className="text-base text-gray-900 font-normal">
+                        <Heart className="size-5 text-gray-600" />
+                        <span className="text-base font-normal text-gray-900">
                           My wishlist
                         </span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="size-5 text-gray-400" />
                     </Link>
                   </div>
 
                   {/* Logout */}
-                  <div className="border-t border-gray-100 flex-shrink-0">
+                  <div className="shrink-0 border-t border-gray-100">
                     <div className="p-2" style={{ backgroundColor: "#fdf7f4" }}>
                       <button
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors"
+                        className="flex w-full items-center gap-3 rounded-md px-4 py-3 transition-colors"
                         style={{ backgroundColor: "#E0622C0D" }}
                       >
-                        <div className="w-5 h-5 relative flex-shrink-0">
+                        <div className="relative size-5 shrink-0">
                           <Image
                             src="/icons/logout.png"
                             alt="Logout"
@@ -247,22 +247,22 @@ export default function EcommerceHeader() {
               )}
             </div>
 
-            <Button className="bg-[#E87A3F] hover:bg-[#d96d34] text-white px-4 sm:px-6 text-sm sm:text-base font-semibold h-10 sm:h-11 w-[100px] sm:w-[135px] rounded-3xl">
+            <Button className="h-10 w-[100px] rounded-3xl bg-[#E87A3F] px-4 text-sm font-semibold text-white hover:bg-[#d96d34] sm:h-11 sm:w-[135px] sm:px-6 sm:text-base">
               Sell
             </Button>
           </div>
 
           {/* Mobile Icons */}
-          <div className="flex sm:hidden items-center space-x-2">
+          <div className="flex items-center space-x-2 sm:hidden">
             <Link href="/cart">
               <Button
                 variant="outline"
                 size="icon"
-                className="relative h-10 w-10 rounded-lg bg-transparent"
+                className="relative size-10 rounded-lg bg-transparent"
               >
-                <ShoppingCart className="h-6 w-6" />
+                <ShoppingCart className="size-6" />
                 <span className="ml-2 hidden md:inline">Cart</span>
-                <span className="absolute -top-1 -right-1 bg-[#E87A3F] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#E87A3F] text-xs text-white">
                   2
                 </span>
               </Button>
@@ -270,27 +270,27 @@ export default function EcommerceHeader() {
             <Button
               variant="outline"
               size="icon"
-              className="h-10 w-10 rounded-lg bg-transparent"
+              className="size-10 rounded-lg bg-transparent"
             >
-              <Heart className="h-6 w-6" />
+              <Heart className="size-6" />
             </Button>
             {/* User + Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <Button
                 variant="outline"
                 size="icon"
-                className="h-11 w-11 rounded-lg bg-transparent"
+                className="size-11 rounded-lg bg-transparent"
                 onClick={() => setShowProfile(!showProfile)}
               >
-                <User className="h-6 w-6" />
+                <User className="size-6" />
               </Button>
 
               {showProfile && (
-                <div className="absolute right-0 mt-2 z-50 w-[250px] max-h-[80vh] bg-white rounded-lg shadow-lg border border-gray-100 flex flex-col overflow-y-auto">
+                <div className="absolute right-0 z-50 mt-2 flex max-h-[80vh] w-[250px] flex-col overflow-y-auto rounded-lg border border-gray-100 bg-white shadow-lg">
                   {/* Profile Section */}
-                  <div className="p-2 border-b border-gray-100 flex-shrink-0">
+                  <div className="shrink-0 border-b border-gray-100 p-2">
                     <div className="flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden">
+                      <div className="relative size-12 overflow-hidden rounded-full">
                         <Image
                           src="/icons/user-avatar.png"
                           alt="User avatar"
@@ -310,15 +310,15 @@ export default function EcommerceHeader() {
                   </div>
 
                   {/* Menu Items */}
-                  <div className="py-1 flex-1">
+                  <div className="flex-1 py-1">
                     {menuItems.map((item, index) => (
                       <Link
                         key={index}
                         href={item.href} // ✅ use href from menuItems
-                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-md"
+                        className="flex w-full items-center justify-between rounded-md px-4 py-3 transition-colors hover:bg-gray-50"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-4 h-4 relative flex-shrink-0">
+                          <div className="relative size-4 shrink-0">
                             <Image
                               src={item.icon}
                               alt={item.label}
@@ -326,37 +326,37 @@ export default function EcommerceHeader() {
                               className="object-contain"
                             />
                           </div>
-                          <span className="text-[14px] text-gray-900 font-normal">
+                          <span className="text-[14px] font-normal text-gray-900">
                             {item.label}
                           </span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                        <ChevronRight className="size-5 text-gray-400" />
                       </Link>
                     ))}
 
                     {/* Wishlist */}
                     <Link
-                      href="/editprofile"
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-md"
+                      href="/edit-profile"
+                      className="flex w-full items-center justify-between rounded-md px-4 py-3 transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3">
-                        <Heart className="w-5 h-5 text-gray-600" />
-                        <span className="text-base text-gray-900 font-normal">
+                        <Heart className="size-5 text-gray-600" />
+                        <span className="text-base font-normal text-gray-900">
                           My wishlist
                         </span>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="size-5 text-gray-400" />
                     </Link>
                   </div>
 
                   {/* Logout */}
-                  <div className="border-t border-gray-100 flex-shrink-0">
+                  <div className="shrink-0 border-t border-gray-100">
                     <div className="p-2" style={{ backgroundColor: "#fdf7f4" }}>
                       <button
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-md transition-colors"
+                        className="flex w-full items-center gap-3 rounded-md px-4 py-3 transition-colors"
                         style={{ backgroundColor: "#E0622C0D" }}
                       >
-                        <div className="w-5 h-5 relative flex-shrink-0">
+                        <div className="relative size-5 shrink-0">
                           <Image
                             src="/icons/logout.png"
                             alt="Logout"
@@ -379,13 +379,13 @@ export default function EcommerceHeader() {
 
             {/* Mobile Menu Button */}
             <button
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700"
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-700"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
+                <X className="size-6" />
               ) : (
-                <Menu className="h-6 w-6" />
+                <Menu className="size-6" />
               )}
             </button>
           </div>
@@ -393,20 +393,20 @@ export default function EcommerceHeader() {
       </div>
 
       {/* Navigation Bar */}
-      <div className="bg-white shadow-sm hidden md:block">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div className="hidden bg-white shadow-sm md:block">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center space-x-8">
             <Button
               variant="outline"
-              className="h-12 px-4 rounded-lg border-gray-300 bg-transparent"
+              className="h-12 rounded-lg border-gray-300 bg-transparent px-4"
             >
-              <Menu className="h-6 w-6 mr-2" />
+              <Menu className="mr-2 size-6" />
               <span className="font-medium">All Categories</span>
             </Button>
             <nav className="flex items-center space-x-8 text-base">
               <a
                 href="#"
-                className="text-[#E87A3F] font-semibold border-b-2 border-[#E87A3F] pb-1"
+                className="border-b-2 border-[#E87A3F] pb-1 font-semibold text-[#E87A3F]"
               >
                 Women
               </a>
@@ -426,7 +426,7 @@ export default function EcommerceHeader() {
           </div>
           <Button
             variant="outline"
-            className="bg-[#FEF3EC] border-[#FEF3EC] text-[#E87A3F] hover:bg-[#fde8d9] h-12 px-6 rounded-full text-base font-medium"
+            className="h-12 rounded-full border-[#FEF3EC] bg-[#FEF3EC] px-6 text-base font-medium text-[#E87A3F] hover:bg-[#fde8d9]"
             onClick={() => setShowAuth(true)} // ✅ Open popup
           >
             Log in / Sign up
@@ -436,7 +436,7 @@ export default function EcommerceHeader() {
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden bg-white border-t border-gray-200 shadow-md">
+        <div className="border-t border-gray-200 bg-white shadow-md sm:hidden">
           <nav className="flex flex-col space-y-3 p-4 text-gray-700">
             <a href="#" className="hover:text-[#E87A3F]">
               Women
@@ -456,25 +456,25 @@ export default function EcommerceHeader() {
             <hr className="my-2" />
             <a
               href="#"
-              className="hover:text-[#E87A3F] flex items-center space-x-2"
+              className="flex items-center space-x-2 hover:text-[#E87A3F]"
             >
-              <ShoppingCart className="h-5 w-5" /> <span>Cart</span>
+              <ShoppingCart className="size-5" /> <span>Cart</span>
             </a>
             <a
               href="#"
-              className="hover:text-[#E87A3F] flex items-center space-x-2"
+              className="flex items-center space-x-2 hover:text-[#E87A3F]"
             >
-              <Heart className="h-5 w-5" /> <span>Wishlist</span>
+              <Heart className="size-5" /> <span>Wishlist</span>
             </a>
             <a
               href="#"
-              className="hover:text-[#E87A3F] flex items-center space-x-2"
+              className="flex items-center space-x-2 hover:text-[#E87A3F]"
             >
-              <User className="h-5 w-5" /> <span>Account</span>
+              <User className="size-5" /> <span>Account</span>
             </a>
             <Button
               variant="outline"
-              className="bg-[#FEF3EC] border-[#FEF3EC] text-[#E87A3F] hover:bg-[#fde8d9] h-11 rounded-3xl"
+              className="h-11 rounded-3xl border-[#FEF3EC] bg-[#FEF3EC] text-[#E87A3F] hover:bg-[#fde8d9]"
               onClick={() => {
                 setShowAuth(true); // ✅ Open popup
                 setMobileMenuOpen(false); // Close mobile menu
@@ -483,7 +483,7 @@ export default function EcommerceHeader() {
               Log in / Sign up
             </Button>
 
-            <Button className="bg-[#E87A3F] hover:bg-[#d96d34] text-white px-6 text-base font-semibold h-11 rounded-3xl">
+            <Button className="h-11 rounded-3xl bg-[#E87A3F] px-6 text-base font-semibold text-white hover:bg-[#d96d34]">
               Sell
             </Button>
           </nav>

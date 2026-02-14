@@ -1,0 +1,503 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e10]: Free Shipping On All Orders Over $50
+        - generic [ref=e11]:
+          - generic [ref=e13] [cursor=pointer]:
+            - generic [ref=e14]: Eng
+            - img [ref=e15]
+          - generic [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: USD
+            - img [ref=e20]
+          - link "Privacy Policy" [ref=e22] [cursor=pointer]:
+            - /url: /privacypolicy
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - link "Need Help" [ref=e26] [cursor=pointer]:
+              - /url: /FAQs
+      - generic [ref=e28]:
+        - link "SoukLoop" [ref=e29] [cursor=pointer]:
+          - /url: /
+          - img "SoukLoop" [ref=e31]
+        - generic [ref=e32]:
+          - button "Cart" [ref=e33] [cursor=pointer]:
+            - img
+            - generic [ref=e34]: Cart
+          - button "Log in / Sign up" [ref=e37] [cursor=pointer]
+      - generic [ref=e40]:
+        - button "All Categories" [ref=e42] [cursor=pointer]:
+          - img
+          - generic [ref=e43]: All Categories
+        - navigation [ref=e44]:
+          - button "women" [ref=e45] [cursor=pointer]
+          - button "men" [ref=e46] [cursor=pointer]
+          - button "kids" [ref=e47] [cursor=pointer]
+      - generic [ref=e49]:
+        - img "Two women in cardigans" [ref=e51]
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - heading "Sign In" [level=1] [ref=e54]
+            - generic [ref=e55]:
+              - button "Sign Up" [ref=e56] [cursor=pointer]
+              - button [ref=e57] [cursor=pointer]:
+                - img [ref=e58]
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - generic [ref=e63]: Email
+              - textbox "Email" [ref=e65]:
+                - /placeholder: Enter Your Email
+                - text: "' OR '1'='1"
+            - generic [ref=e66]:
+              - generic [ref=e67]: Password
+              - generic [ref=e68]:
+                - textbox "Password" [active] [ref=e69]: randompass
+                - button "Show password" [ref=e70] [cursor=pointer]:
+                  - img [ref=e71]
+            - generic [ref=e74]:
+              - generic [ref=e75] [cursor=pointer]:
+                - generic [ref=e76]:
+                  - checkbox "Remember me" [checked] [ref=e77]
+                  - img [ref=e79]
+                - generic [ref=e81]: Remember me
+              - button "Forgot your password?" [ref=e82] [cursor=pointer]
+            - button "Sign In" [ref=e83] [cursor=pointer]
+          - generic [ref=e86]: OR
+          - generic [ref=e88]:
+            - button "Continue with Google" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - text: Continue with Google
+            - button "Continue with Facebook" [ref=e95] [cursor=pointer]:
+              - img [ref=e96]
+              - text: Continue with Facebook
+            - button "Continue with Apple" [ref=e98] [cursor=pointer]:
+              - img [ref=e99]
+              - text: Continue with Apple
+          - paragraph [ref=e101]: By clicking Sign in, Continue with Google, Facebook, or Apple, you agree to Terms of Use and Privacy Policy.
+    - generic [ref=e104]:
+      - generic [ref=e105]:
+        - heading "Get Up to 20% OFF on First Order" [level=1] [ref=e106]:
+          - text: Get Up to 20% OFF on
+          - text: First Order
+        - paragraph [ref=e107]: Your first order just got better—save up to 20% today.
+        - link "View Product" [ref=e108] [cursor=pointer]:
+          - /url: /products
+          - button "View Product" [ref=e109]
+      - img "Group of five smiling women in pink and red outfits" [ref=e111]
+    - generic [ref=e115]:
+      - generic [ref=e116]:
+        - img [ref=e117]
+        - textbox "Select location" [ref=e120]
+        - button [ref=e121] [cursor=pointer]:
+          - img [ref=e122]
+      - textbox "Search Product" [ref=e125]
+      - button "Search" [ref=e126] [cursor=pointer]
+    - generic [ref=e128]:
+      - generic [ref=e129]:
+        - heading "Categories" [level=2] [ref=e130]
+        - generic [ref=e131] [cursor=pointer]:
+          - generic [ref=e132]: View More
+          - img [ref=e133]
+      - generic [ref=e135]:
+        - generic [ref=e136] [cursor=pointer]:
+          - img "Men's Style" [ref=e138]
+          - heading "Men's Style" [level=3] [ref=e139]
+        - generic [ref=e140] [cursor=pointer]:
+          - img "Women's Style" [ref=e142]
+          - heading "Women's Style" [level=3] [ref=e143]
+        - generic [ref=e144] [cursor=pointer]:
+          - img "Casual Wear" [ref=e146]
+          - heading "Casual Wear" [level=3] [ref=e147]
+        - generic [ref=e148] [cursor=pointer]:
+          - img "Kids Style" [ref=e150]
+          - heading "Kids Style" [level=3] [ref=e151]
+        - generic [ref=e152] [cursor=pointer]:
+          - img "Bridal Styles" [ref=e154]
+          - heading "Bridal Styles" [level=3] [ref=e155]
+        - generic [ref=e156] [cursor=pointer]:
+          - img "Event Styles" [ref=e158]
+          - heading "Event Styles" [level=3] [ref=e159]
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - heading "Featured Products" [level=2] [ref=e163]
+        - paragraph [ref=e164]: Explore the Hottest Trending Products from Our Most Wanted Collections
+      - generic [ref=e165]:
+        - button "Women" [ref=e166] [cursor=pointer]
+        - button "Men" [ref=e167] [cursor=pointer]
+        - button "Kids" [ref=e168] [cursor=pointer]
+    - heading "Best Sellers" [level=2] [ref=e180]
+    - generic [ref=e186]:
+      - heading "Shop by price" [level=2] [ref=e188]
+      - generic [ref=e189]:
+        - generic [ref=e191] [cursor=pointer]:
+          - generic [ref=e192]: Under
+          - text: $10
+        - generic [ref=e194] [cursor=pointer]:
+          - generic [ref=e195]: Under
+          - text: $20
+        - generic [ref=e197] [cursor=pointer]:
+          - generic [ref=e198]: Under
+          - text: $30
+    - generic [ref=e201]:
+      - generic [ref=e202] [cursor=pointer]:
+        - img "Shop by Season" [ref=e203]
+        - generic [ref=e205]:
+          - heading "Shop by Season" [level=3] [ref=e206]
+          - generic [ref=e207]:
+            - generic [ref=e208]: Collections
+            - img [ref=e209]
+      - generic [ref=e211] [cursor=pointer]:
+        - img "Trending Now" [ref=e212]
+        - generic [ref=e214]:
+          - heading "Trending Now" [level=3] [ref=e215]
+          - generic [ref=e216]:
+            - generic [ref=e217]: Collections
+            - img [ref=e218]
+      - generic [ref=e220] [cursor=pointer]:
+        - img "By Occasion" [ref=e221]
+        - generic [ref=e223]:
+          - heading "By Occasion" [level=3] [ref=e224]
+          - generic [ref=e225]:
+            - generic [ref=e226]: Collections
+            - img [ref=e227]
+      - generic [ref=e229] [cursor=pointer]:
+        - img "Shop by Style" [ref=e230]
+        - generic [ref=e232]:
+          - heading "Shop by Style" [level=3] [ref=e233]
+          - generic [ref=e234]:
+            - generic [ref=e235]: Collections
+            - img [ref=e236]
+    - generic [ref=e238]:
+      - generic [ref=e240]:
+        - paragraph [ref=e241]: PROMOTION
+        - heading "Winter Collections" [level=2] [ref=e242]
+        - paragraph [ref=e243]: Cold? Not anymore. Our new winter jackets just dropped.
+      - generic [ref=e245] [cursor=pointer]:
+        - img "Winter Collections - Woman in purple winter jacket" [ref=e246]
+        - img [ref=e250]
+    - generic [ref=e255]:
+      - generic [ref=e256]:
+        - img "Discount" [ref=e258]
+        - generic [ref=e259]:
+          - heading "Discount" [level=3] [ref=e260]
+          - paragraph [ref=e261]: Every week new sales
+      - generic [ref=e262]:
+        - img "Free Delivery" [ref=e264]
+        - generic [ref=e265]:
+          - heading "Free Delivery" [level=3] [ref=e266]
+          - paragraph [ref=e267]: 100% Free for $100 or above order
+      - generic [ref=e268]:
+        - img "Great Support 24/7" [ref=e270]
+        - generic [ref=e271]:
+          - heading "Great Support 24/7" [level=3] [ref=e272]
+          - paragraph [ref=e273]: We care your experiences
+      - generic [ref=e274]:
+        - img "Secure Payment" [ref=e276]
+        - generic [ref=e277]:
+          - heading "Secure Payment" [level=3] [ref=e278]
+          - paragraph [ref=e279]: 100% Secure Payment Method
+    - generic [ref=e280]:
+      - generic [ref=e281]:
+        - heading "Clients Testimonials" [level=2] [ref=e282]
+        - paragraph [ref=e283]: Our clients' success is our pride, hear what they have to say.
+      - generic [ref=e285]:
+        - generic [ref=e287]:
+          - generic [ref=e288]:
+            - img "Client Name" [ref=e290]
+            - generic [ref=e291]:
+              - heading "Client Name" [level=3] [ref=e292]
+              - paragraph [ref=e293]: Location
+              - generic [ref=e294]:
+                - img [ref=e295]
+                - img [ref=e297]
+                - img [ref=e299]
+                - img [ref=e301]
+                - img [ref=e303]
+          - paragraph [ref=e305]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img "Product" [ref=e307]
+        - generic [ref=e309]:
+          - generic [ref=e310]:
+            - img "Client Name" [ref=e312]
+            - generic [ref=e313]:
+              - heading "Client Name" [level=3] [ref=e314]
+              - paragraph [ref=e315]: Location
+              - generic [ref=e316]:
+                - img [ref=e317]
+                - img [ref=e319]
+                - img [ref=e321]
+                - img [ref=e323]
+                - img [ref=e325]
+          - paragraph [ref=e327]: Absolutely love this Dress! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img "Product" [ref=e329]
+        - generic [ref=e331]:
+          - generic [ref=e332]:
+            - img "Client Name" [ref=e334]
+            - generic [ref=e335]:
+              - heading "Client Name" [level=3] [ref=e336]
+              - paragraph [ref=e337]: Location
+              - generic [ref=e338]:
+                - img [ref=e339]
+                - img [ref=e341]
+                - img [ref=e343]
+                - img [ref=e345]
+                - img [ref=e347]
+          - paragraph [ref=e349]: Absolutely love this item! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img "Product" [ref=e351]
+        - generic [ref=e353]:
+          - generic [ref=e354]:
+            - img "Client Name" [ref=e356]
+            - generic [ref=e357]:
+              - heading "Client Name" [level=3] [ref=e358]
+              - paragraph [ref=e359]: Location
+              - generic [ref=e360]:
+                - img [ref=e361]
+                - img [ref=e363]
+                - img [ref=e365]
+                - img [ref=e367]
+                - img [ref=e369]
+          - paragraph [ref=e371]: Absolutely love this product! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img "Product" [ref=e373]
+        - generic [ref=e375]:
+          - generic [ref=e376]:
+            - img "Client Name" [ref=e378]
+            - generic [ref=e379]:
+              - heading "Client Name" [level=3] [ref=e380]
+              - paragraph [ref=e381]: Location
+              - generic [ref=e382]:
+                - img [ref=e383]
+                - img [ref=e385]
+                - img [ref=e387]
+                - img [ref=e389]
+                - img [ref=e391]
+          - paragraph [ref=e393]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img "Product" [ref=e395]
+        - generic [ref=e397]:
+          - generic [ref=e398]:
+            - img [ref=e400]
+            - generic [ref=e401]:
+              - heading [level=3] [ref=e402]: Client Name
+              - paragraph [ref=e403]: Location
+              - generic [ref=e404]:
+                - img [ref=e405]
+                - img [ref=e407]
+                - img [ref=e409]
+                - img [ref=e411]
+                - img [ref=e413]
+          - paragraph [ref=e415]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e417]
+        - generic [ref=e419]:
+          - generic [ref=e420]:
+            - img [ref=e422]
+            - generic [ref=e423]:
+              - heading [level=3] [ref=e424]: Client Name
+              - paragraph [ref=e425]: Location
+              - generic [ref=e426]:
+                - img [ref=e427]
+                - img [ref=e429]
+                - img [ref=e431]
+                - img [ref=e433]
+                - img [ref=e435]
+          - paragraph [ref=e437]: Absolutely love this Dress! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e439]
+        - generic [ref=e441]:
+          - generic [ref=e442]:
+            - img [ref=e444]
+            - generic [ref=e445]:
+              - heading [level=3] [ref=e446]: Client Name
+              - paragraph [ref=e447]: Location
+              - generic [ref=e448]:
+                - img [ref=e449]
+                - img [ref=e451]
+                - img [ref=e453]
+                - img [ref=e455]
+                - img [ref=e457]
+          - paragraph [ref=e459]: Absolutely love this item! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e461]
+        - generic [ref=e463]:
+          - generic [ref=e464]:
+            - img [ref=e466]
+            - generic [ref=e467]:
+              - heading [level=3] [ref=e468]: Client Name
+              - paragraph [ref=e469]: Location
+              - generic [ref=e470]:
+                - img [ref=e471]
+                - img [ref=e473]
+                - img [ref=e475]
+                - img [ref=e477]
+                - img [ref=e479]
+          - paragraph [ref=e481]: Absolutely love this product! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e483]
+        - generic [ref=e485]:
+          - generic [ref=e486]:
+            - img [ref=e488]
+            - generic [ref=e489]:
+              - heading [level=3] [ref=e490]: Client Name
+              - paragraph [ref=e491]: Location
+              - generic [ref=e492]:
+                - img [ref=e493]
+                - img [ref=e495]
+                - img [ref=e497]
+                - img [ref=e499]
+                - img [ref=e501]
+          - paragraph [ref=e503]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e505]
+        - generic [ref=e507]:
+          - generic [ref=e508]:
+            - img [ref=e510]
+            - generic [ref=e511]:
+              - heading [level=3] [ref=e512]: Client Name
+              - paragraph [ref=e513]: Location
+              - generic [ref=e514]:
+                - img [ref=e515]
+                - img [ref=e517]
+                - img [ref=e519]
+                - img [ref=e521]
+                - img [ref=e523]
+          - paragraph [ref=e525]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e527]
+        - generic [ref=e529]:
+          - generic [ref=e530]:
+            - img [ref=e532]
+            - generic [ref=e533]:
+              - heading [level=3] [ref=e534]: Client Name
+              - paragraph [ref=e535]: Location
+              - generic [ref=e536]:
+                - img [ref=e537]
+                - img [ref=e539]
+                - img [ref=e541]
+                - img [ref=e543]
+                - img [ref=e545]
+          - paragraph [ref=e547]: Absolutely love this Dress! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e549]
+        - generic [ref=e551]:
+          - generic [ref=e552]:
+            - img [ref=e554]
+            - generic [ref=e555]:
+              - heading [level=3] [ref=e556]: Client Name
+              - paragraph [ref=e557]: Location
+              - generic [ref=e558]:
+                - img [ref=e559]
+                - img [ref=e561]
+                - img [ref=e563]
+                - img [ref=e565]
+                - img [ref=e567]
+          - paragraph [ref=e569]: Absolutely love this item! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e571]
+        - generic [ref=e573]:
+          - generic [ref=e574]:
+            - img [ref=e576]
+            - generic [ref=e577]:
+              - heading [level=3] [ref=e578]: Client Name
+              - paragraph [ref=e579]: Location
+              - generic [ref=e580]:
+                - img [ref=e581]
+                - img [ref=e583]
+                - img [ref=e585]
+                - img [ref=e587]
+                - img [ref=e589]
+          - paragraph [ref=e591]: Absolutely love this product! The quality feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e593]
+        - generic [ref=e595]:
+          - generic [ref=e596]:
+            - img [ref=e598]
+            - generic [ref=e599]:
+              - heading [level=3] [ref=e600]: Client Name
+              - paragraph [ref=e601]: Location
+              - generic [ref=e602]:
+                - img [ref=e603]
+                - img [ref=e605]
+                - img [ref=e607]
+                - img [ref=e609]
+                - img [ref=e611]
+          - paragraph [ref=e613]: Absolutely love this bag! The leather feels premium, and the design is so sleek. It goes with everything and fits all my essentials—stylish and practical!
+          - img [ref=e615]
+    - contentinfo [ref=e616]:
+      - generic [ref=e618]:
+        - generic [ref=e619]:
+          - link "SoukLoop" [ref=e621] [cursor=pointer]:
+            - /url: /
+            - heading "SoukLoop" [level=2] [ref=e622]:
+              - img "SoukLoop" [ref=e623]
+          - paragraph [ref=e624]: Vivamus tristique odio sit amet velit semper, eu posuere turpis interdum.
+          - paragraph [ref=e625]: Cras egestas purus
+          - generic [ref=e626]:
+            - link [ref=e627] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e628]
+            - link [ref=e630] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e631]
+            - link [ref=e633] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e634]
+            - link "P" [ref=e637] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e638]: P
+            - link [ref=e639] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e640]
+        - generic [ref=e643]:
+          - generic [ref=e644]:
+            - heading "QUICK LINK" [level=3] [ref=e645]
+            - generic [ref=e646]:
+              - link "Home" [ref=e647] [cursor=pointer]:
+                - /url: /#
+              - link "Products" [ref=e648] [cursor=pointer]:
+                - /url: /products
+              - link "About Us" [ref=e649] [cursor=pointer]:
+                - /url: /about-us
+              - link "FAQs" [ref=e650] [cursor=pointer]:
+                - /url: /FAQs
+              - link "Contact Us" [ref=e651] [cursor=pointer]:
+                - /url: /contactus
+          - generic [ref=e652]:
+            - heading "SUPPORT" [level=3] [ref=e653]
+            - generic [ref=e654]:
+              - link "Help & Support" [ref=e655] [cursor=pointer]:
+                - /url: /help
+              - link "Terms & Conditions" [ref=e656] [cursor=pointer]:
+                - /url: /terms
+              - link "Privacy Policy" [ref=e657] [cursor=pointer]:
+                - /url: /privacy
+              - link "Pricing" [ref=e658] [cursor=pointer]:
+                - /url: /pricing
+        - generic [ref=e659]:
+          - heading "NEWSLETTER" [level=3] [ref=e660]
+          - generic [ref=e661]:
+            - textbox "Your email" [ref=e662]
+            - button "Subscribe" [ref=e663] [cursor=pointer]
+          - paragraph [ref=e664]: Stay on trend — subscribe to our newsletter for exclusive discounts and style updates!
+      - generic [ref=e667]:
+        - generic [ref=e668]:
+          - generic [ref=e669]: Copyright © 2024 SoukLoop. All rights reserved
+          - generic [ref=e671]:
+            - link "Privacy Policy" [ref=e672] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms & Conditions" [ref=e673] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=e674]:
+          - generic [ref=e676]: VISA
+          - generic [ref=e678]:
+            - text: AMERICAN
+            - text: EXPRESS
+          - generic [ref=e684]: stripe
+          - generic [ref=e686]: PayPal
+          - generic [ref=e690]: Pay
+  - generic [ref=e691]:
+    - img [ref=e693]
+    - button "Open Tanstack query devtools" [ref=e741] [cursor=pointer]:
+      - img [ref=e742]
+  - button "Open Next.js Dev Tools" [ref=e795] [cursor=pointer]:
+    - generic [ref=e798]:
+      - text: Rendering
+      - generic [ref=e799]:
+        - generic [ref=e800]: .
+        - generic [ref=e801]: .
+        - generic [ref=e802]: .
+  - alert [ref=e803]
+```

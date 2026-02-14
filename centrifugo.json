@@ -1,0 +1,46 @@
+{
+    "client": {
+        "token": {
+            "hmac_secret_key": "centrifugo_token_secret"
+        },
+        "allowed_origins": [
+            "*"
+        ],
+        "channel_limit": 100
+    },
+    "channel": {
+        "namespaces": [
+            {
+                "name": "public",
+                "allow_subscribe_for_client": true
+            },
+            {
+                "name": "personal",
+                "allow_subscribe_for_client": false
+            }
+        ]
+    },
+    "http_api": {
+        "key": "centrifugo_api_key"
+    },
+    "admin": {
+        "enabled": true,
+        "password": "admin",
+        "secret": "admin_secret"
+    },
+    "consumers": [
+        {
+            "name": "default",
+            "type": "postgresql",
+            "enabled": true,
+            "postgresql": {
+                "dsn": "host=postgres port=5432 user=postgres password=password dbname=soukloop_db sslmode=disable",
+                "outbox_table_name": "centrifugo_outbox",
+                "num_partitions": 1
+            }
+        }
+    ],
+    "health": {
+        "enabled": true
+    }
+}

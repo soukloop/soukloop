@@ -1,22 +1,25 @@
-"use client"
+"use client";
 
 interface ProgressStepsProps {
-  currentStep: number
-  onStepChange?: (step: number) => void
+  currentStep: number;
+  onStepChange?: (step: number) => void;
 }
 
-export default function ProgressSteps({ currentStep, onStepChange }: ProgressStepsProps) {
+export default function ProgressSteps({
+  currentStep,
+  onStepChange,
+}: ProgressStepsProps) {
   const steps = [
     { number: 1, label: "Shopping cart" },
     { number: 2, label: "Checkout details" },
     { number: 3, label: "Order complete" },
-  ]
+  ];
 
   return (
-    <div className="flex flex-row items-center justify-center mb-8 px-2 space-x-3 sm:space-x-8 max-[446px]:space-x-2">
+    <div className="mb-8 flex flex-row items-center justify-center space-x-3 px-2 max-[446px]:space-x-2 sm:space-x-8">
       {steps.map((step, index) => {
-        const isDone = step.number < currentStep
-        const isCurrent = step.number === currentStep
+        const isDone = step.number < currentStep;
+        const isCurrent = step.number === currentStep;
 
         const circleClasses =
           "rounded-full flex items-center justify-center font-medium shrink-0 " +
@@ -24,24 +27,26 @@ export default function ProgressSteps({ currentStep, onStepChange }: ProgressSte
             ? "bg-black text-white"
             : isDone
             ? "bg-[#E87A3F] text-white"
-            : "bg-gray-300 text-gray-600")
+            : "bg-gray-300 text-gray-600");
 
         return (
-          <div key={step.number} className="flex items-center min-w-0">
+          <div key={step.number} className="flex min-w-0 items-center">
             <button
               type="button"
-              onClick={onStepChange ? () => onStepChange(step.number) : undefined}
-              className="flex items-center focus:outline-none min-w-0"
+              onClick={
+                onStepChange ? () => onStepChange(step.number) : undefined
+              }
+              className="flex min-w-0 items-center focus:outline-none"
               aria-current={isCurrent ? "step" : undefined}
               aria-disabled={!onStepChange}
             >
               {/* Circle — gets smaller under 446px */}
               <div
-                className={`w-6 h-6 sm:w-8 sm:h-8 max-[446px]:w-5 max-[446px]:h-5 ${circleClasses} text-[11px] sm:text-sm max-[446px]:text-[10px]`}
+                className={`size-6 max-[446px]:size-5 sm:size-8 ${circleClasses} text-[11px] max-[446px]:text-[10px] sm:text-sm`}
               >
                 {isDone ? (
                   <svg
-                    className="w-3 h-3 sm:w-4 sm:h-4"
+                    className="size-3 sm:size-4"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -58,8 +63,10 @@ export default function ProgressSteps({ currentStep, onStepChange }: ProgressSte
 
               {/* Label — tighter margins & truncation under 446px */}
               <span
-                className={`ml-2 sm:ml-3 max-[446px]:ml-1 text-[11px] sm:text-sm max-[446px]:text-[10px] truncate whitespace-nowrap max-w-[92px] sm:max-w-none max-[446px]:max-w-[72px] min-w-0 ${
-                  step.number <= currentStep ? "font-medium text-black" : "text-gray-500"
+                className={`ml-2 min-w-0 max-w-[92px] truncate whitespace-nowrap text-[11px] max-[446px]:ml-1 max-[446px]:max-w-[72px] max-[446px]:text-[10px] sm:ml-3 sm:max-w-none sm:text-sm ${
+                  step.number <= currentStep
+                    ? "font-medium text-black"
+                    : "text-gray-500"
                 }`}
                 title={step.label}
               >
@@ -69,11 +76,11 @@ export default function ProgressSteps({ currentStep, onStepChange }: ProgressSte
 
             {/* Connector — shorter under 446px */}
             {index < steps.length - 1 && (
-              <div className="w-6 sm:w-16 max-[446px]:w-4 h-px bg-gray-300 ml-3 sm:ml-8 max-[446px]:ml-2"></div>
+              <div className="ml-3 h-px w-6 bg-gray-300 max-[446px]:ml-2 max-[446px]:w-4 sm:ml-8 sm:w-16"></div>
             )}
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

@@ -22,11 +22,11 @@ export default function StyleCollectionsSection() {
   return (
     <div className="bg-[#f9f9f9] py-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {collections.map((collection) => (
             <div
               key={collection.id}
-              className="relative group cursor-pointer overflow-hidden rounded-2xl aspect-[4/5] bg-gray-100 
+              className="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl bg-gray-100 
               p-8 sm:p-12 md:p-20 lg:p-[160px]"
             >
               {/* Background Image */}
@@ -38,14 +38,14 @@ export default function StyleCollectionsSection() {
               />
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+              <div className="absolute inset-0 bg-black/20 transition-colors duration-300 group-hover:bg-black/30" />
 
               {/* Content */}
               <div className="absolute bottom-8 left-8 text-white">
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{collection.title}</h3>
-                <div className="flex items-center group-hover:translate-x-2 transition-transform duration-300">
-                  <span className="text-[#e0622c] text-base sm:text-lg font-semibold mr-2">{collection.subtitle}</span>
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-[#e0622c]" />
+                <h3 className="mb-2 text-2xl font-bold sm:text-3xl lg:text-4xl">{collection.title}</h3>
+                <div className="flex items-center transition-transform duration-300 group-hover:translate-x-2">
+                  <span className="mr-2 text-base font-semibold text-[#e0622c] sm:text-lg">{collection.subtitle}</span>
+                  <ArrowRight className="size-4 text-[#e0622c] sm:size-5" />
                 </div>
               </div>
             </div>
