@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getMyOrders } from "@/features/orders/actions";
 import { Pagination } from "@/components/ui/pagination";
+import { isAtLeastAdmin } from "@/lib/roles";
 
 // =============================================================================
 // TYPES
@@ -214,7 +215,7 @@ export default async function OrderDetailsPage(props: {
     }
 
     const role = (session.user as any).role;
-    const isSeller = role === 'ADMIN' || role === 'SUPER_ADMIN' || (session.user as any).isVendor;
+    const isSeller = isAtLeastAdmin(role) || (session.user as any).isVendor;
 
     // Extract params
     const activeTab = typeof searchParams.tab === 'string' ? searchParams.tab : 'all';

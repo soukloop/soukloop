@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
 import DataTable, { Column, FilterOption } from '@/components/admin/DataTable';
 import { CopyButton } from "@/components/ui/copy-button";
 import { ActionItem } from '@/components/admin/ActionDropdown';
@@ -158,59 +157,59 @@ export default function ProductsTable({
             header: 'Seller',
             className: 'hidden sm:table-cell',
             render: (product) => (
-                <span
-                    className="text-gray-600 hover:text-[#E87A3F] hover:underline cursor-pointer truncate max-w-[150px] inline-block align-middle"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (product.sellerId) {
-                            router.push(`/admin/sellers/${product.sellerId}`);
-                        }
-                    }}
-                >
-                    {product.sellerName}
-                </span>
-                {
-            product.sellerId && (
-                <CopyButton value={product.sellerId} hoverOnly className="h-3 w-3 text-gray-400 hover:text-[#E87A3F] ml-1" />
-            )
-        }
+                <div className="flex items-center">
+                    <span
+                        className="text-gray-600 hover:text-[#E87A3F] hover:underline cursor-pointer truncate max-w-[150px] inline-block align-middle"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (product.sellerId) {
+                                router.push(`/admin/sellers/${product.sellerId}`);
+                            }
+                        }}
+                    >
+                        {product.sellerName}
+                    </span>
+                    {product.sellerId && (
+                        <CopyButton value={product.sellerId} hoverOnly className="h-3 w-3 text-gray-400 hover:text-[#E87A3F] ml-1" />
+                    )}
+                </div>
             ),
-},
-{
-    key: 'category',
-        header: 'Category',
+        },
+        {
+            key: 'category',
+            header: 'Category',
             className: 'hidden md:table-cell',
-                render: (product) => (
-                    <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                        {product.category}
-                    </span>
-                ),
+            render: (product) => (
+                <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                    {product.category}
+                </span>
+            ),
         },
-{
-    key: 'dressStyle',
-        header: 'Dress Style',
+        {
+            key: 'dressStyle',
+            header: 'Dress Style',
             className: 'hidden lg:table-cell',
-                render: (product) => (
-                    <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${product.dressStyleStatus === 'pending' || product.hasPendingStyle
-                        ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
-                        : 'bg-purple-50 text-purple-700 ring-purple-700/10'
-                        }`}>
-                        {product.dressStyle}
-                        {(product.dressStyleStatus === 'pending' || product.hasPendingStyle) && (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                        )}
-                    </span>
-                ),
+            render: (product) => (
+                <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${product.dressStyleStatus === 'pending' || product.hasPendingStyle
+                    ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20'
+                    : 'bg-purple-50 text-purple-700 ring-purple-700/10'
+                    }`}>
+                    {product.dressStyle}
+                    {(product.dressStyleStatus === 'pending' || product.hasPendingStyle) && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
+                </span>
+            ),
         },
-{
-    key: 'submittedOn',
-        header: 'Listed On',
+        {
+            key: 'submittedOn',
+            header: 'Listed On',
             className: 'hidden xl:table-cell',
-                render: (product) => <span className="text-gray-600">{product.submittedOn}</span>,
+            render: (product) => <span className="text-gray-600">{product.submittedOn}</span>,
         },
-{
-    key: 'status',
-        header: 'Status',
+        {
+            key: 'status',
+            header: 'Status',
             render: (product) => {
                 if (product.status === 'Pending Style') {
                     return (
@@ -221,131 +220,131 @@ export default function ProductsTable({
                 }
                 return <StatusBadge status={product.status} type="product" />;
             }
-},
-    ];
-
-const filterOptions: FilterOption<Product>[] = [
-    {
-        key: 'status',
-        label: 'Status',
-        options: [
-            { label: 'Active', value: 'Active' },
-            { label: 'Blocked', value: 'Blocked' },
-            { label: 'Pending Style', value: 'Pending Style' },
-        ]
-    },
-    {
-        key: 'category',
-        label: 'Category',
-        options: categories.map(cat => ({ label: cat, value: cat }))
-    },
-    {
-        key: 'dressStyle',
-        label: 'Dress Style',
-        options: dressStyles.map(ds => ({ label: ds, value: ds }))
-    }
-];
-
-const getActions = (product: Product): ActionItem[] => {
-    const actions: ActionItem[] = [
-        {
-            label: 'View Details',
-            onClick: () => router.push(`/admin/products/${product.id}`),
         },
-        // Permission checks handled by API, UI just shows buttons. 
     ];
 
-    // Specific logic for Pending Dress Style
-    if (product.dressStyleStatus === 'pending' && product.dressStyleId) {
-        actions.push({
-            label: 'Approve Dress Style',
-            onClick: () => router.push(`/admin/dress-styles/${product.dressStyleId}`),
-            className: 'text-blue-600 font-medium'
-        });
-    }
+    const filterOptions: FilterOption<Product>[] = [
+        {
+            key: 'status',
+            label: 'Status',
+            options: [
+                { label: 'Active', value: 'Active' },
+                { label: 'Blocked', value: 'Blocked' },
+                { label: 'Pending Style', value: 'Pending Style' },
+            ]
+        },
+        {
+            key: 'category',
+            label: 'Category',
+            options: categories.map(cat => ({ label: cat, value: cat }))
+        },
+        {
+            key: 'dressStyle',
+            label: 'Dress Style',
+            options: dressStyles.map(ds => ({ label: ds, value: ds }))
+        }
+    ];
 
-    // Only show Block/Unblock if NOT pending approval for dress style
-    if (product.dressStyleStatus !== 'pending') {
-        if (product.isActive) {
+    const getActions = (product: Product): ActionItem[] => {
+        const actions: ActionItem[] = [
+            {
+                label: 'View Details',
+                onClick: () => router.push(`/admin/products/${product.id}`),
+            },
+            // Permission checks handled by API, UI just shows buttons. 
+        ];
+
+        // Specific logic for Pending Dress Style
+        if (product.dressStyleStatus === 'pending' && product.dressStyleId) {
             actions.push({
-                label: 'Block Product',
-                onClick: () => {
-                    setSelectedProduct(product);
-                    setShowBlockModal(true);
-                },
-                className: 'text-orange-600',
-            });
-        } else {
-            actions.push({
-                label: 'Unblock Product',
-                onClick: () => {
-                    setSelectedProduct(product);
-                    setShowBlockModal(true);
-                },
-                className: 'text-green-600',
+                label: 'Approve Dress Style',
+                onClick: () => router.push(`/admin/dress-styles/${product.dressStyleId}`),
+                className: 'text-blue-600 font-medium'
             });
         }
-    }
 
-    actions.push({
-        label: 'Delete',
-        onClick: () => {
-            setSelectedProduct(product);
-            setShowDeleteModal(true);
-        },
-        className: 'text-red-600',
-    });
-
-    return actions;
-};
-
-return (
-    <>
-        <DataTable
-            data={initialProducts}
-            columns={columns}
-            rowCount={totalRecords}
-            currentPage={initialPage}
-            pageSize={pageSize}
-            searchable
-            searchPlaceholder="Search products or sellers..."
-            searchKeys={['productName', 'sellerName', 'category']} // Handled by server search
-            filterOptions={filterOptions}
-            actions={getActions}
-            onRowClick={(product) => router.push(`/admin/products/${product.id}`)}
-            manualPagination={true} // Enable server-side mode
-        />
-
-        {/* Block/Unblock Modal */}
-        {/* Block/Unblock Modal */}
-        <ConfirmDialog
-            isOpen={showBlockModal}
-            onClose={() => {
-                setShowBlockModal(false);
-                setSelectedProduct(null);
-            }}
-            onConfirm={handleBlockToggle}
-            title={selectedProduct?.status === 'Active' ? 'Block Product' : 'Unblock Product'}
-            message={
-                selectedProduct?.status === 'Active'
-                    ? `Are you sure you want to block "${selectedProduct?.productName}"? It will no longer be visible to customers.`
-                    : `Are you sure you want to unblock "${selectedProduct?.productName}"? It will be visible to customers again.`
+        // Only show Block/Unblock if NOT pending approval for dress style
+        if (product.dressStyleStatus !== 'pending') {
+            if (product.isActive) {
+                actions.push({
+                    label: 'Block Product',
+                    onClick: () => {
+                        setSelectedProduct(product);
+                        setShowBlockModal(true);
+                    },
+                    className: 'text-orange-600',
+                });
+            } else {
+                actions.push({
+                    label: 'Unblock Product',
+                    onClick: () => {
+                        setSelectedProduct(product);
+                        setShowBlockModal(true);
+                    },
+                    className: 'text-green-600',
+                });
             }
-            confirmText={selectedProduct?.status === 'Active' ? 'Block' : 'Unblock'}
-            type={selectedProduct?.status === 'Active' ? 'danger' : 'success'}
-            isLoading={isSubmitting}
-        />
+        }
 
-        {/* Delete Modal */}
-        <ConfirmDialog
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            onConfirm={handleDelete}
-            title="Delete Product"
-            message={`Are you sure you want to delete "${selectedProduct?.productName}"? This action cannot be undone.`}
-            type="danger"
-            isLoading={isSubmitting}
-        />
-    </>
-);
+        actions.push({
+            label: 'Delete',
+            onClick: () => {
+                setSelectedProduct(product);
+                setShowDeleteModal(true);
+            },
+            className: 'text-red-600',
+        });
+
+        return actions;
+    };
+
+    return (
+        <>
+            <DataTable
+                data={initialProducts}
+                columns={columns}
+                rowCount={totalRecords}
+                currentPage={initialPage}
+                pageSize={pageSize}
+                searchable
+                searchPlaceholder="Search products or sellers..."
+                searchKeys={['productName', 'sellerName', 'category']} // Handled by server search
+                filterOptions={filterOptions}
+                actions={getActions}
+                onRowClick={(product) => router.push(`/admin/products/${product.id}`)}
+                manualPagination={true} // Enable server-side mode
+            />
+
+            {/* Block/Unblock Modal */}
+            {/* Block/Unblock Modal */}
+            <ConfirmDialog
+                isOpen={showBlockModal}
+                onClose={() => {
+                    setShowBlockModal(false);
+                    setSelectedProduct(null);
+                }}
+                onConfirm={handleBlockToggle}
+                title={selectedProduct?.status === 'Active' ? 'Block Product' : 'Unblock Product'}
+                message={
+                    selectedProduct?.status === 'Active'
+                        ? `Are you sure you want to block "${selectedProduct?.productName}"? It will no longer be visible to customers.`
+                        : `Are you sure you want to unblock "${selectedProduct?.productName}"? It will be visible to customers again.`
+                }
+                confirmText={selectedProduct?.status === 'Active' ? 'Block' : 'Unblock'}
+                type={selectedProduct?.status === 'Active' ? 'danger' : 'success'}
+                isLoading={isSubmitting}
+            />
+
+            {/* Delete Modal */}
+            <ConfirmDialog
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDelete}
+                title="Delete Product"
+                message={`Are you sure you want to delete "${selectedProduct?.productName}"? This action cannot be undone.`}
+                type="danger"
+                isLoading={isSubmitting}
+            />
+        </>
+    );
 }

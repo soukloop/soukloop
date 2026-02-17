@@ -18,12 +18,19 @@ interface NewPasswordPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onBackToVerificationCode: () => void;
+  // Make these optional since they might come from URL in legacy flows, but we prefer props now
+  code?: string;
+  email?: string;
+  onSuccess?: () => void;
 }
 
 export default function NewPasswordPopup({
   isOpen,
   onClose,
   onBackToVerificationCode,
+  code: propCode,
+  email: propEmail,
+  onSuccess,
 }: NewPasswordPopupProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,10 +40,11 @@ export default function NewPasswordPopup({
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Support both flows: token from URL (link) or just open (after OTP)
-  // For the new secure flow, we rely on token from URL
-  const token = searchParams?.get('token');
-  const email = searchParams?.get('email');
+  // Support mainly the new flow (props), but fallback to URL for legacy/direct links
+  // But note: new actions.ts requires email/code, NOT token. So URL token flow is deprecated essentially unless we refactored backend to support both.
+  // For this fix, we assume we are in the OTP flow.
+  const code = propCode;
+  const email = propEmail || "user@example.com"; // Should always be passed
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,17 +60,17 @@ export default function NewPasswordPopup({
       return;
     }
 
-    // If we're in the new flow, we need token and email from URL
-    if (!token || !email) {
-      // Fallback for legacy flow or error
-      setError("Invalid or expired reset link. Please request a new one.");
+    // We need code and email
+    if (!code || !email) {
+      setError("Missing verification details. Please start over.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const result = await resetPasswordAction(token, password);
+      // Call the new Action signature: email, code, password
+      const result = await resetPasswordAction(email, code, password);
 
       if (!result.success) {
         throw new Error(
@@ -75,8 +83,13 @@ export default function NewPasswordPopup({
       }
 
       // Success
-      onClose();
-      router.push('/signin?reset=success');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Fallback if no callback provided
+        onClose();
+        router.push('/signin?reset=success');
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

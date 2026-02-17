@@ -6,7 +6,7 @@
     "build": "next build",
     "prebuild": "node build-utilities/generate-robots.js",
     "dev": "next dev",
-    "dev:all": "npx -y concurrently \"docker-compose up postgres redis\" \"next dev\"",
+    "dev:all": "npx -y concurrently \"docker-compose up postgres redis centrifugo\" \"next dev\"",
     "lint": "next lint",
     "lint:structure": "eslint .",
     "validate:deps": "depcruise --config .dependency-cruiser.js app features components lib types",
@@ -123,8 +123,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22",
-    "@types/react": "^19",
+    "@types/node": "^22.19.11",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.44.1",
@@ -132,6 +132,7 @@
     "autoprefixer": "^10.4.23",
     "concurrently": "^9.2.1",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3"
   }
 }

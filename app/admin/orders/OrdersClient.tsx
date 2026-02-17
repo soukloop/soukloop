@@ -2,7 +2,6 @@
 
 import DataTable, { Column } from '@/components/admin/DataTable';
 import StatusBadge from '@/components/admin/StatusBadge';
-import StatusBadge from '@/components/admin/StatusBadge';
 import { CopyButton } from "@/components/ui/copy-button";
 import { useRouter } from "next/navigation";
 
@@ -66,19 +65,17 @@ export default function OrdersClient({ orders, total, page, limit }: OrdersClien
                                 + {order.productNames.length - 2} More Items
                             </span>
                         )}
-                    </span>
-                        )}
-                    <div className="group/order-id flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[9px] text-gray-300 font-medium uppercase tracking-widest">ORDER #{order.orderNumber}</span>
-                        <CopyButton value={order.orderNumber} hoverOnly className="h-3 w-3 text-gray-300 hover:text-orange-500" />
+                        <div className="group/order-id flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] text-gray-300 font-medium uppercase tracking-widest">ORDER #{order.orderNumber}</span>
+                            <CopyButton value={order.orderNumber} hoverOnly className="h-3 w-3 text-gray-300 hover:text-orange-500" />
+                        </div>
                     </div>
                 </div>
-                </div >
             )
-},
-{
-    key: 'customer',
-        header: 'Customer',
+        },
+        {
+            key: 'customer',
+            header: 'Customer',
             render: (o) => (
                 <div className="flex flex-col">
                     <span className="text-gray-900 font-medium truncate max-w-[120px]">{o.customer}</span>
@@ -88,44 +85,44 @@ export default function OrdersClient({ orders, total, page, limit }: OrdersClien
                     </div>
                 </div>
             )
-},
-{ key: 'date', header: 'Date', render: (o) => <span className="text-gray-500 font-medium">{o.date}</span> },
-{ key: 'total', header: 'Total', render: (o) => <span className="font-bold text-gray-900">{o.total}</span> },
-{
-    key: 'status',
-        header: 'Status',
+        },
+        { key: 'date', header: 'Date', render: (o) => <span className="text-gray-500 font-medium">{o.date}</span> },
+        { key: 'total', header: 'Total', render: (o) => <span className="font-bold text-gray-900">{o.total}</span> },
+        {
+            key: 'status',
+            header: 'Status',
             render: (o) => (
                 <StatusBadge status={o.status} type="order" />
             )
-},
+        },
     ];
 
-return (
-    <DataTable
-        data={displayOrders}
-        columns={columns}
-        pageSize={limit}
-        rowCount={total}
-        currentPage={page}
-        manualPagination={true}
-        searchable
-        searchPlaceholder="Search order #, customer, or email..."
-        onRowClick={(item) => router.push(`/admin/orders/${item.id}`)}
-        filterOptions={[
-            {
-                key: 'status',
-                label: 'Status',
-                options: [
-                    { label: 'Pending', value: 'PENDING' },
-                    { label: 'Processing', value: 'PROCESSING' },
-                    { label: 'Shipped', value: 'SHIPPED' },
-                    { label: 'Delivered', value: 'DELIVERED' },
-                    { label: 'Paid', value: 'PAID' },
-                    { label: 'Canceled', value: 'CANCELED' },
-                    { label: 'Refunded', value: 'REFUNDED' }
-                ]
-            }
-        ]}
-    />
-);
+    return (
+        <DataTable
+            data={displayOrders}
+            columns={columns}
+            pageSize={limit}
+            rowCount={total}
+            currentPage={page}
+            manualPagination={true}
+            searchable
+            searchPlaceholder="Search order #, customer, or email..."
+            onRowClick={(item) => router.push(`/admin/orders/${item.id}`)}
+            filterOptions={[
+                {
+                    key: 'status',
+                    label: 'Status',
+                    options: [
+                        { label: 'Pending', value: 'PENDING' },
+                        { label: 'Processing', value: 'PROCESSING' },
+                        { label: 'Shipped', value: 'SHIPPED' },
+                        { label: 'Delivered', value: 'DELIVERED' },
+                        { label: 'Paid', value: 'PAID' },
+                        { label: 'Canceled', value: 'CANCELED' },
+                        { label: 'Refunded', value: 'REFUNDED' }
+                    ]
+                }
+            ]}
+        />
+    );
 }

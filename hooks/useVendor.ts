@@ -1,17 +1,15 @@
 import useSWR from 'swr'
 import { useAuth } from './useAuth'
 import type { Product, Order } from '../types/api'
+import { isAtLeastSeller } from '@/lib/roles'
 
 // ===== SIMPLIFIED SELLER HOOK (No Vendor Table) =====
 // Uses User role directly instead of separate Vendor table
 export function useVendor() {
   const { user, refreshSession } = useAuth()
 
-  // Check if user is a seller (checks both plural 'roles' and singular 'role' for robustness)
-  const isSeller =
-    (user as any)?.role === 'SELLER' ||
-    (user as any)?.roles?.includes('SELLER') ||
-    false;
+  // Check if user has at least the Seller hierarchy level
+  const isSeller = isAtLeastSeller(user?.role);
 
   // My products query (seller's own products)
   const { data: myProductsData, error: productsError, isLoading: isLoadingProducts, mutate: mutateProducts } = useSWR(

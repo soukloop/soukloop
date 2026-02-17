@@ -8,10 +8,10 @@ import {
 } from "./middleware/rate-limit"
 import { NextResponse, NextRequest } from "next/server"
 import { Role } from "@prisma/client"
+import { hasRole } from "./lib/roles"
 
 // Initialize NextAuth with Edge-safe config
 const { auth } = NextAuth(authConfig)
-
 
 // ===== PUBLIC ROUTES =====
 const PUBLIC_PAGES = [
@@ -49,12 +49,13 @@ const PUBLIC_API_PREFIXES = [
 ];
 
 // ===== ROLE-BASED ROUTE PROTECTION =====
+// Define the MINIMUM role required for each prefix
 const PROTECTED_ROUTES = [
-  { prefix: '/admin', roles: [Role.ADMIN, Role.SUPER_ADMIN, Role.MODERATOR, Role.SUPPORT] },
-  { prefix: '/api/admin', roles: [Role.ADMIN, Role.SUPER_ADMIN, Role.MODERATOR, Role.SUPPORT] },
-  { prefix: '/seller', roles: [Role.SELLER, Role.ADMIN, Role.SUPER_ADMIN] },
-  { prefix: '/api/vendor', roles: [Role.SELLER, Role.ADMIN, Role.SUPER_ADMIN] },
-  { prefix: '/api/seller', roles: [Role.SELLER, Role.ADMIN, Role.SUPER_ADMIN] },
+  { prefix: '/admin', minRole: Role.SUPPORT },
+  { prefix: '/api/admin', minRole: Role.SUPPORT },
+  { prefix: '/seller', minRole: Role.SELLER },
+  { prefix: '/api/vendor', minRole: Role.SELLER },
+  { prefix: '/api/seller', minRole: Role.SELLER },
 ];
 
 export default auth(async (req) => {
@@ -150,7 +151,7 @@ export default auth(async (req) => {
   // 6. Role-based access control
   for (const route of PROTECTED_ROUTES) {
     if (pathname.startsWith(route.prefix)) {
-      const hasRequiredRole = (route.roles as Role[]).includes(userRole as Role);
+      const hasRequiredRole = hasRole(userRole as Role, route.minRole);
 
       if (!hasRequiredRole) {
         // console.warn(`[Middleware] Unauthorized access attempt to ${pathname} by role ${userRole}`);

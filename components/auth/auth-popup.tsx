@@ -51,6 +51,11 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
   const [isVerificationCodeOpen, setIsVerificationCodeOpen] = useState(false);
   const [isNewPasswordOpen, setIsNewPasswordOpen] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
+  // Track the verified code to pass to NewPasswordPopup
+  const [verifiedCode, setVerifiedCode] = useState<string | undefined>(undefined);
+  // Track the mode for verification popup
+  const [verificationMode, setVerificationMode] = useState<"signup" | "reset">("signup");
+
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null);
 
   const handleSignupClick = () => {
@@ -93,6 +98,15 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
 
   const handleOpenVerificationCode = (email: string) => {
     setVerificationEmail(email);
+    // If we are coming from Reset Password popup (Lines 52-56 of reset-password-popup), assume reset mode
+    // logic: reset-password-popup calls this. 
+    // We can default to 'reset' here if we are currently in ResetPasswordOpen state
+    if (isResetPasswordOpen) {
+      setVerificationMode("reset");
+    } else {
+      setVerificationMode("signup");
+    }
+
     setIsResetPasswordOpen(false);
     setIsVerificationCodeOpen(true);
   };
@@ -102,7 +116,11 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
     setIsResetPasswordOpen(true);
   };
 
-  const handleOpenNewPassword = () => {
+  const handleOpenNewPassword = (code?: string) => {
+    // If pased a code (from verification popup), store it
+    if (code) {
+      setVerifiedCode(code);
+    }
     setIsVerificationCodeOpen(false);
     setIsNewPasswordOpen(true);
   };
@@ -110,6 +128,12 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
   const handleNewPasswordToVerificationCode = () => {
     setIsNewPasswordOpen(false);
     setIsVerificationCodeOpen(true);
+  };
+
+  const handleNewPasswordSuccess = () => {
+    setIsNewPasswordOpen(false);
+    setIsLoginOpen(true);
+    // verificationEmail is already set, we will pass it to LoginPopup
   };
 
   const handleCloseAll = () => {
@@ -254,6 +278,7 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           onClose={handleCloseAll}
           onOpenSignup={handleLoginToSignup}
           onOpenResetPassword={handleOpenResetPassword}
+          initialEmail={verificationEmail}
         />
       )}
 
@@ -286,6 +311,7 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           onBackToResetPassword={handleVerificationCodeToResetPassword}
           onOpenNewPassword={handleOpenNewPassword}
           email={verificationEmail}
+          mode={verificationMode}
         />
       )}
 
@@ -295,6 +321,9 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           isOpen={isNewPasswordOpen}
           onClose={handleCloseAll}
           onBackToVerificationCode={handleNewPasswordToVerificationCode}
+          code={verifiedCode}
+          email={verificationEmail}
+          onSuccess={handleNewPasswordSuccess}
         />
       )}
     </>

@@ -23,6 +23,7 @@ interface LoginPopupProps {
   onBackToAuth?: () => void;
   onOpenSignup: () => void;
   onOpenResetPassword: () => void;
+  initialEmail?: string;
 }
 
 export default function LoginPopup({
@@ -30,8 +31,9 @@ export default function LoginPopup({
   onClose,
   onOpenSignup,
   onOpenResetPassword,
+  initialEmail = "",
 }: LoginPopupProps) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
@@ -146,8 +148,8 @@ export default function LoginPopup({
                   />
                   <div
                     className={`flex size-5 items-center justify-center rounded border-2 ${rememberMe
-                        ? "border-[#e0622c] bg-[#e0622c]"
-                        : "border-gray-300 bg-white"
+                      ? "border-[#e0622c] bg-[#e0622c]"
+                      : "border-gray-300 bg-white"
                       }`}
                   >
                     {rememberMe && (

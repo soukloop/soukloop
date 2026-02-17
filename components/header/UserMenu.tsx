@@ -11,6 +11,7 @@ import { useSellerAuth } from "@/hooks/useSellerAuth";
 import { useSellerVerification } from "@/hooks/useSellerVerification";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
+import { isAtLeastSeller, isAtLeastAdmin, hasRole } from "@/lib/roles";
 
 export default function UserMenu() {
     const router = useRouter();
@@ -55,17 +56,21 @@ export default function UserMenu() {
         { icon: Shield, label: "Admin Dashboard", href: "/admin" },
     ];
 
-    // Build menu items based on roles
-    let menuItems = commonMenuItems;
+    // Build menu items based on hierarchical roles
+    let menuItems: any[] = [];
 
-    if (isSeller) {
-        menuItems = [...sellerMenuItems, ...menuItems];
+    // 1. Add Admin Dashboard if user is at least an admin/moderator
+    if (hasRole(user?.role, "SUPPORT")) { // SUPPORT is the lowest admin-level role in our hierarchy
+        menuItems = [...adminMenuItems];
     }
 
-    // Add Admin Dashboard if user has appropriate role
-    if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" || user?.role === "MODERATOR" || user?.role === "SUPPORT") {
-        menuItems = [...adminMenuItems, ...menuItems];
+    // 2. Add Seller items if user is at least a seller
+    if (isAtLeastSeller(user?.role)) {
+        menuItems = [...menuItems, ...sellerMenuItems];
     }
+
+    // 3. Add Common items
+    menuItems = [...menuItems, ...commonMenuItems];
 
     // ✅ Trigger Auth Modal
     const triggerAuth = () => {

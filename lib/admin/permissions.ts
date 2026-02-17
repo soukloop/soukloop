@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
+import { isSuperAdmin as isSuperAdminRole, isAtLeastAdmin as isAtLeastAdminRole } from '@/lib/roles';
 
 // ==================== PERMISSION DEFINITIONS ====================
 
@@ -111,15 +112,15 @@ export async function hasPermission(
             return false;
         }
 
-        const role = user.role;
+        const role = user.role as Role;
 
         // SuperAdmin has all permissions
-        if (role === 'SUPER_ADMIN') {
+        if (isSuperAdminRole(role)) {
             return true;
         }
 
         // Admins have implicit access to dashboard
-        if (role === 'ADMIN' && resource === 'dashboard') {
+        if (isAtLeastAdminRole(role) && resource === 'dashboard') {
             return true;
         }
 
@@ -178,7 +179,7 @@ export async function getAdminPermissions(
         }
 
         // SuperAdmin has all permissions
-        if (user.role === 'SUPER_ADMIN') {
+        if (isSuperAdminRole(user.role as Role)) {
             return { ...PERMISSION_DEFINITIONS };
         }
 
@@ -192,7 +193,7 @@ export async function getAdminPermissions(
         const result: Record<string, string[]> = {};
 
         // Admins always have dashboard access
-        if (user.role === 'ADMIN' || user.role === 'MODERATOR' || user.role === 'SUPPORT') {
+        if (isAtLeastAdminRole(user.role as Role)) {
             result['dashboard'] = ['view'];
         }
 
@@ -216,12 +217,12 @@ export async function getAdminPermissions(
 /**
  * Check if user is a SuperAdmin
  */
-export async function isSuperAdmin(userId: string): Promise<boolean> {
+export async function checkIsSuperAdmin(userId: string): Promise<boolean> {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { role: true }
     });
-    return user?.role === 'SUPER_ADMIN';
+    return isSuperAdminRole(user?.role as Role);
 }
 
 /**
@@ -239,7 +240,7 @@ export async function canModifyAdmin(
         return { canModify: false, reason: 'User not found' };
     }
 
-    if (targetUser.role === 'SUPER_ADMIN') {
+    if (isSuperAdminRole(targetUser.role as Role)) {
         return { canModify: false, reason: 'Cannot modify SuperAdmin' };
     }
 
@@ -309,7 +310,7 @@ export async function setAdminPermissions(
         select: { role: true }
     });
 
-    if (user?.role === 'SUPER_ADMIN') {
+    if (isSuperAdminRole(user?.role as Role)) {
         throw new Error('Cannot modify SuperAdmin permissions');
     }
 
@@ -354,7 +355,7 @@ export async function getAdminFromRequest(request: Request): Promise<string | nu
             select: { role: true }
         });
 
-        if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+        if (isAtLeastAdminRole(user?.role as Role)) {
             return userId;
         }
 

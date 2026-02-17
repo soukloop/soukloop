@@ -64,21 +64,22 @@ export async function notifyEmailVerified(
 export async function notifyPasswordReset(
   userId: string,
   email: string,
-  resetToken: string,
+  resetCode: string,
   userName?: string
 ) {
-  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+  // We no longer send a link, but the code
+  const { PasswordResetEmail } = await import('@/lib/email-templates/auth/password-reset'); // Lazy import to ensure we get updated one if needed
 
   return createNotification({
     userId,
     type: 'PASSWORD_RESET',
-    title: 'Password Reset Requested',
-    message: 'A password reset was requested for your account.',
-    actionUrl: `/reset-password?token=${resetToken}`,
+    title: 'Password Reset Code',
+    message: `Your password reset code is: ${resetCode}`,
+    actionUrl: `/reset-password`, // Just point to reset page, code is manual
     sendEmail: true,
     emailSubject: 'Reset Your Password - SoukLoop',
     emailReact: PasswordResetEmail({
-      resetUrl,
+      resetCode, // changed from resetUrl
       userName
     })
   });

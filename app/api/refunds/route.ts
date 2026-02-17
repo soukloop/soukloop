@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { isAtLeastAdmin } from '@/lib/roles'
 
 const refundCreateSchema = z.object({
     orderId: z.string().min(1, 'Order ID is required'),
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
             include: { vendor: true }
         })
 
-        if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+        if (isAtLeastAdmin(user?.role)) {
             // Admin sees all, filtered by params if any
         } else if (user?.vendor) {
             if (role === 'seller') {

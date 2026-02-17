@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyAdminAuth } from '@/lib/admin/auth-utils';
 import {
-    isSuperAdmin,
+    checkIsSuperAdmin,
     logAdminAction,
     getRequestMeta,
     setAdminPermissions,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         const adminId = authResult.admin?.id!;
 
         // Only SuperAdmin can view sub-admins
-        const isSuper = await isSuperAdmin(adminId);
+        const isSuper = await checkIsSuperAdmin(adminId);
         if (!isSuper) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
         }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         const adminId = authResult.admin?.id!;
 
         // Only SuperAdmin can create sub-admins
-        const isSuper = await isSuperAdmin(adminId);
+        const isSuper = await checkIsSuperAdmin(adminId);
         if (!isSuper) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
         }

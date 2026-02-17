@@ -6,7 +6,7 @@ import { X, AlertCircle, ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 import { useRouter } from "next/navigation";
-import { verifyEmailAction } from "@/features/auth/actions";
+import { verifyEmailAction, verifyResetCodeAction } from "@/features/auth/actions";
 import {
   AuthButton,
   GoogleIcon,
@@ -17,8 +17,9 @@ interface VerificationCodePopupProps {
   isOpen: boolean;
   onClose: () => void;
   onBackToResetPassword: () => void;
-  onOpenNewPassword: () => void;
+  onOpenNewPassword: (code: string) => void; // Pass code to next step
   email?: string;
+  mode?: "signup" | "reset"; // Added mode
 }
 
 export default function VerificationCodePopup({
@@ -27,6 +28,7 @@ export default function VerificationCodePopup({
   onBackToResetPassword,
   onOpenNewPassword,
   email = "info****@gmail.com",
+  mode = "signup", // Default to signup for backward compatibility
 }: VerificationCodePopupProps) {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(59);
@@ -80,6 +82,7 @@ export default function VerificationCodePopup({
     setTimeLeft(59);
     setCode(["", "", "", "", "", ""]);
     inputRefs.current[0]?.focus();
+    // Implementation note: You might want to trigger resend action here based on mode
   };
 
   const formatTime = (seconds: number) => {
@@ -101,7 +104,14 @@ export default function VerificationCodePopup({
     setIsLoading(true);
 
     try {
-      const result = await verifyEmailAction(email, codeString);
+      let result;
+      if (mode === 'reset') {
+        // Use the new Verify OTP action for Reset
+        result = await verifyResetCodeAction(email, codeString);
+      } else {
+        // Use existing Email Verification action
+        result = await verifyEmailAction(email, codeString);
+      }
 
       if (!result.success) {
         throw new Error(
@@ -113,14 +123,21 @@ export default function VerificationCodePopup({
         );
       }
 
-      if (email !== "info****@gmail.com") {
-        // ✅ Email verified successfully
-        // Redirect to login page with verified status since we removed auto-login
-        onClose();
-        router.push("/signin?verified=true");
+      // Success
+      if (mode === 'reset') {
+        // Pass the valid code to the next step (NewPasswordPopup)
+        onOpenNewPassword(codeString);
       } else {
-        onOpenNewPassword();
+        // Signup Success
+        if (email !== "info****@gmail.com") {
+          onClose();
+          router.push("/signin?verified=true");
+        } else {
+          // Fallback for legacy demo flow
+          onOpenNewPassword(codeString);
+        }
       }
+
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -160,7 +177,7 @@ export default function VerificationCodePopup({
                 <ArrowLeft className="size-4" />
               </button>
               <h1 className="text-lg font-bold text-black sm:text-3xl text-nowrap">
-                Enter Code
+                {mode === 'reset' ? 'Verify Reset Code' : 'Enter Code'}
               </h1>
             </div>
             {/* Close button - strict circle */}

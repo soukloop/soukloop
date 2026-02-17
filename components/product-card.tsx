@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AuthPopup from "@/components/auth/auth-popup";
+import { isAtLeastSeller, isAtLeastAdmin } from "@/lib/roles";
 
 interface Product {
     id: string;
@@ -84,7 +85,7 @@ export default function ProductCard({
     // 1. User must be logged in.
     // 2. User must be a Seller (and by implication active, as session validates activity).
     // 3. Product's vendor user ID must match logged-in user's ID.
-    const isOwner = user && user.role === 'SELLER' && product.vendorUserId === user.id;
+    const isOwner = user && isAtLeastSeller(user.role) && product.vendorUserId === user.id;
 
     const isNew = isNewProduct(product.createdAt);
     const isManageMode = !!onEdit; // Infer manage mode
@@ -236,7 +237,7 @@ export default function ProductCard({
                 )}
 
                 {/* Suspended Overlay - Only visible to Owner or Admin */}
-                {(product.isActive === false || product.status === 'INACTIVE') && !product.hasPendingStyle && (isOwner || user?.role === 'ADMIN') && (
+                {(product.isActive === false || product.status === 'INACTIVE') && !product.hasPendingStyle && (isOwner || isAtLeastAdmin(user?.role)) && (
                     <div className="absolute inset-0 z-20 flex flex-col gap-2 items-center justify-center bg-gray-100/90">
                         <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800 shadow-sm border border-red-200">
                             Suspended

@@ -68,7 +68,8 @@ export type ActionState = {
  */
 export async function registerUserAction(data: RegisterInput): Promise<ActionState> {
     try {
-        const ip = headers().get("x-forwarded-for") || "127.0.0.1";
+        const headersList = await headers();
+        const ip = headersList.get("x-forwarded-for") || "127.0.0.1";
         const { success: limitSuccess, retryAfter } = await checkRateLimit(ip, registerRateLimit);
         if (!limitSuccess) {
             return {
@@ -97,7 +98,7 @@ export async function registerUserAction(data: RegisterInput): Promise<ActionSta
 
         if (allowRegistrationSetting?.value === 'false') {
             console.log(`[Auth] Registration blocked for ${normalizedEmail}. Adding to waitlist.`);
-            
+
             // Add to waitlist
             await prisma.waitlistEntry.upsert({
                 where: { email: normalizedEmail },
@@ -109,7 +110,7 @@ export async function registerUserAction(data: RegisterInput): Promise<ActionSta
             await notifyWaitlistAdded(normalizedEmail);
 
             return {
-                success: true, 
+                success: true,
                 message: "Registration is currently closed. We've added you to our waitlist and will notify you as soon as we open!",
             };
         }
@@ -192,7 +193,8 @@ export async function registerUserAction(data: RegisterInput): Promise<ActionSta
  */
 export async function forgotPasswordAction(email: string): Promise<ActionState> {
     try {
-        const ip = headers().get("x-forwarded-for") || "127.0.0.1";
+        const headersList = await headers();
+        const ip = headersList.get("x-forwarded-for") || "127.0.0.1";
         const { success: limitSuccess, retryAfter } = await checkRateLimit(ip, passwordResetRateLimit);
         if (!limitSuccess) {
             return {
@@ -222,10 +224,9 @@ export async function forgotPasswordAction(email: string): Promise<ActionState> 
             return { success: true, message: "If an account exists, a reset link has been sent." };
         }
 
-        // Generate token
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        // Generate 6-digit code
+        const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
         // Delete existing reset tokens
         await prisma.verificationToken.deleteMany({
@@ -235,10 +236,12 @@ export async function forgotPasswordAction(email: string): Promise<ActionState> 
             },
         });
 
+        // Store the raw code (prefixed for clarity in DB, but we send raw code to user)
+        // We will store it as `reset_123456` in DB to distinguish from other tokens
         await prisma.verificationToken.create({
             data: {
                 identifier: normalizedEmail,
-                token: `reset_${hashedToken}`,
+                token: `reset_${resetCode}`,
                 expires,
             },
         });
@@ -247,11 +250,11 @@ export async function forgotPasswordAction(email: string): Promise<ActionState> 
         await notifyPasswordReset(
             user.id,
             normalizedEmail,
-            resetToken, // send raw token
+            resetCode, // send 6-digit code
             user.name || undefined
         );
 
-        return { success: true, message: "If an account exists, a reset link has been sent." };
+        return { success: true, message: "If an account exists, a reset code has been sent." };
     } catch (error) {
         console.error("Forgot password error:", error);
         return { success: false, message: "Failed to process request." };
@@ -261,66 +264,98 @@ export async function forgotPasswordAction(email: string): Promise<ActionState> 
 /**
  * Reset Password
  */
-export async function resetPasswordAction(
-    token: string,
-    password: string
+export async function verifyResetCodeAction(
+    email: string,
+    code: string
 ): Promise<ActionState> {
     try {
-        const validation = ResetPasswordSchema.safeParse({ token, password });
+        const headersList = await headers();
+        const ip = headersList.get("x-forwarded-for") || "127.0.0.1";
+        const { success: limitSuccess, retryAfter } = await checkRateLimit(ip, passwordResetRateLimit);
 
-        if (!validation.success) {
+        if (!limitSuccess) {
             return {
                 success: false,
-                errors: validation.error.flatten().fieldErrors,
+                message: `Too many attempts. Please try again in ${retryAfter}s.`,
             };
         }
 
-        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
+        const normalizedEmail = email.toLowerCase().trim();
         const storedToken = await prisma.verificationToken.findFirst({
             where: {
-                token: `reset_${hashedToken}`,
+                identifier: normalizedEmail,
+                token: `reset_${code}`,
             },
         });
 
         if (!storedToken) {
-            return { success: false, message: "Invalid or expired reset token." };
+            return { success: false, message: "Invalid verification code." };
         }
 
         if (new Date() > storedToken.expires) {
-            await prisma.verificationToken.delete({
+            return { success: false, message: "Verification code has expired." };
+        }
+
+        return { success: true, message: "Code verified." };
+    } catch (error) {
+        console.error("Verify reset code error:", error);
+        return { success: false, message: "Failed to verify code." };
+    }
+}
+
+/**
+ * Reset Password
+ */
+export async function resetPasswordAction(
+    email: string,
+    code: string,
+    password: string
+): Promise<ActionState> {
+    try {
+        if (!email || !code || !password) {
+            return { success: false, message: "Missing required fields." };
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        // We manually validate here since we changed the signature from token->password to email->code->password
+        if (password.length < 8) {
+            return { success: false, message: "Password must be at least 8 characters." };
+        }
+
+        const storedToken = await prisma.verificationToken.findFirst({
+            where: {
+                identifier: normalizedEmail,
+                token: `reset_${code}`,
+            },
+        });
+
+        if (!storedToken) {
+            return { success: false, message: "Invalid or expired reset code." };
+        }
+
+        if (new Date() > storedToken.expires) {
+            await prisma.verificationToken.deleteMany({
                 where: {
-                    identifier_token: {
-                        identifier: storedToken.identifier,
-                        token: storedToken.token,
-                    },
-                },
+                    identifier: normalizedEmail,
+                    token: { startsWith: "reset_" },
+                }
             });
-            return { success: false, message: "Reset token has expired." };
+            return { success: false, message: "Reset code has expired." };
         }
 
         const hashedPassword = await hash(password, 12);
 
         const user = await prisma.user.update({
-            where: { email: storedToken.identifier },
+            where: { email: normalizedEmail },
             data: { password: hashedPassword },
         });
 
         await notifyPasswordChanged(user.id, user.name || undefined);
 
-        await prisma.verificationToken.delete({
-            where: {
-                identifier_token: {
-                    identifier: storedToken.identifier,
-                    token: storedToken.token,
-                },
-            },
-        });
-
-        // Use identifier, not email in the where clause
+        // Clean up used token
         await prisma.verificationToken.deleteMany({
             where: {
-                identifier: storedToken.identifier,
+                identifier: normalizedEmail,
                 token: { startsWith: "reset_" },
             },
         });
@@ -340,7 +375,8 @@ export async function verifyEmailAction(
     code: string
 ): Promise<ActionState> {
     try {
-        const ip = headers().get("x-forwarded-for") || "127.0.0.1";
+        const headersList = await headers();
+        const ip = headersList.get("x-forwarded-for") || "127.0.0.1";
         const { success: limitSuccess, retryAfter } = await checkRateLimit(ip, emailVerificationRateLimit);
         if (!limitSuccess) {
             return {

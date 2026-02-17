@@ -36,6 +36,7 @@ import { useProducts } from "@/hooks/useProducts";
 import ReviewsSection from "@/app/product/components/reviews-section";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { isAtLeastAdmin } from "@/lib/roles";
 
 export default function ProductContent({ slug }: { slug?: string }) {
     const params = useParams();
@@ -233,7 +234,7 @@ export default function ProductContent({ slug }: { slug?: string }) {
                 <div className="container mx-auto px-4">
 
                     {/* Pending Approval Banner */}
-                    {(product as any)?.hasPendingStyle && (user && (sellerId === user.id || user.role === 'ADMIN')) && (
+                    {(product as any)?.hasPendingStyle && (user && (sellerId === user.id || isAtLeastAdmin(user.role))) && (
                         <div className="mb-6 rounded-lg bg-yellow-50 p-4 text-yellow-800 border border-yellow-200 flex items-start gap-3">
                             <AlertCircle className="size-5 shrink-0 mt-0.5" />
                             <div>

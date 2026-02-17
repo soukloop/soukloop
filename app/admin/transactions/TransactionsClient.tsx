@@ -3,7 +3,6 @@
 import { useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import DataTable, { Column } from '@/components/admin/DataTable';
 import StatusBadge from "@/components/admin/StatusBadge";
 import { CopyButton } from "@/components/ui/copy-button";
 

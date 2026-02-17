@@ -16,6 +16,7 @@ interface SignupPopupProps {
   onClose: () => void;
   onOpenLogin: () => void;
   onOpenVerificationCode: (email: string) => void;
+  onBackToAuth?: () => void;
 }
 
 export default function SignupPopup({
@@ -23,6 +24,7 @@ export default function SignupPopup({
   onClose,
   onOpenLogin,
   onOpenVerificationCode,
+  onBackToAuth,
 }: SignupPopupProps) {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");

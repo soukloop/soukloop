@@ -1,7 +1,7 @@
 "use client";
 
 import { useOptimistic, useTransition, useState, useMemo, useEffect } from "react";
-import { OrderListTable, DisplayOrder } from "@/app/editprofile/components/my-orders";
+import { OrderListTable, DisplayOrder } from "@/app/edit-profile/components/my-orders";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { acceptOrderAction } from "@/src/features/seller/actions";
 import { toast } from "sonner";

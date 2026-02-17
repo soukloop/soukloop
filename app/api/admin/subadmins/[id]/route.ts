@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyAdminAuth } from '@/lib/admin/auth-utils';
 import {
-    isSuperAdmin,
+    checkIsSuperAdmin,
     logAdminAction,
     getRequestMeta,
     canModifyAdmin,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
         const adminId = authResult.admin?.id!;
 
         // Only SuperAdmin can view sub-admin details
-        const isSuper = await isSuperAdmin(adminId);
+        const isSuper = await checkIsSuperAdmin(adminId);
         if (!isSuper) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
         }
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
         const adminId = authResult.admin?.id!;
 
         // Only SuperAdmin can modify sub-admins
-        const isSuper = await isSuperAdmin(adminId);
+        const isSuper = await checkIsSuperAdmin(adminId);
         if (!isSuper) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
         }
@@ -215,7 +215,7 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
         const adminId = authResult.admin?.id!;
 
         // Only SuperAdmin can delete sub-admins
-        const isSuper = await isSuperAdmin(adminId);
+        const isSuper = await checkIsSuperAdmin(adminId);
         if (!isSuper) {
             return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
         }

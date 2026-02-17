@@ -6,12 +6,14 @@ import { revalidatePath } from "next/cache";
 import { OrderQuerySchema, UpdateStatusSchema } from "./schemas";
 import { OrderStatus } from "@prisma/client";
 
+import { isAtLeastAdmin } from "@/lib/roles";
+
 /**
  * Checks if the current user has admin privileges.
  */
 async function checkAdmin() {
     const session = await auth();
-    if (!session?.user?.id || (session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN")) {
+    if (!session?.user?.id || !isAtLeastAdmin(session.user.role)) {
         throw new Error("Unauthorized: Admin access required");
     }
     return session.user.id;

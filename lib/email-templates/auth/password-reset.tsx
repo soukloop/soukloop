@@ -1,10 +1,9 @@
 import * as React from 'react';
 import { Text, Heading } from '@react-email/components';
 import { EmailLayout } from '../components/email-layout';
-import { EmailButton } from '../components/email-button';
 
 interface PasswordResetEmailProps {
-    resetUrl: string;
+    resetCode: string;
     userName?: string;
 }
 
@@ -13,7 +12,7 @@ interface PasswordResetEmailProps {
  * Uses noreply@ sender
  */
 export const PasswordResetEmail = ({
-    resetUrl,
+    resetCode,
     userName
 }: PasswordResetEmailProps) => {
     return (
@@ -25,17 +24,19 @@ export const PasswordResetEmail = ({
             </Text>
 
             <Text style={paragraph}>
-                We received a request to reset your password. Click the button below to create a new password:
+                We received a request to reset your password. Here is your verification code:
             </Text>
 
-            <div style={buttonContainer}>
-                <EmailButton href={resetUrl}>
-                    Reset Password
-                </EmailButton>
+            <div style={codeContainer}>
+                <Text style={codeText}>{resetCode}</Text>
             </div>
 
+            <Text style={paragraph}>
+                Enter this code in the app to proceed with resetting your password.
+            </Text>
+
             <Text style={footerNote}>
-                This link will expire in 1 hour for security reasons.
+                This code will expire in 15 minutes for security reasons.
             </Text>
 
             <Text style={footerNote}>
@@ -60,9 +61,20 @@ const paragraph = {
     margin: '0 0 16px 0'
 };
 
-const buttonContainer = {
+const codeContainer = {
     textAlign: 'center' as const,
-    margin: '24px 0'
+    margin: '24px 0',
+    padding: '12px',
+    backgroundColor: '#f4f4f4',
+    borderRadius: '8px'
+};
+
+const codeText = {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#333',
+    letterSpacing: '4px',
+    margin: '0'
 };
 
 const footerNote = {
