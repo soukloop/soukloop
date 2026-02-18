@@ -608,7 +608,7 @@ export default function TrackOrderPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-[#FAFAFA] sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
       <main className="container mx-auto px-4 py-10 sm:px-6 sm:py-16 lg:px-8 max-w-[1248px]">
         {viewMode === "list" ? renderListView() : renderDetailView()}

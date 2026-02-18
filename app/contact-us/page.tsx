@@ -9,7 +9,7 @@ export default async function ContactPage() {
   const session = await auth();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       {/* Main Contact Section */}

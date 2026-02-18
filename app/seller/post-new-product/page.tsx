@@ -402,7 +402,7 @@ export default function PostNewProductPage() {
     }
 
     return (
-        <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans">
+        <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans sm:mt-[-6rem] mt-[-4.2rem]">
             <EcommerceHeader />
 
             <main className="mx-auto w-full flex-1 bg-white pt-20 sm:pt-24">

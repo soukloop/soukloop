@@ -14,7 +14,7 @@ export default async function HelpPage() {
     const user = session?.user
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
             <EcommerceHeader />
 
             <main className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">

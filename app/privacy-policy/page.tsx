@@ -5,7 +5,7 @@ import FooterSection from "@/components/footer-section";
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-white sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       <main className="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">

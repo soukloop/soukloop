@@ -93,7 +93,7 @@ export default function PricingPage() {
   const [countdown, setCountdown] = useState(59);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       {/* Main Pricing Section */}
