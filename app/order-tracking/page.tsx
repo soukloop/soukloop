@@ -292,7 +292,7 @@ export default async function OrderDetailsPage(props: {
     }));
 
     return (
-        <div className="flex min-h-screen flex-col bg-white">
+        <div className="flex min-h-screen flex-col bg-white sm:mt-[-9rem] mt-[-6.2rem]">
             <EcommerceHeader />
 
             <main className="flex-1 bg-[#F9FAFB]">
