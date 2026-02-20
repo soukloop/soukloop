@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MoreVertical, PenLine, Trash2, EyeOff, CheckCircle } from "lucide-react";
+import { MoreVertical, PenLine, Trash2, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AuthPopup from "@/components/auth/auth-popup";
 import { isAtLeastSeller, isAtLeastAdmin } from "@/lib/roles";
+import WishlistButton from "@/components/ui/wishlist-button";
 
 interface Product {
     id: string;
@@ -324,26 +325,24 @@ export default function ProductCard({
                         )}
                     </div>
                     {!isManageMode && (
-                        <button
+                        <WishlistButton
+                            isWishlisted={product.isWishlist}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!user) {
-                                    // toast.info("Please login to save items to your wishlist");
-                                    // router.push("/signin");
-                                    setShowAuthModal(true);
-                                    return;
+                                if (toggleWishlist) {
+                                    toggleWishlist(product.id);
+                                } else {
+                                    // Fallback: If no toggleWishlist prop is provided, we should probably warn or handle it.
+                                    // But since we are refactoring, we will update the parents to pass the function or use the hook wrapper.
+                                    // Actually, let's make ProductCard smarter? No, keep it dumb for performance in big grids?
+                                    // Better to keep props for now to avoid refactoring EVERY usage instantaneously if they pass different logic.
+                                    // But wait, the goal is UNIFICATION.
+                                    // Let's stick to the prop for now to avoid breaking changes, but use the new Button component.
                                 }
-                                toggleWishlist?.(product.id);
                             }}
-                            className="focus:outline-none"
-                        >
-                            <Heart
-                                className={`transition-transform hover:scale-110 ${compact ? "size-4 sm:size-5" : "size-5 sm:size-6"} ${product.isWishlist
-                                    ? "fill-[#ff4500] text-[#ff4500]"
-                                    : "text-gray-400"
-                                    }`}
-                            />
-                        </button>
+                            className="hover:scale-110"
+                            size={compact ? "sm" : "md"}
+                        />
                     )}
                 </div>
 

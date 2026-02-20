@@ -18,7 +18,7 @@ async function checkAdminPermission(request: NextRequest) {
         return { success: false, status: 401, error: 'Unauthorized' };
     }
     const role = session.user.role;
-    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN' && role !== 'MODERATOR' && role !== 'SUPPORT') {
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
         return { success: false, status: 403, error: 'Forbidden' };
     }
     return { success: true };
@@ -142,7 +142,7 @@ export async function PATCH(
         // 🚀 REAL-TIME SIGNAL: Role Change
         if (body.role && oldUser && body.role !== oldUser.role) {
             const newRole = body.role as Role;
-            const isPromotion = ['SELLER', 'ADMIN', 'SUPER_ADMIN', 'MODERATOR'].includes(newRole);
+            const isPromotion = ['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(newRole);
             const isDemotion = newRole === 'USER';
 
             await centrifugoPublish(`user:${id}:role-changed`, {

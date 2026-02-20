@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if already a seller
-        if (user.role === "SELLER") {
+        // Check if already a seller or higher
+        const { isAtLeastSeller } = await import("@/lib/roles");
+        if (isAtLeastSeller(user.role)) {
             return NextResponse.json(
                 { message: "Already a seller", success: true },
                 { status: 200 }

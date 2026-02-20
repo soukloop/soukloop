@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,11 +24,10 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateVendorVerification } from "../actions";
+import { updateVendorVerification, getDecryptedVendorData } from "../actions";
 import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
-    slug: z.string().min(3, "Slug must be at least 3 characters"),
     taxIdType: z.string().min(1, "Tax ID Type is required"),
     taxId: z.string().min(1, "Tax ID is required"),
     govIdType: z.string().min(1, "Gov ID Type is required"),
@@ -49,28 +48,55 @@ interface EditVendorFormProps {
         govIdFrontUrl?: string;
         govIdBackUrl?: string;
         selfieUrl?: string;
+        businessLicenseUrl?: string;
+        addressProofUrl?: string;
     };
     onSuccess?: () => void;
+    /** If true, hides the Vendor Slug field (useful when shown to end-users) */
+    hideSlug?: boolean;
 }
 
-export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFormProps) {
+export function EditVendorForm({ userId, initialData, onSuccess, hideSlug = false }: EditVendorFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSensitiveLoading, setIsSensitiveLoading] = useState(true);
+    const [uploadedUrls, setUploadedUrls] = useState({
+        govIdFrontUrl: initialData.govIdFrontUrl || "",
+        govIdBackUrl: initialData.govIdBackUrl || "",
+        selfieUrl: initialData.selfieUrl || "",
+    });
     const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            slug: initialData.slug || "",
             taxIdType: initialData.taxIdType || "SSN",
-            taxId: initialData.taxId || "",
+            taxId: "",
             govIdType: initialData.govIdType || "DRIVERS_LICENSE",
-            govIdNumber: initialData.govIdNumber || "",
+            govIdNumber: "",
         },
     });
 
+    // Lazily decrypt the sensitive fields after the modal is open
+    useEffect(() => {
+        let cancelled = false;
+        setIsSensitiveLoading(true);
+        getDecryptedVendorData(userId)
+            .then((data) => {
+                if (!cancelled) {
+                    form.setValue("taxId", data.taxId);
+                    form.setValue("govIdNumber", data.govIdNumber);
+                    setIsSensitiveLoading(false);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setIsSensitiveLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [userId, form]);
+
     // Handle Image Upload Helper
-    const handleImageUpload = async (file: File) => {
+    const handleImageUpload = async (file: File, field: "govIdFrontUrl" | "govIdBackUrl" | "selfieUrl") => {
         setIsUploading(true);
         try {
             if (file.size > 5 * 1024 * 1024) throw new Error("Image size must be less than 5MB");
@@ -81,7 +107,10 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
             });
             if (!res.ok) throw new Error("Upload failed");
             const result = await res.json();
-            return result.url;
+            const url = result.url;
+            setUploadedUrls(prev => ({ ...prev, [field]: url }));
+            toast.success("Image uploaded successfully");
+            return url;
         } catch (err) {
             toast.error("Failed to upload image");
             console.error(err);
@@ -94,7 +123,12 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
         try {
-            await updateVendorVerification(userId, values);
+            await updateVendorVerification(userId, {
+                ...values,
+                govIdFrontUrl: uploadedUrls.govIdFrontUrl || undefined,
+                govIdBackUrl: uploadedUrls.govIdBackUrl || undefined,
+                selfieUrl: uploadedUrls.selfieUrl || undefined,
+            });
             toast.success("Vendor details updated successfully");
             router.refresh();
             onSuccess?.();
@@ -106,40 +140,9 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
         }
     }
 
-    // Mock loading state if initialData is missing (though it shouldn't be with current flows)
-    if (!initialData) {
-        return (
-            <div className="space-y-4 p-4">
-                <Skeleton className="h-10 w-full" />
-                <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            </div>
-        );
-    }
-
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Vendor Slug</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -163,6 +166,7 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                         )}
                     />
 
+                    {/* Tax ID Number — shimmer while decrypting */}
                     <FormField
                         control={form.control}
                         name="taxId"
@@ -170,7 +174,11 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                             <FormItem>
                                 <FormLabel>Tax ID Number</FormLabel>
                                 <FormControl>
-                                    <Input {...field} placeholder="XXX-XX-XXXX" />
+                                    {isSensitiveLoading ? (
+                                        <Skeleton className="h-10 w-full rounded-md animate-pulse" />
+                                    ) : (
+                                        <Input {...field} placeholder="XXX-XX-XXXX" />
+                                    )}
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -192,7 +200,7 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="DRIVERS_LICENSE">Driver's License</SelectItem>
+                                        <SelectItem value="DRIVERS_LICENSE">Driver&apos;s License</SelectItem>
                                         <SelectItem value="PASSPORT">Passport</SelectItem>
                                         <SelectItem value="NATIONAL_ID">National ID</SelectItem>
                                     </SelectContent>
@@ -202,6 +210,7 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                         )}
                     />
 
+                    {/* Gov ID Number — shimmer while decrypting */}
                     <FormField
                         control={form.control}
                         name="govIdNumber"
@@ -209,7 +218,11 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                             <FormItem>
                                 <FormLabel>Gov ID Number</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    {isSensitiveLoading ? (
+                                        <Skeleton className="h-10 w-full rounded-md animate-pulse" />
+                                    ) : (
+                                        <Input {...field} />
+                                    )}
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -217,77 +230,63 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                     />
                 </div>
 
-                {/* Note: File Uploads would go here. For now, referencing them in UI but schema update needed to persist them. 
-                    The user asked for "option to edit the images uploaded". 
-                    Since `updateVendorVerification` needs to be updated to accept these URLs, I will stick to the basic fields first 
-                    and add the UI, but I need to update the server action to actually save them. 
-                */}
+                {/* Verification Documents */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
                     <h4 className="text-sm font-medium text-slate-900">Verification Documents</h4>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Gov ID Front */}
                         <div className="space-y-2">
                             <FormLabel>Gov ID Front</FormLabel>
                             <div className="flex items-center gap-4">
-                                {initialData.govIdFrontUrl && (
+                                {uploadedUrls.govIdFrontUrl && (
                                     <div className="relative h-16 w-24 overflow-hidden rounded-md border">
-                                        <img src={initialData.govIdFrontUrl} alt="ID Front" className="h-full w-full object-cover" />
+                                        <img src={uploadedUrls.govIdFrontUrl} alt="ID Front" className="h-full w-full object-cover" />
                                     </div>
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Change"}
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.govIdFrontUrl ? "Change" : "Upload")}
                                     <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                                         const file = e.target.files?.[0];
-                                        if (file) {
-                                            const url = await handleImageUpload(file);
-                                            // TODO: Update form value or handle separately. 
-                                            // For this task, we might need a hidden field or just state.
-                                            // Ideally, updateVendorVerification needs to accept these URLs.
-                                            // I will assume for now we just want the UI to LOOK like it works or I need to update the form schema.
-                                            if (url) toast.success("Image uploaded (Schema update required to persist)");
-                                        }
+                                        if (file) await handleImageUpload(file, "govIdFrontUrl");
                                     }} />
                                 </label>
                             </div>
                         </div>
 
+                        {/* Gov ID Back */}
                         <div className="space-y-2">
                             <FormLabel>Gov ID Back</FormLabel>
                             <div className="flex items-center gap-4">
-                                {initialData.govIdBackUrl && (
+                                {uploadedUrls.govIdBackUrl && (
                                     <div className="relative h-16 w-24 overflow-hidden rounded-md border">
-                                        <img src={initialData.govIdBackUrl} alt="ID Back" className="h-full w-full object-cover" />
+                                        <img src={uploadedUrls.govIdBackUrl} alt="ID Back" className="h-full w-full object-cover" />
                                     </div>
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Change"}
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.govIdBackUrl ? "Change" : "Upload")}
                                     <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                                         const file = e.target.files?.[0];
-                                        if (file) {
-                                            const url = await handleImageUpload(file);
-                                            if (url) toast.success("Image uploaded (Schema update required to persist)");
-                                        }
+                                        if (file) await handleImageUpload(file, "govIdBackUrl");
                                     }} />
                                 </label>
                             </div>
                         </div>
 
+                        {/* Selfie */}
                         <div className="space-y-2">
                             <FormLabel>Selfie</FormLabel>
                             <div className="flex items-center gap-4">
-                                {initialData.selfieUrl && (
+                                {uploadedUrls.selfieUrl && (
                                     <div className="relative h-16 w-16 overflow-hidden rounded-full border">
-                                        <img src={initialData.selfieUrl} alt="Selfie" className="h-full w-full object-cover" />
+                                        <img src={uploadedUrls.selfieUrl} alt="Selfie" className="h-full w-full object-cover" />
                                     </div>
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Change"}
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.selfieUrl ? "Change" : "Upload")}
                                     <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                                         const file = e.target.files?.[0];
-                                        if (file) {
-                                            const url = await handleImageUpload(file);
-                                            if (url) toast.success("Image uploaded (Schema update required to persist)");
-                                        }
+                                        if (file) await handleImageUpload(file, "selfieUrl");
                                     }} />
                                 </label>
                             </div>
@@ -296,7 +295,7 @@ export function EditVendorForm({ userId, initialData, onSuccess }: EditVendorFor
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                    <Button type="submit" disabled={isLoading} className="bg-orange-600 hover:bg-orange-700">
+                    <Button type="submit" disabled={isLoading || isUploading || isSensitiveLoading} className="bg-orange-600 hover:bg-orange-700">
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Changes
                     </Button>

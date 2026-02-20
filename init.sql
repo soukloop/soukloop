@@ -46,6 +46,19 @@ END $$;
 -- Create indexes for better performance
 -- These will be created by Prisma migrations, but we can add some additional ones here
 
+-- Create Centrifugo Outbox table
+CREATE TABLE IF NOT EXISTS "centrifugo_outbox" (
+    "id" BIGSERIAL PRIMARY KEY,
+    "method" TEXT NOT NULL,
+    "payload" JSONB NOT NULL,
+    "partition" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS "centrifugo_outbox_partition_id_idx" ON "centrifugo_outbox"("partition", "id");
+
 -- Grant permissions
 GRANT ALL PRIVILEGES ON DATABASE soukloop_db TO postgres;
 GRANT ALL PRIVILEGES ON SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;

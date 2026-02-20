@@ -11,7 +11,7 @@ const PROTECTED_ROUTES = [
 
 export const authConfig = {
     pages: {
-        signIn: '/',
+        signIn: '/?auth=login',
         error: '/auth/error',
     },
     // Explicitly set secret for Edge compatibility

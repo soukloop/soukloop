@@ -29,6 +29,7 @@ export interface SellerVerification {
     postalCode: string | null
     country: string | null
     addressProofUrl: string | null
+    sellerAddressId: string | null
 
     // Tax Information
     taxIdType: string | null

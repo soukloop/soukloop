@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { validateRequest } from "@/lib/security";
+
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -25,23 +25,16 @@ export function withAuth(handler: ApiHandler): ApiHandler {
 
             const session = await auth();
 
+            // The session is now strictly validated in auth.ts (JWT Callback).
+            // If session is present, the user exists and is active.
             if (!session || !session.user) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
 
-            // We can't use validateRequest directy because it redirects.
-            // We need a version that returns boolean or throws specific error?
-            // Actually, let's reuse the logic but handle the redirect error.
-
-            try {
-                await validateRequest();
-            } catch (error: any) {
-                if (error?.digest?.startsWith('NEXT_REDIRECT')) {
-                    // Convert Redirect to 403 Forbidden
-                    console.warn("[API Security] Blocked suspended/revoked user access.");
-                    return NextResponse.json({ error: "Account Suspended or Session Expired" }, { status: 403 });
-                }
-                throw error;
+            // Additional Check: If the session says inactive (edge case), block it.
+            // @ts-ignore
+            if (session.user.isActive === false) {
+                return NextResponse.json({ error: "Account Suspended" }, { status: 403 });
             }
 
             // Proceed to handler

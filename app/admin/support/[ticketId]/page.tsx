@@ -10,9 +10,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ t
     const userRole = session?.user?.role;
     if (
         userRole !== "ADMIN" &&
-        userRole !== "SUPER_ADMIN" &&
-        userRole !== "MODERATOR" &&
-        userRole !== "SUPPORT"
+        userRole !== "SUPER_ADMIN"
     ) {
         return <div>Unauthorized</div>;
     }

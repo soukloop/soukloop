@@ -4,8 +4,9 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Check, Copy, Loader2 } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { CopyButton } from "@/components/ui/copy-button"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -46,7 +47,6 @@ interface SupportFormProps {
 export function SupportForm({ user }: SupportFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [ticketId, setTicketId] = useState<string | null>(null)
-    const [copied, setCopied] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -58,13 +58,7 @@ export function SupportForm({ user }: SupportFormProps) {
         },
     })
 
-    const handleCopy = () => {
-        if (!ticketId) return
-        navigator.clipboard.writeText(ticketId)
-        setCopied(true)
-        toast.success("Ticket ID copied to clipboard")
-        setTimeout(() => setCopied(false), 2000)
-    }
+
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true)
@@ -111,19 +105,11 @@ export function SupportForm({ user }: SupportFormProps) {
                         <code className="text-sm font-mono font-medium text-gray-900 truncate">
                             {ticketId}
                         </code>
-                        <Button
-                            size="icon"
-                            variant="ghost"
+                        <CopyButton
+                            value={ticketId}
                             className="h-8 w-8 shrink-0 text-gray-500 hover:bg-white hover:text-green-600 hover:shadow-sm"
-                            onClick={handleCopy}
-                            title="Copy Ticket ID"
-                        >
-                            {copied ? (
-                                <Check className="h-4 w-4" />
-                            ) : (
-                                <Copy className="h-4 w-4" />
-                            )}
-                        </Button>
+                            variant="ghost"
+                        />
                     </div>
                 </div>
 

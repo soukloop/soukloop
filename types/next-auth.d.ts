@@ -23,6 +23,7 @@ declare module 'next-auth' {
     role: Role
     tokenVersion?: number
     isActive?: boolean
+    emailVerified?: Date | null
   }
 }
 
@@ -30,6 +31,8 @@ declare module '@auth/core/adapters' {
   interface AdapterUser {
     role: Role
     tokenVersion?: number
+    isActive?: boolean
+    emailVerified?: Date | null
   }
 }
 

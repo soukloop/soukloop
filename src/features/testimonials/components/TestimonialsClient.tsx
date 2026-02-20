@@ -12,6 +12,7 @@ import { deleteTestimonial } from "../actions";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { ActionItem } from "@/components/admin/ActionDropdown";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+// @ts-ignore
 import { debounce } from "lodash";
 
 interface TestimonialsClientProps {
@@ -177,7 +178,7 @@ export function TestimonialsClient({
                         <Input
                             placeholder="Search testimonials..."
                             className="pl-9 bg-gray-50 border-gray-200 focus-visible:ring-offset-0"
-                            defaultValue={searchParams.get('search') || ""}
+                            defaultValue={searchParams?.get('search') || ""}
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                     </div>

@@ -7,10 +7,8 @@ import { Role } from "@prisma/client";
 export const RoleLevel: Record<Role, number> = {
     USER: 1,
     SELLER: 2,
-    SUPPORT: 3,
-    MODERATOR: 4,
     ADMIN: 5,
-    SUPER_ADMIN: 10, // High gap for future roles
+    SUPER_ADMIN: 10,
 };
 
 /**

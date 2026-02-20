@@ -61,7 +61,8 @@ services:
       - ./centrifugo.json:/centrifugo/config.json
     command: centrifugo -c config.json
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]

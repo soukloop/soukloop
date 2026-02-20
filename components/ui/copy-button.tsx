@@ -15,6 +15,7 @@ interface CopyButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
     size?: "default" | "sm" | "lg" | "icon";
     showIconAlways?: boolean;
     hoverOnly?: boolean;
+    iconClassName?: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export function CopyButton({
     size = "icon",
     className,
     showIconAlways = true,
+    iconClassName,
     ...props
 }: CopyButtonProps) {
     const [hasCopied, setHasCopied] = React.useState(false);
@@ -67,9 +69,9 @@ export function CopyButton({
                     )}
                 >
                     {hasCopied ? (
-                        <Check className="h-4 w-4 text-green-500 animate-in zoom-in duration-300" />
+                        <Check className={cn("h-4 w-4 text-green-500 animate-in zoom-in duration-300", iconClassName)} />
                     ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className={cn("h-4 w-4", iconClassName)} />
                     )}
                 </div>
             </div>
@@ -91,9 +93,9 @@ export function CopyButton({
         >
             <span className="sr-only">{label}</span>
             {hasCopied ? (
-                <Check className="h-4 w-4 text-green-500 animate-in zoom-in duration-300" />
+                <Check className={cn("h-4 w-4 text-green-500 animate-in zoom-in duration-300", iconClassName)} />
             ) : (
-                <Copy className="h-4 w-4" />
+                <Copy className={cn("h-4 w-4", iconClassName)} />
             )}
         </Button>
     );

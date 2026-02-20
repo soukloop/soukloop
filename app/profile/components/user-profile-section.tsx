@@ -22,7 +22,10 @@ export default function UserProfileSection({ initialData }: UserProfileSectionPr
     <div className="flex flex-col min-h-screen bg-white">
       {/* 1. Header (Banner, Avatar, Name, Bio, Follow Button) */}
       <ProfileHeader
-        user={user}
+        user={{
+          ...user,
+          role: user.role // Explicitly passing role
+        }}
         profile={profile}
         vendor={vendor}
         isOwner={isOwner}

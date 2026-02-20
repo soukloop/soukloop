@@ -37,7 +37,7 @@ export interface Address {
     postalCode: string
     country: string
     isDefault: boolean
-    isBusiness?: boolean
+    isSellerAddress?: boolean
     isShipping?: boolean
     isBilling?: boolean
     createdAt: string
@@ -70,7 +70,7 @@ export interface AddressCreateData {
     postalCode: string
     country: string
     isDefault?: boolean
-    isBusiness?: boolean
+    isSellerAddress?: boolean
     isShipping?: boolean
     isBilling?: boolean
 }
@@ -227,24 +227,24 @@ export function useProfile(userId?: string) {
         mutateAddresses()
     }
 
-    // Set business address (ensures only ONE address has isBusiness = true)
-    const setBusinessAddress = async (id: string): Promise<void> => {
-        // Find current business addresses and remove their flag
-        const currentBusinessAddresses = addresses?.filter(a => a.isBusiness && a.id !== id) || []
+    // Set seller address (ensures only ONE address has isSellerAddress = true)
+    const setSellerAddress = async (id: string): Promise<void> => {
+        // Find current seller addresses and remove their flag
+        const currentSellerAddresses = addresses?.filter(a => a.isSellerAddress && a.id !== id) || []
 
-        // Remove isBusiness from all other addresses first
-        for (const addr of currentBusinessAddresses) {
-            await updateAddress(addr.id, { isBusiness: false })
+        // Remove isSellerAddress from all other addresses first
+        for (const addr of currentSellerAddresses) {
+            await updateAddress(addr.id, { isSellerAddress: false })
         }
 
-        // Set the selected address as business
-        await updateAddress(id, { isBusiness: true })
+        // Set the selected address as seller address
+        await updateAddress(id, { isSellerAddress: true })
     }
 
     // Get default addresses (using boolean flags)
     const defaultShippingAddress = addresses?.find(a => a.isShipping && a.isDefault) || addresses?.find(a => a.isShipping)
     const defaultBillingAddress = addresses?.find(a => a.isBilling && a.isDefault) || addresses?.find(a => a.isBilling)
-    const businessAddress = addresses?.find(a => a.isBusiness)
+    const sellerAddress = addresses?.find(a => a.isSellerAddress)
 
     return {
         // Profile
@@ -266,8 +266,8 @@ export function useProfile(userId?: string) {
         // Convenience
         defaultShippingAddress,
         defaultBillingAddress,
-        businessAddress,
-        setBusinessAddress,
+        sellerAddress,
+        setSellerAddress,
         isAuthenticated,
         isLoading: profileLoading || addressesLoading,
 

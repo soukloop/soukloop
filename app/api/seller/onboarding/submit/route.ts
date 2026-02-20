@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         if (!verification.govIdFrontUrl) missing.push('ID Front Photo')
         if (!verification.govIdBackUrl) missing.push('ID Back Photo')
         if (!verification.selfieUrl) missing.push('Selfie Photo')
-        if (!verification.addressLine1) missing.push('Business Address')
+        if (!verification.addressLine1) missing.push('Seller Address')
         if (!verification.taxId) missing.push('Tax ID (SSN/EIN)')
         if (!verification.taxIdType) missing.push('Tax ID Type')
 

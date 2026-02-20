@@ -107,7 +107,7 @@ async function main() {
           postalCode: `7500${i}`,
           country: 'Pakistan',
           isDefault: false,
-          isBusiness: true,
+          isSellerAddress: true,
         },
       }),
     ])
@@ -631,18 +631,6 @@ async function main() {
         name: 'Admin User',
         password: adminPassword,
         role: Role.ADMIN,
-        isActive: true,
-        emailVerified: new Date(),
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: 'support@admin.com' },
-      update: {},
-      create: {
-        email: 'support@admin.com',
-        name: 'Support Agent',
-        password: adminPassword,
-        role: Role.SUPPORT,
         isActive: true,
         emailVerified: new Date(),
       },

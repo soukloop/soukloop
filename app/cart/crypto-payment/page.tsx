@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Loader2, Copy, Check, AlertCircle, Clock, ArrowRight } from "lucide-react"
+import { Loader2, AlertCircle, Clock, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Header from "../components/header"
 import FooterSection from "@/components/footer-section"
 import Image from "next/image"
+import { CopyButton } from "@/components/ui/copy-button"
 
 export default function CryptoPaymentPage() {
   const searchParams = useSearchParams()
@@ -19,7 +20,6 @@ export default function CryptoPaymentPage() {
   const currency = searchParams?.get("currency")
   const expiresAt = searchParams?.get("expiresAt")
 
-  const [copied, setCopied] = useState(false)
   const [timeLeft, setTimeLeft] = useState<string>("")
 
   // Calculate time remaining
@@ -46,13 +46,7 @@ export default function CryptoPaymentPage() {
     return () => clearInterval(interval)
   }, [expiresAt])
 
-  const handleCopyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
+
 
   const handlePaymentComplete = () => {
     // In a real implementation, you would verify the payment on the blockchain
@@ -137,17 +131,11 @@ export default function CryptoPaymentPage() {
                     {address}
                   </p>
                 </div>
-                <button
-                  onClick={handleCopyAddress}
+                <CopyButton
+                  value={address}
                   className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50"
-                  title="Copy address"
-                >
-                  {copied ? (
-                    <Check className="size-5 text-green-600" />
-                  ) : (
-                    <Copy className="size-5 text-gray-600" />
-                  )}
-                </button>
+                  iconClassName="size-5 text-gray-600"
+                />
               </div>
             </div>
 

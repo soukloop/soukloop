@@ -37,6 +37,8 @@ import ReviewsSection from "@/app/product/components/reviews-section";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { isAtLeastAdmin } from "@/lib/roles";
+import { useWishlist } from "@/hooks/use-wishlist";
+import WishlistButton from "@/components/ui/wishlist-button";
 
 export default function ProductContent({ slug }: { slug?: string }) {
     const params = useParams();
@@ -183,12 +185,12 @@ export default function ProductContent({ slug }: { slug?: string }) {
         setZoomStyle({});
     }, []);
 
-    // Placeholder for wishlist toggle
-    const toggleWishlist = (id: string) => {
-        setIsWishlist(prev => !prev);
-        // Implement actual wishlist logic here
-        alert(isWishlist ? "Removed from wishlist!" : "Added to wishlist!");
-    };
+    // Use centralized wishlist hook
+    const { isWithlisted, toggleWishlist } = useWishlist();
+    const isWishlist = isWithlisted(productId);
+
+    // Placeholder removed, used hook directly
+
 
     // Record Recently Viewed - MOVED TO PAGE LOAD
     // Increment View Count
@@ -309,20 +311,15 @@ export default function ProductContent({ slug }: { slug?: string }) {
 
                                     {/* Wishlist Button Overlay */}
                                     <div className="absolute right-4 top-4 z-10">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-11 rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white hover:scale-110 transition-all border-none"
+                                        <WishlistButton
+                                            isWishlisted={isWishlist}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 toggleWishlist(productId);
                                             }}
-                                        >
-                                            <Heart
-                                                className={`size-6 ${isWishlist ? "fill-red-500 text-red-500" : "text-gray-400"
-                                                    }`}
-                                            />
-                                        </Button>
+                                            size="lg"
+                                            className="size-11 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                                        />
                                     </div>
 
                                     {/* Lightbox Trigger Hint - Only for images */}

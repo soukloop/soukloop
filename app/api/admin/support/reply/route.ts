@@ -11,9 +11,7 @@ export async function POST(req: Request) {
         const userRole = session?.user?.role;
         if (
             userRole !== "ADMIN" &&
-            userRole !== "SUPER_ADMIN" &&
-            userRole !== "MODERATOR" &&
-            userRole !== "SUPPORT"
+            userRole !== "SUPER_ADMIN"
         ) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
         }

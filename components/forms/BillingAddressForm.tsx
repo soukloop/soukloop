@@ -8,7 +8,8 @@ import { StatefulButton } from '@/components/ui/StatefulButton'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import LocationSelector from '@/components/ui/LocationSelector'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Info } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StyledPhoneInput } from '@/components/ui/phone-input'
 import { Switch } from "@/components/ui/switch"
@@ -39,7 +40,7 @@ export interface BillingAddressFormData {
     state: string
     postalCode: string
     country: string
-    isBusiness?: boolean
+    isSellerAddress?: boolean
 }
 
 interface BillingAddressFormProps {
@@ -94,7 +95,7 @@ export default function BillingAddressForm({
             state: '',
             postalCode: '',
             country: 'United States',
-            isBusiness: false,
+            isSellerAddress: false,
         },
     })
 
@@ -117,7 +118,7 @@ export default function BillingAddressForm({
                     country: initialData.country && initialData.country.length === 2
                         ? (countryCodeToName[initialData.country] || initialData.country)
                         : (initialData.country || 'United States'),
-                    isBusiness: initialData.isBusiness || false,
+                    isSellerAddress: initialData.isSellerAddress || false,
                 }
                 storedInitialValuesRef.current = initialValues
                 reset(initialValues)
@@ -290,25 +291,69 @@ export default function BillingAddressForm({
 
 
 
-                {/* Business Address Toggle */}
-                {!excludeFields.includes('isBusiness') && (
+                {/* Seller Address Toggle */}
+                {!excludeFields.includes('isSellerAddress') && (
                     <div className="flex items-center justify-between space-x-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <Label htmlFor="isBusiness" className="flex flex-col space-y-1 cursor-pointer">
-                            <span className="text-sm font-medium text-gray-900">Business Address</span>
-                            <span className="text-xs text-gray-500">Set this as your primary business address</span>
+                        <Label htmlFor="isSellerAddress" className="flex flex-col space-y-1 cursor-pointer">
+                            <span className="text-sm font-medium text-gray-900">Seller Address</span>
+                            <span className="text-xs text-gray-500">Set this as your primary seller address</span>
                         </Label>
                         <Controller
                             control={control}
-                            name="isBusiness"
-                            render={({ field }) => (
-                                <Switch
-                                    id="isBusiness"
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={isDisabled}
-                                    className="data-[state=checked]:bg-[#E87A3F] data-[state=checked]:border-[#E87A3F]"
-                                />
-                            )}
+                            name="isSellerAddress"
+                            render={({ field }) => {
+                                // Logic: Once toggled ON, it cannot be toggled OFF manually for this address.
+                                // It can only be turned off by selecting another address as the Seller Address.
+                                const isCurrentlySeller = initialData?.isSellerAddress === true;
+                                const isDraftOn = field.value === true;
+                                const isLocked = isCurrentlySeller || isDraftOn;
+
+                                const SwitchComponent = (
+                                    <Switch
+                                        id="isSellerAddress"
+                                        checked={field.value}
+                                        onCheckedChange={(val) => {
+                                            if (isLocked && !val) {
+                                                toast.info(
+                                                    <div className="flex flex-col space-y-2">
+                                                        <p className="font-bold text-sm">Strict Toggle Switch:</p>
+                                                        <p className="text-xs">The "Seller Address" switch now locks (disables) as soon as it is toggled ON. It cannot be toggled OFF manually.</p>
+                                                        <p className="font-bold text-sm pt-1">Exclusive Selection (Radio behavior):</p>
+                                                        <p className="text-xs">To change the seller address, the user must select or add a different address and toggle that one ON. This will automatically unset the previous one in the database.</p>
+                                                    </div>,
+                                                    {
+                                                        duration: 6000,
+                                                        className: "p-4 border-l-4 border-orange-500"
+                                                    }
+                                                );
+                                                return;
+                                            }
+                                            field.onChange(val);
+                                        }}
+                                        disabled={isDisabled || isLocked}
+                                        className="data-[state=checked]:bg-[#E87A3F] data-[state=checked]:border-[#E87A3F]"
+                                    />
+                                );
+
+                                if (isLocked) {
+                                    return (
+                                        <TooltipProvider delayDuration={200}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-1.5 cursor-not-allowed">
+                                                        {SwitchComponent}
+                                                        <Info className="size-3.5 text-gray-400 shrink-0" />
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[260px] text-center">
+                                                    <p>This address is set as your Seller Address and is locked. To change it, toggle ON a different address as the Seller Address.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    )
+                                }
+                                return SwitchComponent;
+                            }}
                         />
                     </div>
                 )}

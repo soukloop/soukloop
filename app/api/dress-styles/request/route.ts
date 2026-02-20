@@ -17,7 +17,11 @@ function createSlug(name: string): string {
 /**
  * POST /api/dress-styles/request
  * Submit a new dress style request
- * Body: { name: string, categoryType: string, message?: string }
+ * Body: { name: string, categoryId: string, message?: string }
+ *
+ * Rules:
+ *  - Same style name is ALLOWED across different categories
+ *  - Same style name in the SAME category is blocked (returns existing record)
  */
 export async function POST(request: NextRequest) {
     try {
@@ -31,32 +35,45 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, categoryType, message, categoryId } = body;
+        const { name, categoryId, message } = body;
 
         // Validate required fields
-        if (!name || !categoryType) {
+        if (!name || !name.trim()) {
             return NextResponse.json(
-                { error: 'Name and categoryType are required' },
+                { error: 'Dress style name is required' },
                 { status: 400 }
             );
         }
 
-        // Validate categoryType
-        if (!['Kids', 'Men', 'Women'].includes(categoryType)) {
+        if (!categoryId) {
             return NextResponse.json(
-                { error: 'categoryType must be Kids, Men, or Women' },
+                { error: 'categoryId is required — please select a category in Step 2 first' },
                 { status: 400 }
             );
         }
 
-        const slug = createSlug(name);
+        // Validate category exists in DB (replaces hardcoded ['Kids','Men','Women'] check)
+        const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { id: true, name: true }
+        });
 
-        // Check if style already exists (approved or pending)
+        if (!category) {
+            return NextResponse.json(
+                { error: 'Invalid category. Please select a valid category first.' },
+                { status: 400 }
+            );
+        }
+
+        const slug = createSlug(name.trim());
+        const categoryType = category.name; // derived from DB, never hardcoded
+
+        // Check if style already exists in THIS category (unique per [slug, categoryId])
         let existingStyle = await prisma.dressStyle.findUnique({
             where: {
-                slug_categoryType: {
+                slug_categoryId: {
                     slug,
-                    categoryType
+                    categoryId
                 }
             },
             include: {
@@ -66,22 +83,22 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // If approved style exists, just return it
+        // If approved style exists in this category, just return it
         if (existingStyle?.status === 'approved') {
             return NextResponse.json({
                 success: true,
-                message: 'This style already exists and is approved',
+                message: 'This style already exists and is approved for this category',
                 dressStyle: existingStyle,
                 alreadyApproved: true
             });
         }
 
-        // If pending style exists, check if user already requested
+        // If pending style exists in this category, handle deduplication
         if (existingStyle?.status === 'pending') {
             if (existingStyle.requests.length > 0) {
                 return NextResponse.json({
                     success: true,
-                    message: 'You have already requested this style',
+                    message: 'You have already requested this style for this category',
                     dressStyle: existingStyle,
                     alreadyRequested: true
                 });
@@ -92,7 +109,7 @@ export async function POST(request: NextRequest) {
                 data: {
                     dressStyleId: existingStyle.id,
                     requesterId: session.user.id,
-                    message
+                    message: message?.trim() || undefined
                 }
             });
 
@@ -104,28 +121,18 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Create new pending dress style with request
-        // Prioritize categoryId if provided, otherwise fallback to finding by slug
-        let targetCategoryId = categoryId;
-
-        if (!targetCategoryId) {
-            const category = await prisma.category.findFirst({
-                where: { slug: { equals: categoryType, mode: 'insensitive' } }
-            });
-            targetCategoryId = category?.id;
-        }
-
+        // Create new pending dress style for this specific category
         const newDressStyle = await prisma.dressStyle.create({
             data: {
                 name: name.trim(),
                 slug,
-                categoryType,
+                categoryType,  // stored for display purposes (e.g. "Accessories", "Men", "Custom")
                 status: 'pending',
-                categoryId: targetCategoryId,
+                categoryId,
                 requests: {
                     create: {
                         requesterId: session.user.id,
-                        message
+                        message: message?.trim() || undefined
                     }
                 }
             },

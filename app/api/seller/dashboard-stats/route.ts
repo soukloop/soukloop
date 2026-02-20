@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from "@/auth";
 import { prisma } from '@/lib/prisma';
+import { isAtLeastSeller } from '@/lib/roles';
 
 // Types for the response
 interface MetricData {
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
             select: { role: true },
         });
 
-        if (user?.role !== 'SELLER') {
+        if (!isAtLeastSeller(user?.role)) {
             return NextResponse.json({ error: 'Not a seller' }, { status: 403 });
         }
 

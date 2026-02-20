@@ -132,6 +132,7 @@ export async function getProfilePayload(userIdOrUsername?: string) {
                 name: profile.name,
                 email: profile.email,
                 image: profile.image,
+                role: profile.role,
                 createdAt: profile.createdAt,
             },
             profile: profile.profile,

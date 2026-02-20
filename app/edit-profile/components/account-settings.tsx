@@ -40,6 +40,8 @@ import MyOrdersSection from './my-orders';
 import AddressBookSection from './AddressBookSection';
 import BankAccountsSection from './BankAccountsSection';
 import SellerApplicationSection from './SellerApplicationSection';
+import { useSellerAuth } from "@/hooks/useSellerAuth";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 export default function AccountSettings() {
   const searchParams = useSearchParams();
@@ -51,8 +53,7 @@ export default function AccountSettings() {
   const [activeSection, setActiveSection] = useState(initialSection);
 
   const { addItem } = useCart();
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const { favorites, isLoading: isLoadingFavorites, toggleWishlist } = useWishlist();
 
   // Sync state with URL when URL changes (e.g. back button)
   useEffect(() => {
@@ -70,33 +71,8 @@ export default function AccountSettings() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  // Fetch Favorites
-  useEffect(() => {
-    if (activeSection === "wishlist") {
-      setIsLoadingFavorites(true);
-      fetch("/api/favorites")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data)) {
-            setFavorites(data);
-          }
-          setIsLoadingFavorites(false);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch favorites", err);
-          setIsLoadingFavorites(false);
-        });
-    }
-  }, [activeSection]);
-
   const handleRemoveFavorite = async (productId: string) => {
-    setFavorites(prev => prev.filter(f => f.product.id !== productId));
-    try {
-      await fetch(`/api/favorites?productId=${productId}`, { method: "DELETE" });
-    } catch (err) {
-      console.error("Failed to remove favorite", err);
-      // could revert optimistic update here
-    }
+    await toggleWishlist(productId);
   };
 
   const handleAddToCartFromWishlist = async (product: any) => {
@@ -110,6 +86,16 @@ export default function AccountSettings() {
   };
 
   const { addresses, createAddress, updateAddress, isLoading } = useProfile();
+
+  const { isSeller } = useSellerAuth();
+
+  const tabs = [
+    { id: "edit-profile", label: "Edit Profile", icon: Edit },
+    { id: 'orders', label: 'My Orders', icon: Package },
+    { id: 'wishlist', label: 'Wishlist', icon: Heart },
+    { id: 'address', label: 'Address Book', icon: MapPin },
+    ...(isSeller ? [{ id: 'payment', label: 'Bank Accounts', icon: Building2 }] : []),
+  ];
 
   const shippingAddress = useMemo(() => {
     return addresses?.find(addr => addr.isShipping) || null;
@@ -142,13 +128,7 @@ export default function AccountSettings() {
                 justify-between md:justify-center md:gap-4 w-full mx-auto hide-scrollbar
               `}
             >
-              {[
-                { id: "edit-profile", label: "Edit Profile", icon: Edit },
-                { id: 'orders', label: 'My Orders', icon: Package },
-                { id: 'wishlist', label: 'Wishlist', icon: Heart },
-                { id: 'address', label: 'Address Book', icon: MapPin },
-                { id: 'payment', label: 'Bank Accounts', icon: Building2 },
-              ].map((item) => {
+              {tabs.map((item) => {
                 const isActive = activeSection === item.id;
                 const Icon = item.icon;
 
@@ -197,14 +177,7 @@ export default function AccountSettings() {
             {/* Mobile Active Section Title */}
             <div className="md:hidden text-center pb-2 animate-in fade-in slide-in-from-top-1 duration-300">
               <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mx-10">
-                {[
-                  { id: "edit-profile", label: "Edit Profile" },
-                  { id: "orders", label: "My Orders" },
-                  { id: "wishlist", label: "Wishlist" },
-                  { id: "address", label: "Address Book" },
-                  { id: "payment", label: "Bank Accounts" },
-                  { id: "security", label: "Security" },
-                ].find(i => i.id === activeSection)?.label}
+                {tabs.find(i => i.id === activeSection)?.label}
               </h2>
             </div>
           </div>

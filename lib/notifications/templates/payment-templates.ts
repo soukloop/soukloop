@@ -56,11 +56,26 @@ export async function notifyPaymentFailed(buyerId: string, data: PaymentData & {
 /**
  * Notify buyer that refund was requested
  */
+/**
+ * Notify buyer that refund was requested
+ */
 export async function notifyRefundRequested(
     buyerId: string,
-    data: PaymentData & { refundId: string }
+    data: PaymentData & { refundId: string; reason?: string; items?: any[] }
 ) {
     const formatted = formatCurrency(data.amount, data.currency)
+    const { render } = await import('@react-email/render');
+    const { RefundRequestedEmail } = await import('@/lib/email-templates/order/refund-requested');
+
+    const emailHtml = render(
+        RefundRequestedEmail({
+            orderNumber: data.orderNumber,
+            refundAmount: data.amount,
+            reason: data.reason || 'No reason provided',
+            items: data.items || [],
+            actionUrl: `${process.env.NEXTAUTH_URL}/refunds-and-returns`
+        })
+    );
 
     return createNotification({
         userId: buyerId,
@@ -68,9 +83,10 @@ export async function notifyRefundRequested(
         title: 'Refund Request Received 🔄',
         message: `Your refund request of ${formatted} for order #${data.orderNumber} has been received. We'll process it shortly.`,
         data,
-        actionUrl: '/editprofile?section=my-orders',
+        actionUrl: '/refunds-and-returns',
         sendEmail: true,
-        emailSubject: `Refund Request Received - Order #${data.orderNumber}`
+        emailSubject: `Refund Request Received - Order #${data.orderNumber}`,
+        emailHtml
     })
 }
 

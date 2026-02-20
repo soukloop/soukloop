@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         // We filter for roles that are considered "SubAdmins" or Staff.
         const admins = await prisma.user.findMany({
             where: {
-                role: { in: ['ADMIN', 'MODERATOR', 'SUPPORT'] }
+                role: { in: ['ADMIN'] }
             },
             select: {
                 id: true,

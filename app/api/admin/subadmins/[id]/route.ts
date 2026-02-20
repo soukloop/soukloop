@@ -24,7 +24,7 @@ const updateSubAdminSchema = z.object({
     name: z.string().min(2).max(100).optional(),
     password: z.string().min(8).optional(),
     isActive: z.boolean().optional(),
-    role: z.enum(['ADMIN', 'MODERATOR', 'SUPPORT']).optional(),
+    role: z.enum(['ADMIN']).optional(),
     permissions: z.array(z.object({
         resource: z.string(),
         action: z.string()
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
         }
 
         // Verify it's an admin-type user
-        if (!['ADMIN', 'MODERATOR', 'SUPPORT', 'SUPER_ADMIN'].includes(admin.role)) {
+        if (!['ADMIN', 'SUPER_ADMIN'].includes(admin.role)) {
             return NextResponse.json({ error: 'User is not an admin' }, { status: 404 });
         }
 

@@ -564,31 +564,33 @@ export default function OrdersPage() {
 
   return (
     <div className="w-full bg-white">
-      {/* View Switcher (Visible to All Users) */}
-      <div className="flex justify-center pt-6 pb-2">
-        <div className="bg-gray-100 p-1 rounded-full flex relative w-[240px]">
-          {/* Sliding Background */}
-          <div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#E87A3F] rounded-full shadow-sm transition-all duration-300 ease-in-out ${viewMode === 'selling' ? 'translate-x-[116px]' : 'translate-x-0'
-              }`}
-          />
+      {/* View Switcher (Visible only to Sellers) */}
+      {isSeller && (
+        <div className="flex justify-center pt-6 pb-2">
+          <div className="bg-gray-100 p-1 rounded-full flex relative w-[240px]">
+            {/* Sliding Background */}
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#E87A3F] rounded-full shadow-sm transition-all duration-300 ease-in-out ${viewMode === 'selling' ? 'translate-x-[116px]' : 'translate-x-0'
+                }`}
+            />
 
-          <button
-            onClick={() => handleViewModeChange('buying')}
-            className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors ${viewMode === 'buying' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            Buying
-          </button>
-          <button
-            onClick={() => handleViewModeChange('selling')}
-            className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors ${viewMode === 'selling' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            Selling
-          </button>
+            <button
+              onClick={() => handleViewModeChange('buying')}
+              className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors ${viewMode === 'buying' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Buying
+            </button>
+            <button
+              onClick={() => handleViewModeChange('selling')}
+              className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors ${viewMode === 'selling' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Selling
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Order Tabs */}
       <div className="border-b border-gray-100">

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/use-wishlist";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchSection from "@/components/search-section";
 import { Pagination } from "@/components/ui/pagination";
@@ -201,6 +202,8 @@ export default function SearchResults({
     }, 1200);
   };
 
+  const { isWithlisted, toggleWishlist } = useWishlist();
+
   const filterProps = {
     categoryFromURL,
     occasion, setOccasion,
@@ -367,7 +370,7 @@ export default function SearchResults({
                       title: product.title || product.name || "Product",
                       price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(product.priceCents ? product.priceCents / 100 : product.price),
                       originalPrice: product.originalPrice ? `$${product.originalPrice}` : "",
-                      isWishlist: false,
+                      isWishlist: isWithlisted(product.id),
                       vendorId: product.vendorId,
                       vendorUserId: product.vendor?.userId,
                       category: product.category,
@@ -379,7 +382,7 @@ export default function SearchResults({
                     }}
                     animatingId={animatingId}
                     handleAddToCart={() => handleAddToCart(product)}
-                    toggleWishlist={() => { }}
+                    toggleWishlist={() => toggleWishlist(product.id)}
                   />
                 ))}
             </div>

@@ -1,7 +1,7 @@
-import { useRouter } from 'next/navigation'
+'use client'
+
+import { useState } from 'react'
 import {
-    Loader2,
-    ShieldCheck,
     FileType,
     MapPin,
     Edit3
@@ -10,9 +10,9 @@ import { useSellerVerification } from '@/hooks/useSellerVerification'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
 import ApplicationStatusBox from '@/components/seller/ApplicationStatusBox'
+import { EditUserModal } from '@/components/admin/users/modals/edit-user-modal'
 
 export default function SellerApplicationSection() {
-    const router = useRouter()
     const { data: session } = useSession()
     const {
         verification,
@@ -20,11 +20,39 @@ export default function SellerApplicationSection() {
         isApproved,
         isSubmitted,
         isRejected,
-        isIncomplete
+        mutate: refreshVerification
     } = useSellerVerification()
 
-    const isExistingSeller = session?.user?.role === 'SELLER'
+    const isExistingSeller = ['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(session?.user?.role as string)
     const status = isApproved ? 'approved' : isSubmitted ? 'submitted' : isRejected ? 'rejected' : 'incomplete'
+
+    // State for vendor identity modal
+    const [vendorModalOpen, setVendorModalOpen] = useState(false)
+    const [vendorInitialData, setVendorInitialData] = useState<{
+        taxIdType?: string;
+        taxId?: string;
+        govIdType?: string;
+        govIdNumber?: string;
+        govIdFrontUrl?: string;
+        govIdBackUrl?: string;
+        selfieUrl?: string;
+    } | null>(null)
+
+    // State for address modal
+    const [addressModalOpen, setAddressModalOpen] = useState(false)
+
+    const handleOpenIdentityModal = () => {
+        // Set non-sensitive data immediately — EditVendorForm will lazily
+        // decrypt taxId and govIdNumber on mount (with shimmer skeleton)
+        setVendorInitialData({
+            taxIdType: verification?.taxIdType || '',
+            govIdType: verification?.govIdType || '',
+            govIdFrontUrl: verification?.govIdFrontUrl || '',
+            govIdBackUrl: verification?.govIdBackUrl || '',
+            selfieUrl: verification?.selfieUrl || '',
+        })
+        setVendorModalOpen(true)
+    }
 
     if (isStatusLoading) {
         return (
@@ -44,8 +72,8 @@ export default function SellerApplicationSection() {
                 isExistingSeller={isExistingSeller}
             />
 
-            {/* Approved Summary View - Keep as a professional card below the status box if approved */}
-            {(isApproved || (isExistingSeller && isSubmitted)) && (
+            {/* Approved Summary View */}
+            {(isApproved || isExistingSeller) && (
                 <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-top-4 duration-700">
                     {/* Identity Summary */}
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -56,7 +84,7 @@ export default function SellerApplicationSection() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push('/become-seller/form')}
+                                onClick={handleOpenIdentityModal}
                                 className="text-[#E87A3F] hover:bg-orange-50 font-semibold"
                             >
                                 <Edit3 className="size-4 mr-1" /> Edit
@@ -64,9 +92,9 @@ export default function SellerApplicationSection() {
                         </div>
                         <div className="space-y-4">
                             <SummaryField label="Tax ID Type" value={verification?.taxIdType || 'N/A'} />
-                            <SummaryField label="Tax ID" value={verification?.taxId || 'Not provided'} />
+                            <SummaryField label="Tax ID" value={verification?.taxId ? '••••••••' : 'Not provided'} />
                             <SummaryField label="Gov ID Type" value={verification?.govIdType?.replace('_', ' ') || 'N/A'} />
-                            <SummaryField label="ID Number" value={verification?.govIdNumber || 'Not provided'} />
+                            <SummaryField label="ID Number" value={verification?.govIdNumber ? '••••••••' : 'Not provided'} />
                         </div>
                     </div>
 
@@ -74,12 +102,12 @@ export default function SellerApplicationSection() {
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <MapPin className="size-4 text-[#E87A3F]" /> Business Address
+                                <MapPin className="size-4 text-[#E87A3F]" /> Seller Address
                             </h3>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => router.push('/become-seller/form')}
+                                onClick={() => setAddressModalOpen(true)}
                                 className="text-[#E87A3F] hover:bg-orange-50 font-semibold"
                             >
                                 <Edit3 className="size-4 mr-1" /> Edit
@@ -94,6 +122,34 @@ export default function SellerApplicationSection() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Identity Edit Modal */}
+            {vendorInitialData && session?.user?.id && (
+                <EditUserModal
+                    userId={session.user.id}
+                    mode="vendor"
+                    hideSlug={true}
+                    open={vendorModalOpen}
+                    onOpenChange={(open) => {
+                        setVendorModalOpen(open)
+                        if (!open) refreshVerification()
+                    }}
+                    vendorInitialData={vendorInitialData}
+                />
+            )}
+
+            {/* Address Edit Modal */}
+            {session?.user?.id && (
+                <EditUserModal
+                    userId={session.user.id}
+                    mode="address"
+                    open={addressModalOpen}
+                    onOpenChange={(open) => {
+                        setAddressModalOpen(open)
+                        if (!open) refreshVerification()
+                    }}
+                />
             )}
         </div>
     )

@@ -157,7 +157,7 @@ export async function deleteUser(userId: string) {
         // ➤ EMAIL NOTIFICATION (Post-deletion using captured email)
         if (user?.email) {
             const { notifyAccountDeleted } = await import('@/lib/notifications/templates/auth-templates');
-            await notifyAccountDeleted(userId, user.email, user.name || undefined).catch(err =>
+            await notifyAccountDeleted(user.email, user.name || undefined).catch(err =>
                 console.error('Failed to send deletion email:', err)
             );
         }

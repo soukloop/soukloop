@@ -361,7 +361,7 @@ export async function getMyOrders(params: {
                             }
                         },
                         user: { select: { name: true, email: true } },
-                        shippingAddress: true, // It's JSON
+                        // shippingAddress is a JSON field, so it's selected by default or via select, not include
                     }
                 }),
                 prisma.order.count({ where }),

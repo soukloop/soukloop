@@ -40,7 +40,7 @@ export default function BecomeSellerCTA() {
         // Direct to the new form page
         try {
             setIsTransforming(true);
-            router.push("/become-seller/form");
+            router.push("/become-a-seller/form");
         } catch (error) {
             console.error("Navigation error:", error);
             setIsTransforming(false);

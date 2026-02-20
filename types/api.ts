@@ -1,7 +1,7 @@
 // Ecommerce API TypeScript interfaces and types
 
 // ===== ENUMS =====
-export type Role = 'USER' | 'SELLER' | 'ADMIN' | 'SUPER_ADMIN' | 'MODERATOR' | 'SUPPORT'
+export type Role = 'USER' | 'SELLER' | 'ADMIN' | 'SUPER_ADMIN'
 export type KycStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type OrderStatus = 'PENDING' | 'PAID' | 'DELIVERED' | 'CANCELED' | 'REFUNDED' | 'PROCESSING' | 'SHIPPED'
 export type PaymentProvider = 'STRIPE' | 'PAYPAL' | 'COINBASE'

@@ -125,13 +125,21 @@ export async function notifyLogin(
     timeStyle: 'short'
   });
 
+  const { LoginAlertEmail } = await import('@/lib/email-templates/auth/login-alert');
+
   return createNotification({
     userId,
     type: 'ACCOUNT_UPDATED',
     title: 'New Login Detected 🔓',
     message: `New login to your account on ${time}.`,
     actionUrl: '/editprofile?section=security',
-    sendEmail: false
+    sendEmail: true,
+    emailSubject: 'New Login Detected - SoukLoop Security',
+    emailReact: LoginAlertEmail({
+      userName,
+      loginTime: time,
+      // We could add device info if we captured it in auth.ts, but for now generic is fine or we update auth.ts later
+    })
   });
 }
 
@@ -141,13 +149,24 @@ export async function notifyLogin(
 export async function notifyLogout(
   userId: string
 ) {
+  const time = new Date().toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  });
+
+  const { LogoutAlertEmail } = await import('@/lib/email-templates/auth/logout-alert');
+
   return createNotification({
     userId,
     type: 'ACCOUNT_UPDATED',
     title: 'Signed Out',
     message: 'You have been successfully signed out.',
     actionUrl: '/auth/signin',
-    sendEmail: false
+    sendEmail: true,
+    emailSubject: 'You have been signed out - SoukLoop',
+    emailReact: LogoutAlertEmail({
+      logoutTime: time
+    })
   });
 }
 

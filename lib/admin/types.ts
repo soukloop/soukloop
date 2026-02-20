@@ -2,7 +2,7 @@
 // Centralized types extracted from the monolithic page.tsx
 
 // ==================== AUTH TYPES ====================
-export type AdminRoleType = 'SUPER_ADMIN' | 'ADMIN' | 'MODERATOR' | 'SUPPORT';
+export type AdminRoleType = 'SUPER_ADMIN' | 'ADMIN';
 
 export interface AdminUser {
     id: string;
@@ -155,12 +155,7 @@ export interface SidebarItem {
 }
 
 // ==================== SUPPORTER ====================
-export interface Supporter {
-    id: number;
-    name: string;
-    team: string;
-    avatar: string;
-}
+
 
 // ==================== CHART DATA ====================
 export interface ChartDataPoint {

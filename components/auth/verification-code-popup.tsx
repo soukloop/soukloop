@@ -20,6 +20,7 @@ interface VerificationCodePopupProps {
   onOpenNewPassword: (code: string) => void; // Pass code to next step
   email?: string;
   mode?: "signup" | "reset"; // Added mode
+  password?: string; // For auto-login
 }
 
 export default function VerificationCodePopup({
@@ -29,6 +30,7 @@ export default function VerificationCodePopup({
   onOpenNewPassword,
   email = "info****@gmail.com",
   mode = "signup", // Default to signup for backward compatibility
+  password,
 }: VerificationCodePopupProps) {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(59);
@@ -130,8 +132,31 @@ export default function VerificationCodePopup({
       } else {
         // Signup Success
         if (email !== "info****@gmail.com") {
-          onClose();
-          router.push("/signin?verified=true");
+
+          // Auto-Login Implementation
+          if (password) {
+            const signInResult = await signIn("credentials", {
+              email: email,
+              password: password,
+              redirect: false,
+            });
+
+            if (signInResult?.error) {
+              // Fallback if auto-login fails for some reason
+              console.error("Auto-login failed:", signInResult.error);
+              onClose();
+              router.push("/signin?verified=true");
+            } else {
+              // Successful Auto-Login
+              onClose();
+              window.location.reload(); // Refresh to update session
+            }
+          } else {
+            // Fallback if no password (shouldn't happen in new flow)
+            onClose();
+            router.push("/signin?verified=true");
+          }
+
         } else {
           // Fallback for legacy demo flow
           onOpenNewPassword(codeString);

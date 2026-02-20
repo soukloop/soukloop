@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         });
 
         // 4. Validate Admin Role
-        const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT'];
+        const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
         if (!user || !user.isActive || !allowedRoles.includes(user.role)) {
             return NextResponse.json(
                 { error: 'Unauthorized access', authenticated: false },

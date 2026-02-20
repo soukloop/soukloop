@@ -163,6 +163,15 @@ export const PUT = withAuth(async (request: any) => {
             }
         })
 
+        // Notify user about profile update
+        const { notifyProfileUpdated } = await import('@/lib/notifications/templates/account-templates');
+        const userName = freshProfile?.user?.name || freshProfile?.firstName || 'User';
+
+        // Dont await to not block response
+        notifyProfileUpdated(targetUserId, userName, 'Profile Info').catch(err =>
+            console.error('Failed to send profile update notification:', err)
+        );
+
         return NextResponse.json(freshProfile)
 
     } catch (error: any) {

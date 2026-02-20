@@ -101,7 +101,7 @@ const nextConfig = {
       { source: '/userprofile', destination: '/profile', permanent: true },
       { source: '/terms', destination: '/terms-and-conditions', permanent: true },
       { source: '/order-details', destination: '/order-tracking', permanent: true },
-      { source: '/become-seller', destination: '/become-a-seller', permanent: true },
+      { source: '/become-seller/:path*', destination: '/become-a-seller/:path*', permanent: true },
       { source: '/productdetails/:id', destination: '/product/:id', permanent: true },
     ]
   }

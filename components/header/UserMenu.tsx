@@ -35,14 +35,13 @@ export default function UserMenu() {
     const hasUnreadGeneral = unreadCount > 0; // For main bell or generic notifications
 
     const commonMenuItems = [
-        { icon: Settings, label: "Account settings", href: "/edit-profile" },
+        { icon: Settings, label: "Edit Profile", href: "/edit-profile" },
         { icon: Bell, label: "Notification settings", href: "/notifications", hasBadge: hasUnreadGeneral },
         { icon: RotateCcw, label: "Refunds & Returns", href: "/refunds-and-returns" },
         { icon: Package, label: "My orders", href: "/editprofile?section=my-orders", hasBadge: hasUnreadOrders },
         { icon: Truck, label: "Track Order", href: "/track-orders" },
         { icon: Gift, label: "Rewards", href: "/reward-points" },
         { icon: MessageCircle, label: "Chat box", href: "/chats", hasBadge: hasUnreadMessages },
-        { icon: Heart, label: "My wishlist", href: "/editprofile?section=wishlist" },
     ];
 
     const sellerMenuItems = [
@@ -59,8 +58,8 @@ export default function UserMenu() {
     // Build menu items based on hierarchical roles
     let menuItems: any[] = [];
 
-    // 1. Add Admin Dashboard if user is at least an admin/moderator
-    if (hasRole(user?.role, "SUPPORT")) { // SUPPORT is the lowest admin-level role in our hierarchy
+    // 1. Add Admin Dashboard if user is at least an admin
+    if (hasRole(user?.role, "ADMIN")) {
         menuItems = [...adminMenuItems];
     }
 

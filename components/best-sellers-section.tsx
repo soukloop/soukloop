@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "../app/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "./product-card";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 interface APIProduct {
   id: string;
@@ -100,7 +101,6 @@ export default function BestSellersSection() {
             size: p.size,
             vendorId: p.vendorId,
             vendorUserId: (p as any).vendor?.userId, // Pass vendor's owner ID
-            hasPendingStyle: p.hasPendingStyle,
             isActive: p.isActive,
             status: p.status,
           }));
@@ -138,40 +138,19 @@ export default function BestSellersSection() {
     }, 1200);
   };
 
-  const toggleWishlist = async (id: string) => {
-    if (status !== "authenticated") {
-      window.dispatchEvent(new Event('open-auth-modal'));
-      return;
-    }
+  /* REMOVED MANUAL TOGGLE LOGIC - Using useWishlist hook downstream/via prop if needed, 
+     but actually this component passes toggleWishlist to ProductCard. 
+     We need to use the hook here to pass it down OR rely on ProductCard to use it?
+     
+     Wait, ProductCard DOES NOT use the hook internally yet (we decided to keep it dumb).
+     So we MUST use the hook here and pass it down.
+  */
 
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => (p.id === id ? { ...p, isWishlist: !p.isWishlist } : p))
-    );
+  const { isWithlisted, toggleWishlist } = useWishlist();
 
-    const product = products.find(p => p.id === id);
-    const currentlyFavorited = product?.isWishlist; // Note: this is the state AFTER optimistic update above? No, React state updates are scheduled.
-    // Actually, accessing `products` here uses the closure value from render, which is the OLD state.
-    // So if I just clicked, `product.isWishlist` is the OLD value.
-    // If it WAS true, I want to remove it.
-    // So the logic matches: if(currentlyFavorited) DELETE.
-
-    try {
-      if (currentlyFavorited) {
-        await fetch(`/api/favorites?productId=${id}`, { method: 'DELETE' });
-      } else {
-        await fetch('/api/favorites', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: id })
-        });
-      }
-    } catch (error) {
-      console.error("Failed to toggle wishlist", error);
-      setProducts((prevProducts) =>
-        prevProducts.map((p) => (p.id === id ? { ...p, isWishlist: !p.isWishlist } : p))
-      );
-    }
-  };
+  // Update products state is NO LONGER needed for wishlist status if we use the hook to derive it during render.
+  // BUT `products` state here also holds the product data.
+  // We should map `isWishlist` from the hook when rendering.
 
   const visibleProducts = products.slice(currentIndex, currentIndex + 3);
 
@@ -238,10 +217,13 @@ export default function BestSellersSection() {
             {visibleProducts.map((product) => (
               <ProductCard
                 key={product.id}
-                product={product}
+                product={{
+                  ...product,
+                  isWishlist: isWithlisted(product.id)
+                }}
                 animatingId={animatingId}
                 handleAddToCart={handleAddToCart}
-                toggleWishlist={toggleWishlist}
+                toggleWishlist={() => toggleWishlist(product.id)}
                 compact={false}
               />
             ))}

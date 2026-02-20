@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import LoginPopup from "./login-popup";
 import SignupPopup from "./signup-popup";
@@ -8,6 +8,7 @@ import ResetPasswordPopup from "./reset-password-popup";
 import VerificationCodePopup from "./verification-code-popup";
 import NewPasswordPopup from "./new-password-popup";
 import { signIn } from "next-auth/react";
+import { useAuthFlow } from "@/hooks/useAuthFlow";
 
 // ✅ Only keep unique prop interfaces
 export interface LoginPopupProps {
@@ -43,118 +44,75 @@ export interface NewPasswordPopupProps {
   onBackToVerificationCode: () => void; // ✅ Add this line
 }
 
-export default function AuthPopup({ onClose }: AuthPopupProps) {
-  const [isAuthOpen, setIsAuthOpen] = useState(true);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  const [isVerificationCodeOpen, setIsVerificationCodeOpen] = useState(false);
-  const [isNewPasswordOpen, setIsNewPasswordOpen] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
-  // Track the verified code to pass to NewPasswordPopup
-  const [verifiedCode, setVerifiedCode] = useState<string | undefined>(undefined);
-  // Track the mode for verification popup
-  const [verificationMode, setVerificationMode] = useState<"signup" | "reset">("signup");
+export default function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
+  const { state, isHydrated, actions } = useAuthFlow();
 
+  // ✅ Sync external isOpen prop with internal auth flow state
+  // When parent sets isOpen=true (e.g. via "Log in / Sign up" button),
+  // open the auth flow to the 'main' step if it's currently closed.
+  useEffect(() => {
+    if (isOpen && isHydrated && state.step === 'closed') {
+      actions.openAuth();
+    }
+  }, [isOpen, isHydrated]);
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null);
 
-  const handleSignupClick = () => {
-    setIsAuthOpen(false);
-    setIsSignupOpen(true);
+  // If not yet hydrated from storage, show nothing or a loader
+  if (!isHydrated) return null;
+
+  // Handlers mapping to actions
+  const handleSignupClick = actions.openSignup;
+  const handleLoginClick = () => actions.openLogin();
+
+  const handleBackToAuth = actions.openAuth;
+
+  const handleLoginToSignup = actions.openSignup;
+  const handleSignupToLogin = () => actions.openLogin();
+
+  const handleOpenResetPassword = actions.openResetPassword;
+
+  const handleResetPasswordToLogin = () => actions.openLogin();
+
+  // Updated signature to match the hook
+  const handleOpenVerificationCode = (email: string, password?: string) => {
+    // If coming from reset password, mode is 'reset'
+    // If coming from signup, mode is 'signup'
+    const mode = state.step === 'reset-password' ? 'reset' : 'signup';
+    actions.openVerification(email, mode, password);
   };
 
-  const handleLoginClick = () => {
-    setIsAuthOpen(false);
-    setIsLoginOpen(true);
-  };
-
-  const handleBackToAuth = () => {
-    setIsLoginOpen(false);
-    setIsSignupOpen(false);
-    setIsResetPasswordOpen(false);
-    setIsVerificationCodeOpen(false);
-    setIsNewPasswordOpen(false);
-    setIsAuthOpen(true);
-  };
-  const handleLoginToSignup = () => {
-    setIsSignupOpen(true);
-    setIsLoginOpen(false);
-  };
-
-  const handleSignupToLogin = () => {
-    setIsSignupOpen(false);
-    setIsLoginOpen(true);
-  };
-
-  const handleOpenResetPassword = () => {
-    setIsLoginOpen(false);
-    setIsResetPasswordOpen(true);
-  };
-
-  const handleResetPasswordToLogin = () => {
-    setIsResetPasswordOpen(false);
-    setIsLoginOpen(true);
-  };
-
-  const handleOpenVerificationCode = (email: string) => {
-    setVerificationEmail(email);
-    // If we are coming from Reset Password popup (Lines 52-56 of reset-password-popup), assume reset mode
-    // logic: reset-password-popup calls this. 
-    // We can default to 'reset' here if we are currently in ResetPasswordOpen state
-    if (isResetPasswordOpen) {
-      setVerificationMode("reset");
-    } else {
-      setVerificationMode("signup");
-    }
-
-    setIsResetPasswordOpen(false);
-    setIsVerificationCodeOpen(true);
-  };
-
-  const handleVerificationCodeToResetPassword = () => {
-    setIsVerificationCodeOpen(false);
-    setIsResetPasswordOpen(true);
-  };
+  const handleVerificationCodeToResetPassword = actions.openResetPassword;
 
   const handleOpenNewPassword = (code?: string) => {
-    // If pased a code (from verification popup), store it
-    if (code) {
-      setVerifiedCode(code);
-    }
-    setIsVerificationCodeOpen(false);
-    setIsNewPasswordOpen(true);
+    if (code) actions.openNewPassword(code);
   };
 
   const handleNewPasswordToVerificationCode = () => {
-    setIsNewPasswordOpen(false);
-    setIsVerificationCodeOpen(true);
+    // We need email to go back, retrieved from state
+    if (state.email) {
+      actions.openVerification(state.email, state.verificationMode, state.tempPassword);
+    }
   };
 
   const handleNewPasswordSuccess = () => {
-    setIsNewPasswordOpen(false);
-    setIsLoginOpen(true);
-    // verificationEmail is already set, we will pass it to LoginPopup
+    // After success, go to login with email pre-filled
+    actions.openLogin(state.email);
   };
 
   const handleCloseAll = () => {
-    setIsAuthOpen(false);
-    setIsLoginOpen(false);
-    setIsSignupOpen(false);
-    setIsResetPasswordOpen(false);
-    setIsVerificationCodeOpen(false);
-    setIsNewPasswordOpen(false);
+    actions.closeAll();
     onClose();
   };
 
-  if (
-    !isAuthOpen &&
-    !isLoginOpen &&
-    !isSignupOpen &&
-    !isResetPasswordOpen &&
-    !isVerificationCodeOpen &&
-    !isNewPasswordOpen
-  )
-    return null;
+  // Derived state for rendering
+  const isAuthOpen = state.step === 'main';
+  const isLoginOpen = state.step === 'login';
+  const isSignupOpen = state.step === 'signup';
+  const isResetPasswordOpen = state.step === 'reset-password';
+  const isVerificationCodeOpen = state.step === 'verification';
+  const isNewPasswordOpen = state.step === 'new-password';
+
+  if (state.step === 'closed') return null;
 
   return (
     <>
@@ -278,7 +236,7 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           onClose={handleCloseAll}
           onOpenSignup={handleLoginToSignup}
           onOpenResetPassword={handleOpenResetPassword}
-          initialEmail={verificationEmail}
+          initialEmail={state.email}
         />
       )}
 
@@ -310,8 +268,9 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           onClose={handleCloseAll}
           onBackToResetPassword={handleVerificationCodeToResetPassword}
           onOpenNewPassword={handleOpenNewPassword}
-          email={verificationEmail}
-          mode={verificationMode}
+          email={state.email}
+          mode={state.verificationMode}
+          password={state.tempPassword}
         />
       )}
 
@@ -321,8 +280,8 @@ export default function AuthPopup({ onClose }: AuthPopupProps) {
           isOpen={isNewPasswordOpen}
           onClose={handleCloseAll}
           onBackToVerificationCode={handleNewPasswordToVerificationCode}
-          code={verifiedCode}
-          email={verificationEmail}
+          code={state.verifiedCode}
+          email={state.email}
           onSuccess={handleNewPasswordSuccess}
         />
       )}

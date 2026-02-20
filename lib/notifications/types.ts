@@ -50,6 +50,13 @@ export type NotificationType =
     | 'PASSWORD_CHANGED'
     | 'ACCOUNT_DELETED'
     | 'SELLER_WELCOME'
+    // Finance
+    | 'WITHDRAWAL_REQUEST'
+    | 'WITHDRAWAL_PROCESSED'
+    | 'WITHDRAWAL_REJECTED'
+    | 'BANK_ACCOUNT_ADDED'
+    // System
+    | 'SYSTEM_ALERT'
 
 /**
  * Input for creating a single notification
@@ -157,6 +164,15 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     PASSWORD_CHANGED: 'system',
     ACCOUNT_DELETED: 'system',
     SELLER_WELCOME: 'system',
+
+    // Finance → requests are system or orders? Let's say system for admins, orders for users?
+    WITHDRAWAL_REQUEST: 'system',
+    WITHDRAWAL_PROCESSED: 'orders', // Money related usually goes with orders/wallet
+    WITHDRAWAL_REJECTED: 'system',
+    BANK_ACCOUNT_ADDED: 'system',
+
+    // System Alerts
+    SYSTEM_ALERT: 'system',
 }
 
 /**
@@ -201,4 +217,9 @@ export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
     PASSWORD_CHANGED: '🔐',
     ACCOUNT_DELETED: '👋',
     SELLER_WELCOME: '🎉',
+    WITHDRAWAL_REQUEST: '💸',
+    WITHDRAWAL_PROCESSED: '💰',
+    WITHDRAWAL_REJECTED: '❌',
+    BANK_ACCOUNT_ADDED: '🏦',
+    SYSTEM_ALERT: '🚨',
 }

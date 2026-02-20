@@ -1,6 +1,6 @@
 "use server";
 
-import { decrypt } from "@/lib/encryption";
+import { decrypt, encrypt } from "@/lib/encryption";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 // careful, hooks are client side. We need server side auth check.
 // We should check session/cookie/jwt.
@@ -36,6 +36,9 @@ export async function updateVendorVerification(userId: string, data: {
     govIdType?: string;
     govIdNumber?: string;
     slug?: string;
+    govIdFrontUrl?: string;
+    govIdBackUrl?: string;
+    selfieUrl?: string;
 }) {
     // TODO: Add Admin Auth Check
     try {
@@ -48,7 +51,6 @@ export async function updateVendorVerification(userId: string, data: {
         }
 
         // 2. Update UserVerification (Identity)
-        // Find the latest verification request
         const latestVerification = await prisma.userVerification.findFirst({
             where: { userId },
             orderBy: { createdAt: 'desc' }
@@ -59,9 +61,14 @@ export async function updateVendorVerification(userId: string, data: {
                 where: { id: latestVerification.id },
                 data: {
                     taxIdType: data.taxIdType,
-                    taxId: data.taxId, // Note: In a real app, you might want to re-encrypt this if it was changed
+                    // Always re-encrypt sensitive data before saving
+                    taxId: data.taxId ? encrypt(data.taxId) : latestVerification.taxId,
                     govIdType: data.govIdType,
-                    govIdNumber: data.govIdNumber // Note: Same here, usually encrypted
+                    govIdNumber: data.govIdNumber ? encrypt(data.govIdNumber) : latestVerification.govIdNumber,
+                    // Persist image URLs if provided
+                    ...(data.govIdFrontUrl && { govIdFrontUrl: data.govIdFrontUrl }),
+                    ...(data.govIdBackUrl && { govIdBackUrl: data.govIdBackUrl }),
+                    ...(data.selfieUrl && { selfieUrl: data.selfieUrl }),
                 }
             });
         }
@@ -72,3 +79,39 @@ export async function updateVendorVerification(userId: string, data: {
         throw new Error("Failed to update vendor details");
     }
 }
+
+/**
+ * Asynchronously retrieves and decrypts only the sensitive fields (taxId, govIdNumber)
+ * for a vendor. Called client-side when the modal opens so the UI isn't blocked.
+ */
+export async function getDecryptedVendorData(userId: string): Promise<{ taxId: string; govIdNumber: string }> {
+    const verification = await prisma.userVerification.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: { taxId: true, govIdNumber: true }
+    });
+
+    let taxId = "";
+    let govIdNumber = "";
+
+    if (verification?.taxId) {
+        try {
+            taxId = decrypt(verification.taxId);
+        } catch {
+            // Value may be stored as plaintext (before encryption was applied)
+            // Fall back to the raw value so existing data is still accessible
+            taxId = verification.taxId;
+        }
+    }
+    if (verification?.govIdNumber) {
+        try {
+            govIdNumber = decrypt(verification.govIdNumber);
+        } catch {
+            // Same fallback for govIdNumber
+            govIdNumber = verification.govIdNumber;
+        }
+    }
+
+    return { taxId, govIdNumber };
+}
+

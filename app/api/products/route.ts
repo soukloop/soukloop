@@ -5,6 +5,7 @@ import { ProductSchema } from '@/lib/validations';
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { Role } from '@prisma/client'
+import { isAtLeastAdmin } from '@/lib/roles'
 import { generateUniqueSlug } from '@/lib/slug'
 import { notifySellerProductListed, notifyFollowersNewProduct, notifySellerProductPending } from '@/lib/notifications/templates/product-templates'
 
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
         const cityId = searchParams.get('cityId');
 
         // Check if admin
-        const isAdmin = session?.user?.role === Role.ADMIN;
+        const isAdmin = isAtLeastAdmin(session?.user?.role);
         const currentUserId = session?.user?.id;
 
         // Base filter for Guests/Public

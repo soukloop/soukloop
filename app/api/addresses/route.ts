@@ -12,7 +12,7 @@ const addressSchema = z.object({
     country: z.string().min(1, 'Country is required'),
     isDefault: z.boolean().optional().default(false),
     // Purpose flags - which purposes this address serves
-    isBusiness: z.boolean().optional().default(false),
+    isSellerAddress: z.boolean().optional().default(false),
     isShipping: z.boolean().optional().default(false),
     isBilling: z.boolean().optional().default(false)
 })
@@ -29,9 +29,18 @@ export async function GET(request: NextRequest) {
             )
         }
 
+        const { searchParams } = new URL(request.url)
+        const type = searchParams.get('type') // 'billing' | 'shipping' | 'seller'
+
+        const where: any = { userId: session.user.id }
+
+        if (type === 'billing') where.isBilling = true
+        if (type === 'shipping') where.isShipping = true
+        if (type === 'seller') where.isSellerAddress = true
+
         // Fetch addresses with user profile for name/phone
         const addresses = await prisma.address.findMany({
-            where: { userId: session.user.id },
+            where,
             include: {
                 user: {
                     include: {
@@ -102,10 +111,10 @@ export async function POST(request: NextRequest) {
                 state: data.state,
                 country: data.country,
                 isDefault: data.isDefault,
-                // Merge flags: if new request sets them true, enable them
-                ...(data.isBusiness && { isBusiness: true }),
-                ...(data.isShipping && { isShipping: true }),
-                ...(data.isBilling && { isBilling: true })
+                // Explicitly set flags from data, allowing toggling off
+                isSellerAddress: data.isSellerAddress,
+                isShipping: data.isShipping,
+                isBilling: data.isBilling
             },
             create: {
                 userId: session.user.id,
@@ -116,11 +125,19 @@ export async function POST(request: NextRequest) {
                 postalCode: data.postalCode,
                 country: data.country,
                 isDefault: data.isDefault,
-                isBusiness: data.isBusiness || false,
+                isSellerAddress: data.isSellerAddress || false,
                 isShipping: data.isShipping || false,
                 isBilling: data.isBilling || false
             }
         })
+
+        // Notify user about address update
+        const { notifyProfileUpdated } = await import('@/lib/notifications/templates/account-templates');
+        const userName = session.user.name || 'User';
+
+        notifyProfileUpdated(session.user.id, userName, 'Address').catch(err =>
+            console.error('Failed to send address update notification:', err)
+        );
 
         return NextResponse.json(address, { status: 201 })
 
