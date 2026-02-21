@@ -149,7 +149,7 @@ export default function WithdrawalClient({ initialData }: WithdrawalClientProps)
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-[#F9FAFB]">
+        <div className="flex min-h-screen flex-col bg-[#F9FAFB] sm:mt-[-9rem] mt-[-6.2rem]">
             <EcommerceHeader />
 
             <main className="flex-1 pb-12">
