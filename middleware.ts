@@ -16,22 +16,22 @@ const { auth } = NextAuth(authConfig)
 // ===== PUBLIC ROUTES =====
 const PUBLIC_PAGES = [
   '/',
-  '/',
   '/signup',
   '/forgot-password',
   '/reset-password',
   '/about-us',
-  '/contactus',
-  '/howtousepoints',
-  '/pricing', '/privacypolicy',
-  '/terms',
-  '/terms&conditions',
-  '/refundsandreturns',
-  '/FAQs',
+  '/contact-us',
+  '/how-to-use-points',
+  '/pricing',
+  '/privacy-policy',
+  '/terms-and-conditions',
+  '/refunds-and-returns',
+  '/faqs',
   '/help',
   '/products',
-  '/productdetails',
-  '/sellerprofile',
+  '/product',
+  '/seller-profile',
+  '/track-orders',
   '/auth/error',
 ];
 
@@ -51,8 +51,12 @@ const PUBLIC_API_PREFIXES = [
 // ===== ROLE-BASED ROUTE PROTECTION =====
 // Define the MINIMUM role required for each prefix
 const PROTECTED_ROUTES = [
-  { prefix: '/admin', minRole: Role.SUPPORT },
-  { prefix: '/api/admin', minRole: Role.SUPPORT },
+  { prefix: '/admin', minRole: Role.ADMIN },
+  { prefix: '/api/admin', minRole: Role.ADMIN },
+  // Allow all authenticated users (User, Seller, Admin) to access onboarding
+  { prefix: '/become-a-seller', minRole: Role.USER },
+  { prefix: '/api/seller/onboarding', minRole: Role.USER },
+  { prefix: '/api/seller/upload', minRole: Role.USER },
   { prefix: '/seller', minRole: Role.SELLER },
   { prefix: '/api/vendor', minRole: Role.SELLER },
   { prefix: '/api/seller', minRole: Role.SELLER },
@@ -68,15 +72,6 @@ export default auth(async (req) => {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-url', pathname);
 
-  // DEBUG: Start
-  if (pathname.startsWith('/admin')) {
-    console.log(`[Middleware] Checking path: ${pathname}`);
-    console.log(`[Middleware] isLoggedIn: ${isLoggedIn}`);
-    console.log(`[Middleware] User Role: ${userRole}`);
-    console.log(`[Middleware] Auth Object present: ${!!req.auth}`);
-  }
-  // DEBUG: End
-
   // 1. Skip static assets
   if (
     pathname.startsWith('/_next') ||
@@ -90,32 +85,7 @@ export default auth(async (req) => {
     });
   }
 
-  // 2. Strict Rate Limiting (Security)
-  if (req.method === "POST") {
-    // Login Rate Limit
-    if (pathname.includes("/api/auth/callback/credentials")) {
-      const res = await checkLoginRateLimit(req);
-      if (res) return res;
-    }
-    // Register Rate Limit
-    if (pathname.includes("/api/auth/register") || pathname.includes("/register")) { // Cover potential paths
-      const res = await checkRegisterRateLimit(req);
-      if (res) return res;
-    }
-    // Password Reset Rate Limit
-    if (pathname.includes("/api/auth/forgot-password") || pathname.includes("/api/auth/reset-password")) {
-      const res = await checkPasswordResetRateLimit(req);
-      if (res) return res;
-    }
-  }
-
-  // General API Rate Limit (for other API routes)
-  if (pathname.startsWith("/api") && !pathname.startsWith("/api/auth")) {
-    const res = await checkApiRateLimit(req);
-    if (res) return res;
-  }
-
-  // 3. Public pages and APIs - allow
+  // 2. Public Pages & APIs - Always Allow (Safe Gatekeeping)
   const isPublicPage = PUBLIC_PAGES.some(page => pathname === page || pathname.startsWith(page + '/'));
   const isPublicApi = PUBLIC_API_PREFIXES.some(prefix => pathname.startsWith(prefix));
 
@@ -127,41 +97,27 @@ export default auth(async (req) => {
     });
   }
 
-  // 4. Auth routes (signup, forgot-password) - redirect if logged in
+  // 3. Auth Routes (signup, login) - Redirect if logged in
   const isAuthRoute = ["/signup", "/forgot-password"].some(route => pathname.startsWith(route));
   if (isAuthRoute && isLoggedIn) {
     return NextResponse.redirect(new URL("/", nextUrl));
   }
 
-  // 5. Require login for everything else
+  // 4. Protected Routes - Require Login
   if (!isLoggedIn) {
     const loginUrl = new URL("/", nextUrl);
     loginUrl.searchParams.set("auth", "login");
     return NextResponse.redirect(loginUrl);
   }
 
-  // 5.5 FAIL-SAFE: If logged in but Role is missing (Corrupted Session), force logout
-  if (isLoggedIn && !userRole) {
-    // Determines if we should clear cookie or redirect to error
-    console.error("[Middleware] Critical: Valid Auto-Auth but NO ROLE found. Forcing logout.");
-    const response = NextResponse.redirect(new URL("/api/auth/signout", nextUrl));
-    return response;
-  }
-
-  // 6. Role-based access control
+  // 5. Role-Based Access Control
   for (const route of PROTECTED_ROUTES) {
     if (pathname.startsWith(route.prefix)) {
       const hasRequiredRole = hasRole(userRole as Role, route.minRole);
 
       if (!hasRequiredRole) {
-        // console.warn(`[Middleware] Unauthorized access attempt to ${pathname} by role ${userRole}`);
         return NextResponse.redirect(new URL("/", nextUrl));
       }
-      return NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      });
     }
   }
 

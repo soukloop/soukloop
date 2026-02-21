@@ -110,7 +110,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     callbacks: {
         async jwt({ token, user, trigger, session }) {
-            console.log(`[Auth] JWT Callback. Trigger: ${trigger}, HasSession: ${!!session}`);
+            // 1. Initial Sign In
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
@@ -119,31 +119,36 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 token.isActive = user.isActive;
             }
 
-            // Performance Check: Log if we are hitting DB
-            if (trigger === "update") {
-                console.log("[Auth] JWT Update Triggered. Token ID:", token.id);
+            // 2. ALWAYS Validate against DB on every check (Paranoid Mode)
+            // This ensures "Zombie Sessions" (deleted users) are killed immediately
+            if (token && token.id) {
                 try {
-                    // If session update provides specific data, use it (optimistic)
-                    if (session) {
-                        token = { ...token, ...session };
-                    }
-
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
-                        select: { id: true, role: true, isActive: true, image: true, name: true, tokenVersion: true }
+                        select: { id: true, role: true, isActive: true, image: true, tokenVersion: true }
                     });
 
-                    console.log("[Auth] DB User Fetch Result:", dbUser ? { id: dbUser.id, isActive: dbUser.isActive } : "null");
-
-                    if (dbUser) {
-                        token.role = dbUser.role;
-                        token.picture = dbUser.image;
-                        token.isActive = dbUser.isActive;
-                        token.tokenVersion = dbUser.tokenVersion;
-                        console.log("[Auth] Token updated with isActive:", token.isActive);
+                    if (!dbUser) {
+                        console.warn(`[Auth] User ${token.id} not found in DB. Invalidating token.`);
+                        return null; // This invalidates the session
                     }
+
+                    if (!dbUser.isActive) {
+                        console.warn(`[Auth] User ${token.id} is suspended. Invalidating token.`);
+                        return null; // This invalidates the session
+                    }
+
+                    // Sync latest state
+                    token.role = dbUser.role;
+                    token.picture = dbUser.image;
+                    token.isActive = dbUser.isActive;
+                    token.tokenVersion = dbUser.tokenVersion;
+
                 } catch (error) {
-                    console.error("Failed to refresh token data:", error);
+                    console.error("[Auth] Token validation error:", error);
+                    // In case of DB error, we might want to keep the session alive or fail closed.
+                    // For security, failing closed (returning null) is safer but risks outage during DB blips.
+                    // We'll keep the old token for now to be resilient.
                 }
             }
 
@@ -207,12 +212,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         },
         async signOut(data) {
             // In NextAuth v5, events receive a single object
-            const session = 'session' in data ? data.session : null;
-            const token = 'token' in data ? data.token : null;
+            const session = (data as any).session;
+            const token = (data as any).token;
 
             console.log('[Auth] User signed out:', { email: session?.user?.email });
             // Note: token might be needed if session is null
-            const userId = session?.user?.id || (token as any)?.id;
+            const userId = session?.user?.id || token?.id;
             if (userId) {
                 notifyLogout(userId).catch(err =>
                     console.error('[Auth] Failed to send logout notification:', err)

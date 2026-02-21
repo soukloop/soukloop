@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { prisma } from '@/lib/prisma'
+import { isAtLeastSeller } from '@/lib/roles'
 
 /**
  * GET /api/user/verification
@@ -31,8 +32,9 @@ export async function GET(request: NextRequest) {
                 reviewedAt: true,
                 rejectionReason: true,
 
-                // Identity Documents - only return presence, not actual values
+                // Identity Documents
                 govIdType: true,
+                govIdNumber: true,
                 govIdFrontUrl: true,
                 govIdBackUrl: true,
                 selfieUrl: true,
@@ -93,7 +95,7 @@ export async function POST(request: NextRequest) {
             select: { role: true }
         })
 
-        if (user?.role === 'SELLER') {
+        if (isAtLeastSeller(user?.role) && user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
             return NextResponse.json(
                 { error: 'You are already a seller' },
                 { status: 400 }

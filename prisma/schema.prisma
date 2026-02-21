@@ -87,7 +87,7 @@ model Address {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   isBilling           Boolean            @default(false) @map("is_billing")
-  isBusiness          Boolean            @default(false) @map("is_business")
+  isSellerAddress     Boolean            @default(false) @map("is_seller_address")
   isShipping          Boolean            @default(false) @map("is_shipping")
   user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   sellerVerifications UserVerification[]
@@ -781,8 +781,8 @@ model UserVerification {
   isActive           Boolean   @default(false) @map("is_active")
   supersededBy       String?   @map("superseded_by")
   version            Int       @default(1)
-  businessAddressId  String?   @map("business_address_id")
-  businessAddress    Address?  @relation(fields: [businessAddressId], references: [id])
+  sellerAddressId    String?   @map("seller_address_id")
+  sellerAddress      Address?  @relation(fields: [sellerAddressId], references: [id])
   reviewer           User?     @relation("ReviewedVerifications", fields: [reviewedBy], references: [id])
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -903,7 +903,7 @@ model DressStyle {
   id           String              @id @default(uuid())
   name         String
   slug         String
-  categoryType String              @map("category_type") @db.VarChar(20)
+  categoryType String              @map("category_type")  // display label only, not used for uniqueness
   categoryId   String?             @map("category_id")
   status       String              @default("approved") @db.VarChar(20)
   createdAt    DateTime            @default(now()) @map("created_at")
@@ -912,7 +912,8 @@ model DressStyle {
   products     Product[]
   category     Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
-  @@unique([slug, categoryType])
+  @@unique([slug, categoryId])      // same style name allowed across different categories, blocked within same one
+  @@index([categoryId])
   @@index([categoryType])
   @@index([status])
   @@map("dress_styles")
@@ -972,8 +973,6 @@ enum Role {
   SELLER
   ADMIN
   SUPER_ADMIN
-  MODERATOR
-  SUPPORT
 }
 
 enum KycStatus {

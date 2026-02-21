@@ -59,7 +59,7 @@ export default function ApplicationStatusBox({
                             {rejectionReason || "Common reasons include blurry documents or mismatched information. Please check your details and try again."}
                         </p>
                         <Button
-                            onClick={() => router.push('/become-seller/form')}
+                            onClick={() => router.push('/become-a-seller/form')}
                             className="h-12 w-full md:w-auto px-8 rounded-xl bg-red-600 font-bold text-white transition-all hover:bg-red-700"
                         >
                             Try Again
@@ -73,7 +73,7 @@ export default function ApplicationStatusBox({
         )
     }
 
-    if (status === 'approved' || (isExistingSeller && status === 'submitted')) {
+    if (status === 'approved' || isExistingSeller) {
         return (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex flex-col md:flex-row gap-8 items-center justify-between p-8 rounded-2xl bg-green-50/50 border border-green-100 shadow-sm">
@@ -117,7 +117,7 @@ export default function ApplicationStatusBox({
                     </p>
 
                     <Button
-                        onClick={() => router.push('/become-seller/form')}
+                        onClick={() => router.push('/become-a-seller/form')}
                         className="h-12 w-full md:w-auto px-8 rounded-xl bg-[#E87A3F] font-bold text-white transition-all hover:bg-[#d96d34] flex items-center justify-center gap-2"
                     >
                         Start Seller Verification <ArrowRight className="size-4" />

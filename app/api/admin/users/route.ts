@@ -11,7 +11,7 @@ async function checkAdminPermission(request: NextRequest) {
         return { success: false, status: 401, error: 'Unauthorized' };
     }
     const role = session.user.role;
-    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN' && role !== 'MODERATOR' && role !== 'SUPPORT') {
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
         return { success: false, status: 403, error: 'Forbidden' };
     }
     return { success: true };
@@ -20,7 +20,7 @@ async function checkAdminPermission(request: NextRequest) {
 const createAdminUserSchema = z.object({
     email: z.string().email('Invalid email'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
-    role: z.enum(['MODERATOR', 'ADMIN', 'SUPPORT'])
+    role: z.enum(['ADMIN'])
 })
 
 async function GET(request: NextRequest) {
@@ -56,7 +56,7 @@ async function GET(request: NextRequest) {
             where.role = { not: 'USER' };
         } else {
             // Default: List Admins
-            where.role = { in: ['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT'] };
+            where.role = { in: ['ADMIN', 'SUPER_ADMIN'] };
 
             if (query) {
                 const searchFilter = {

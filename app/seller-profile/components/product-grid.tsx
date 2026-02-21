@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
+import { useWishlist } from "@/hooks/use-wishlist";
+import WishlistButton from "@/components/ui/wishlist-button";
 
 interface Product {
   id: string;
@@ -23,6 +25,7 @@ interface ProductGridProps {
 
 export default function ProductGrid({ activeTab, products }: ProductGridProps) {
   const { addItem } = useCart();
+  const { isWithlisted, toggleWishlist } = useWishlist();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [animatingId, setAnimatingId] = useState<string | null>(null);
@@ -87,7 +90,14 @@ export default function ProductGrid({ activeTab, products }: ProductGridProps) {
                       ${product.originalPrice}
                     </span>
                   </div>
-                  <Heart className="size-6 fill-current text-red-500" />
+                  <WishlistButton
+                    isWishlisted={isWithlisted(product.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product.id);
+                    }}
+                    className="hover:scale-110"
+                  />
                 </div>
                 <h3 className="mb-2 font-semibold text-gray-900">
                   {product.name}

@@ -8,10 +8,10 @@ export default async function WithdrawEarningsPage() {
 
     // Server-side Auth Check
     if (!session || !session.user) {
-        redirect("/sign-in");
+        redirect("/?auth=login");
     }
 
-    if (session.user.role !== "SELLER") {
+    if (!['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(session.user.role)) {
         redirect("/seller/onboarding");
     }
 

@@ -14,7 +14,7 @@ export async function notifyAdminsWithdrawalRequested(
     bankName: string,
     accountLast4: string
 ) {
-    const emailHtml = render(
+    const emailHtml = await render(
         WithdrawalRequestedEmail({
             vendorName,
             amount,
@@ -25,10 +25,6 @@ export async function notifyAdminsWithdrawalRequested(
     );
 
     // Notify all admins
-    // Note: notifyAllAdmins needs to be updated or used such that it sends emails to all admins.
-    // The current create-notification.ts logic for notifyAllAdmins iterates through all admins.
-    // We pass `sendEmail: true` and `emailSubject`
-
     return notifyAllAdmins(
         'WITHDRAWAL_REQUEST',
         'New Withdrawal Request',
@@ -45,8 +41,6 @@ export async function notifyAdminsWithdrawalRequested(
             emailHtml
         }
     );
-    // Wait, notifyAllAdmins in create-notification.ts likely doesn't support custom HTML injection yet for bulk sending.
-    // I should check create-notification.ts again.
 }
 
 /**
@@ -57,7 +51,7 @@ export async function notifyWithdrawalProcessed(
     amount: number,
     vendorName?: string
 ) {
-    const emailHtml = render(
+    const emailHtml = await render(
         WithdrawalProcessedEmail({
             amount,
             vendorName,
@@ -72,6 +66,39 @@ export async function notifyWithdrawalProcessed(
         actionUrl: '/withdraw-earnings',
         sendEmail: true,
         emailSubject: 'Funds on the way! Withdrawal Processed 💵',
+        emailHtml
+    });
+}
+
+
+/**
+ * Notify vendor that a bank account has been added
+ */
+export async function notifyBankAdded(
+    userId: string,
+    bankName: string,
+    accountLast4: string,
+    userName: string
+) {
+    const { BankAddedEmail } = await import('@/lib/email-templates/finance/bank-added');
+
+    const emailHtml = await render(
+        BankAddedEmail({
+            vendorName: userName,
+            bankName,
+            last4: accountLast4,
+            actionUrl: `${baseUrl}/withdraw-earnings`
+        })
+    );
+
+    return createNotification({
+        userId,
+        type: 'BANK_ACCOUNT_ADDED', // Ensure this type exists or map to ACCOUNT_UPDATED
+        title: 'Bank Account Added 🏦',
+        message: `Your ${bankName} account ending in ${accountLast4} has been added.`,
+        actionUrl: '/withdraw-earnings',
+        sendEmail: true,
+        emailSubject: 'New Bank Account Added - SoukLoop',
         emailHtml
     });
 }

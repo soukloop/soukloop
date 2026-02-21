@@ -3,6 +3,7 @@ import type { Product, ProductImage, CreateProductDto, ProductsListResponse, Sea
 
 // Products service functions
 export async function list(params?: SearchParams): Promise<ApiResponse<ProductsListResponse>> {
+  // @ts-ignore
   return apiGet<ProductsListResponse>('/api/products', params)
 }
 

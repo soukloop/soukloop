@@ -126,9 +126,7 @@ export default function SubAdminManagementPage() {
             label: 'Role',
             options: [
                 { label: 'Super Admin', value: 'SUPER_ADMIN' },
-                { label: 'Admin', value: 'ADMIN' },
-                { label: 'Moderator', value: 'MODERATOR' },
-                { label: 'Support', value: 'SUPPORT' }
+                { label: 'Admin', value: 'ADMIN' }
             ]
         },
         {

@@ -1,10 +1,24 @@
 "use client";
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import StatusBadge from "@/components/admin/StatusBadge";
 import { CopyButton } from "@/components/ui/copy-button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { approvePayout, rejectPayout } from "@/src/features/admin/transactions/actions";
+import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface TransactionsClientProps {
     data: any[];
@@ -131,6 +145,85 @@ export default function TransactionsClient({
         },
     ];
 
+    const [actionLoading, setActionLoading] = useState(false);
+
+    // Approval State
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
+
+    // Rejection State
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+
+    const handleApproveClick = (payoutId: string) => {
+        setSelectedPayoutId(payoutId);
+        setShowApproveModal(true);
+    };
+
+    const handleRejectClick = (payoutId: string) => {
+        setSelectedPayoutId(payoutId);
+        setRejectReason(""); // Reset reason
+        setShowRejectModal(true);
+    };
+
+    const confirmApprove = async () => {
+        if (!selectedPayoutId) return;
+        setActionLoading(true);
+        try {
+            const result = await approvePayout(selectedPayoutId);
+            if (result.success) {
+                toast.success("Payout approved successfully");
+                setShowApproveModal(false);
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to approve payout");
+            }
+        } catch (error) {
+            toast.error("An error occurred");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const confirmReject = async () => {
+        if (!selectedPayoutId) return;
+        if (!rejectReason.trim()) {
+            toast.error("Please provide a reason for rejection");
+            return;
+        }
+        setActionLoading(true);
+        try {
+            const result = await rejectPayout(selectedPayoutId, rejectReason);
+            if (result.success) {
+                toast.success("Payout rejected successfully");
+                setShowRejectModal(false);
+                router.refresh();
+            } else {
+                toast.error(result.error || "Failed to reject payout");
+            }
+        } catch (error) {
+            toast.error("An error occurred");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const getPayoutActions = (payout: any) => {
+        if (payout.status !== 'pending') return [];
+        return [
+            {
+                label: "Approve Payout",
+                onClick: () => handleApproveClick(payout.id),
+                className: "text-green-600 hover:bg-green-50"
+            },
+            {
+                label: "Reject Payout",
+                onClick: () => handleRejectClick(payout.id),
+                className: "text-red-600 hover:bg-red-50"
+            }
+        ];
+    };
+
     return (
         <div className="space-y-6">
             {/* Tabs */}
@@ -206,6 +299,7 @@ export default function TransactionsClient({
             <DataTable
                 data={data}
                 columns={activeTab === 'transactions' ? transactionColumns : payoutColumns}
+                actions={activeTab === 'payouts' ? getPayoutActions : undefined}
                 pageSize={limit}
                 rowCount={totalCount}
                 currentPage={page}
@@ -221,6 +315,47 @@ export default function TransactionsClient({
                     { key: 'method', label: 'Payout Method', options: [{ label: 'Stripe Connect', value: 'stripe_connect' }, { label: 'Bank Transfer', value: 'BANK_TRANSFER' }] }
                 ]}
             />
+
+            {/* Approval Confirmation */}
+            <ConfirmDialog
+                isOpen={showApproveModal}
+                onClose={() => setShowApproveModal(false)}
+                onConfirm={confirmApprove}
+                title="Approve Payout"
+                message="Are you sure you want to approve this payout? The status will be marked as completed."
+                confirmText="Approve Payout"
+                type="success"
+                isLoading={actionLoading}
+            />
+
+            {/* Rejection Dialog (Custom) */}
+            <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reject Payout</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for rejecting this payout. The amount will be refunded to the seller's wallet.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Label htmlFor="rejectReason" className="mb-2 block">Rejection Reason</Label>
+                        <Input
+                            id="rejectReason"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            placeholder="e.g., Invalid bank details"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowRejectModal(false)} disabled={actionLoading}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={confirmReject} disabled={actionLoading}>
+                            {actionLoading ? "Rejecting..." : "Reject Payout"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -3,8 +3,9 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ProductWithRelations } from "@/types";
+import WishlistButton from "@/components/ui/wishlist-button";
 
 interface ProductImageGalleryProps {
     product: ProductWithRelations;
@@ -76,17 +77,15 @@ export default function ProductImageGallery({
 
                 {/* Wishlist Button */}
                 <div className="absolute right-4 top-4 z-10">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="size-11 rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-white hover:scale-110 transition-all border-none"
+                    <WishlistButton
+                        isWishlisted={isWishlist}
                         onClick={(e) => {
                             e.stopPropagation();
                             toggleWishlist(product.id);
                         }}
-                    >
-                        <Heart className={`size-6 ${isWishlist ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
-                    </Button>
+                        size="lg"
+                        className="size-11 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                    />
                 </div>
 
                 {/* Navigation Arrows (Images only) */}

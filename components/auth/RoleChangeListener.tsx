@@ -59,7 +59,7 @@ export function RoleChangeListener() {
                     if (newRole === 'SELLER') {
                         toast.loading('Redirecting to seller dashboard...');
                         setTimeout(() => router.push('/seller/products'), 500);
-                    } else if (['ADMIN', 'SUPER_ADMIN', 'MODERATOR'].includes(newRole)) {
+                    } else if (['ADMIN', 'SUPER_ADMIN'].includes(newRole)) {
                         toast.loading('Redirecting to admin dashboard...');
                         setTimeout(() => router.push('/admin/dashboard'), 500);
                     } else {

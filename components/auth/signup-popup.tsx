@@ -15,7 +15,7 @@ interface SignupPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenLogin: () => void;
-  onOpenVerificationCode: (email: string) => void;
+  onOpenVerificationCode: (email: string, password?: string) => void;
   onBackToAuth?: () => void;
 }
 
@@ -46,7 +46,7 @@ export default function SignupPopup({
         password,
         fullName: firstName,
       });
-      onOpenVerificationCode(email);
+      onOpenVerificationCode(email, password);
     } catch (err) {
       setError(
         err instanceof Error

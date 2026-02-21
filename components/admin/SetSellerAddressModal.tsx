@@ -8,18 +8,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { MapPin } from "lucide-react";
 
-interface SetBusinessAddressModalProps {
+interface SetSellerAddressModalProps {
     isOpen: boolean;
     onClose: () => void;
     verificationId: string;
     addresses: any[];
-    currentBusinessAddressId?: string;
+    currentSellerAddressId?: string;
     onSuccess: () => void;
 }
 
-export function SetBusinessAddressModal({ isOpen, onClose, verificationId, addresses, currentBusinessAddressId, onSuccess }: SetBusinessAddressModalProps) {
+export function SetSellerAddressModal({ isOpen, onClose, verificationId, addresses, currentSellerAddressId, onSuccess }: SetSellerAddressModalProps) {
     const [loading, setLoading] = useState(false);
-    const [selectedAddressId, setSelectedAddressId] = useState(currentBusinessAddressId || "");
+    const [selectedAddressId, setSelectedAddressId] = useState(currentSellerAddressId || "");
 
     const handleSubmit = async () => {
         if (!selectedAddressId) return;
@@ -31,13 +31,13 @@ export function SetBusinessAddressModal({ isOpen, onClose, verificationId, addre
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'update_details',
-                    details: { businessAddressId: selectedAddressId }
+                    details: { sellerAddressId: selectedAddressId }
                 })
             });
 
-            if (!res.ok) throw new Error('Failed to update business address');
+            if (!res.ok) throw new Error('Failed to update seller address');
 
-            toast.success("Business address updated");
+            toast.success("Seller address updated");
             onSuccess();
             onClose();
         } catch (error: any) {
@@ -51,7 +51,7 @@ export function SetBusinessAddressModal({ isOpen, onClose, verificationId, addre
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Set Business Address</DialogTitle>
+                    <DialogTitle>Set Seller Address</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
                     <RadioGroup value={selectedAddressId} onValueChange={setSelectedAddressId}>
@@ -81,7 +81,7 @@ export function SetBusinessAddressModal({ isOpen, onClose, verificationId, addre
                 <DialogFooter>
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
                     <Button onClick={handleSubmit} disabled={loading || !selectedAddressId}>
-                        {loading ? 'Saving...' : 'Set as Business Address'}
+                        {loading ? 'Saving...' : 'Set as Seller Address'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

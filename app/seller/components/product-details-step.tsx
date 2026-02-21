@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { ProductData } from "./types";
 import RequestDressStyleModal from "./request-dress-style-modal";
+import AddOptionModal from "./add-option-modal";
 import { Loader2 } from "lucide-react";
 import { getDressStylesByCategory, createBrand, createMaterial, createOccasion } from "../actions";
-
 import { Label } from "@/components/ui/label";
 
 interface ProductDetailsStepProps {
@@ -21,14 +21,27 @@ interface DressStyleOption {
     isPending: boolean;
 }
 
+// Controls which "Add" modal is currently open
+type AddModalType = "brand" | "material" | "occasion" | null;
+
 export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsStepProps) {
     const [dressStyles, setDressStyles] = useState<DressStyleOption[]>([]);
     const [isLoadingStyles, setIsLoadingStyles] = useState(false);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [requestedStyleName, setRequestedStyleName] = useState("");
 
+    // ── Add-option modal state (shared for Brand / Material / Occasion) ──
+    const [addModalType, setAddModalType] = useState<AddModalType>(null);
+    const [addModalInitialName, setAddModalInitialName] = useState("");
 
-    // ...
+    const openAddModal = (type: AddModalType, prefilledName = "") => {
+        setAddModalType(type);
+        setAddModalInitialName(prefilledName);
+    };
+    const closeAddModal = () => {
+        setAddModalType(null);
+        setAddModalInitialName("");
+    };
 
     // Fetch dress styles when category changes
     useEffect(() => {
@@ -42,118 +55,90 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
             try {
                 const styles = await getDressStylesByCategory(data.categoryId);
                 if (styles) {
-                    // Map to expected format (server action returns {id, name}, component expects more fields?)
-                    // Interface DressStyleOption { id: string; name: string; status: string; isPending: boolean; }
-                    // We can map status='approved', isPending=false for fetched ones.
-                    setDressStyles(styles.map((s: any) => ({ ...s, status: 'approved', isPending: false })));
+                    setDressStyles(styles.map((s: any) => ({ ...s, status: "approved", isPending: false })));
                 }
             } catch (error) {
-                console.error('Failed to fetch dress styles:', error);
+                console.error("Failed to fetch dress styles:", error);
             } finally {
                 setIsLoadingStyles(false);
             }
         };
-
         fetchDressStyles();
     }, [data.categoryId]);
-
-    // Close when clicking outside - removed as FormSelect uses Popover
 
     // Reset gender if incompatible with category
     useEffect(() => {
         const cat = data.category?.toLowerCase();
-        if (cat === 'men' && data.gender === 'Female') onUpdate({ gender: "" });
-        if (cat === 'women' && data.gender === 'Male') onUpdate({ gender: "" });
+        if (cat === "men" && data.gender === "Female") onUpdate({ gender: "" });
+        if (cat === "women" && data.gender === "Male") onUpdate({ gender: "" });
     }, [data.category, data.gender]);
 
     // Fetched Data States
-    const [materials, setMaterials] = useState<{ id: string, name: string }[]>([]);
-    const [occasionsList, setOccasionsList] = useState<{ id: string, name: string }[]>([]);
-    const [colorsList, setColorsList] = useState<{ id: string, name: string }[]>([]);
+    const [materials, setMaterials] = useState<{ id: string; name: string }[]>([]);
+    const [occasionsList, setOccasionsList] = useState<{ id: string; name: string }[]>([]);
+    const [colorsList, setColorsList] = useState<{ id: string; name: string }[]>([]);
+    const [states, setStates] = useState<{ id: string; name: string }[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
 
-    // Loading States for initial data
     const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
     const [isLoadingOccasions, setIsLoadingOccasions] = useState(false);
     const [isLoadingColors, setIsLoadingColors] = useState(false);
-
-    // Location States
-    const [states, setStates] = useState<{ id: string, name: string }[]>([]);
     const [isLoadingStates, setIsLoadingStates] = useState(false);
+    const [isLoadingBrands, setIsLoadingBrands] = useState(false);
 
     // Initial Data Fetching
     useEffect(() => {
-        // Materials
         setIsLoadingMaterials(true);
-        fetch('/api/materials')
+        fetch("/api/materials")
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setMaterials(data);
-            })
+            .then(d => { if (Array.isArray(d)) setMaterials(d); })
             .catch(err => console.error("Failed to fetch materials", err))
             .finally(() => setIsLoadingMaterials(false));
 
-        // Occasions
         setIsLoadingOccasions(true);
-        fetch('/api/occasions')
+        fetch("/api/occasions")
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setOccasionsList(data);
-            })
+            .then(d => { if (Array.isArray(d)) setOccasionsList(d); })
             .catch(err => console.error("Failed to fetch occasions", err))
             .finally(() => setIsLoadingOccasions(false));
 
-        // Colors
         setIsLoadingColors(true);
-        fetch('/api/colors')
+        fetch("/api/colors")
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setColorsList(data);
-            })
+            .then(d => { if (Array.isArray(d)) setColorsList(d); })
             .catch(err => console.error("Failed to fetch colors", err))
             .finally(() => setIsLoadingColors(false));
 
-        // States
         setIsLoadingStates(true);
-        fetch('/api/locations/states')
+        fetch("/api/locations/states")
             .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) setStates(data);
-            })
+            .then(d => { if (Array.isArray(d)) setStates(d); })
             .catch(err => console.error("Failed to fetch states", err))
             .finally(() => setIsLoadingStates(false));
+
+        setIsLoadingBrands(true);
+        fetch("/api/brands")
+            .then(res => res.json())
+            .then(d => { if (Array.isArray(d)) setBrands(d); })
+            .catch(err => console.error("Failed to fetch brands", err))
+            .finally(() => setIsLoadingBrands(false));
     }, []);
 
+    // ── Dress Style helpers ──
+    const selectedDressStyle = dressStyles.find(s => s.id === data.dressStyleId || s.name === data.dress);
+    const isPendingDressSelected = selectedDressStyle?.isPending || false;
 
-
-    // Handle Adding New Options (Optimistic)
-    const handleAddNewOption = (type: 'material' | 'occasion' | 'color', value: string) => {
-        if (!value.trim()) return;
-        const val = value.trim();
-        if (type === 'material') {
-            const existing = materials.find(m => m.name.toLowerCase() === val.toLowerCase());
-            if (existing) {
-                onUpdate({ fabric: existing.name, materialId: existing.id });
-            } else {
-                onUpdate({ fabric: val, materialId: "" });
-            }
-        } else if (type === 'occasion') {
-            const existing = occasionsList.find(o => o.name.toLowerCase() === val.toLowerCase());
-            if (existing) {
-                onUpdate({ occasion: existing.name, occasionId: existing.id });
-            } else {
-                onUpdate({ occasion: val, occasionId: "" });
-            }
-        } else if (type === 'color') {
-            const existing = colorsList.find(c => c.name.toLowerCase() === val.toLowerCase());
-            if (existing) {
-                onUpdate({ color: existing.name, colorId: existing.id });
-            } else {
-                onUpdate({ color: val, colorId: "" });
-            }
-        }
+    const handleDressSelect = (styleId: string, styleName: string, isPending: boolean) => {
+        onUpdate({ dress: styleName, dressStyleId: styleId, hasPendingStyle: isPending });
     };
 
-    // Colors
+    const handleStyleRequested = (newStyle: DressStyleOption) => {
+        setDressStyles(prev => [...prev, newStyle]);
+        handleDressSelect(newStyle.id, newStyle.name, true);
+        setShowRequestModal(false);
+    };
+
+    // ── Color rendering ──
     const displayColors = colorsList.map(c => ({
         label: c.name,
         value: c.name,
@@ -161,13 +146,12 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
     }));
 
     const renderColorOption = (option: any) => {
-        // Fallback map if hexCode missing from DB
         const simpleMap: Record<string, string> = {
             "Black": "#000000", "White": "#FFFFFF", "Blue": "#0000FF", "Red": "#FF0000",
             "Green": "#008000", "Yellow": "#FFFF00", "Orange": "#FFA500", "Purple": "#800080",
             "Pink": "#FFC0CB", "Grey": "#808080", "Brown": "#A52A2A", "Beige": "#F5F5DC",
         };
-        const bg = option.hex || simpleMap[option.label] || '#eee';
+        const bg = option.hex || simpleMap[option.label] || "#eee";
         return (
             <div className="flex items-center gap-2">
                 <span className="block h-4 w-4 rounded-full border border-gray-200 shrink-0" style={{ background: bg }} />
@@ -176,57 +160,48 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
         );
     };
 
-    // Get current selected dress style
-    const selectedDressStyle = dressStyles.find(s => s.id === data.dressStyleId || s.name === data.dress);
-    const isPendingDressSelected = selectedDressStyle?.isPending || false;
-
-    // Handle dress style selection
-    const handleDressSelect = (styleId: string, styleName: string, isPending: boolean) => {
-        onUpdate({
-            dress: styleName,
-            dressStyleId: styleId,
-            hasPendingStyle: isPending
-        });
-    };
-
-    // Handle new style request creation
-    const handleStyleRequested = (newStyle: DressStyleOption) => {
-        setDressStyles(prev => [...prev, newStyle]);
-        handleDressSelect(newStyle.id, newStyle.name, true);
-        setShowRequestModal(false);
-    };
-
-    // Brands Logic (Existing)
-    const [brands, setBrands] = useState<{ id: string, name: string }[]>([]);
-    const [isLoadingBrands, setIsLoadingBrands] = useState(false);
-
-    useEffect(() => {
-        const fetchBrands = async () => {
-            setIsLoadingBrands(true);
-            try {
-                const res = await fetch('/api/brands');
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    setBrands(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch brands', error);
-            } finally {
-                setIsLoadingBrands(false);
-            }
-        };
-        fetchBrands();
-    }, []);
-
-    const handleAddBrand = (newBrand: string) => {
-        if (!newBrand || !newBrand.trim()) return;
-        const brandName = newBrand.trim();
-        const existing = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-        if (existing) {
-            onUpdate({ brand: existing.name, brandId: existing.id });
-        } else {
-            onUpdate({ brand: brandName, brandId: "" });
+    // ── Modal confirm handlers ──
+    const handleConfirmAddBrand = async (brandName: string) => {
+        setIsLoadingBrands(true);
+        const newBrand = await createBrand(brandName);
+        setIsLoadingBrands(false);
+        if (newBrand) {
+            setBrands(prev => {
+                // Avoid duplicates if it already exists
+                if (prev.find(b => b.id === newBrand.id)) return prev;
+                return [...prev, newBrand];
+            });
+            onUpdate({ brand: newBrand.name, brandId: newBrand.id });
         }
+        closeAddModal();
+    };
+
+    const handleConfirmAddMaterial = async (materialName: string) => {
+        setIsLoadingMaterials(true);
+        const newMat = await createMaterial(materialName);
+        setIsLoadingMaterials(false);
+        if (newMat) {
+            setMaterials(prev => {
+                if (prev.find(m => m.id === newMat.id)) return prev;
+                return [...prev, newMat];
+            });
+            onUpdate({ fabric: newMat.name, materialId: newMat.id });
+        }
+        closeAddModal();
+    };
+
+    const handleConfirmAddOccasion = async (occasionName: string) => {
+        setIsLoadingOccasions(true);
+        const newOcc = await createOccasion(occasionName);
+        setIsLoadingOccasions(false);
+        if (newOcc) {
+            setOccasionsList(prev => {
+                if (prev.find(o => o.id === newOcc.id)) return prev;
+                return [...prev, newOcc];
+            });
+            onUpdate({ occasion: newOcc.name, occasionId: newOcc.id });
+        }
+        closeAddModal();
     };
 
     return (
@@ -241,21 +216,11 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                     onUpdate({ brand: val, brandId: existing?.id || "" });
                 }}
                 options={brands.map(b => b.name)}
-                onAddNew={handleAddBrand}
                 isLoading={isLoadingBrands}
                 placeholder="Select or add brand"
                 actionItem={{
                     label: "Add new brand",
-                    onClick: async (query) => {
-                        if (!query) return;
-                        setIsLoadingBrands(true);
-                        const newBrand = await createBrand(query);
-                        setIsLoadingBrands(false);
-                        if (newBrand) {
-                            setBrands(prev => [...prev, newBrand]);
-                            onUpdate({ brand: newBrand.name, brandId: newBrand.id });
-                        }
-                    }
+                    onClick: (query) => openAddModal("brand", query)
                 }}
                 hideDefaultAddOption={true}
             />
@@ -293,8 +258,8 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                     value={data.gender}
                     options={["Male", "Female", "Unisex"].filter(g => {
                         const cat = data.category?.toLowerCase();
-                        if (cat === 'men' && g === 'Female') return false;
-                        if (cat === 'women' && g === 'Male') return false;
+                        if (cat === "men" && g === "Female") return false;
+                        if (cat === "women" && g === "Male") return false;
                         return true;
                     })}
                     onChange={(val) => onUpdate({ gender: val })}
@@ -311,21 +276,11 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                     onUpdate({ fabric: val, materialId: existing?.id || "" });
                 }}
                 options={materials.map(m => m.name)}
-                onAddNew={(val) => handleAddNewOption('material', val)}
                 placeholder="Select material"
                 isLoading={isLoadingMaterials}
                 actionItem={{
                     label: "Add new fabric",
-                    onClick: async (query) => {
-                        if (!query) return;
-                        setIsLoadingMaterials(true);
-                        const newMat = await createMaterial(query);
-                        setIsLoadingMaterials(false);
-                        if (newMat) {
-                            setMaterials(prev => [...prev, newMat]);
-                            onUpdate({ fabric: newMat.name, materialId: newMat.id });
-                        }
-                    }
+                    onClick: (query) => openAddModal("material", query)
                 }}
                 hideDefaultAddOption={true}
             />
@@ -355,10 +310,6 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                             }
                         }}
                         options={dressStyles.filter(s => s && s.name).map(s => s.name)}
-                        onAddNew={(val) => {
-                            setRequestedStyleName(val);
-                            setShowRequestModal(true);
-                        }}
                         isLoading={isLoadingStyles}
                         placeholder="Search or request style"
                         actionItem={{
@@ -385,11 +336,10 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                     />
                 )}
 
-                {/* Warning for pending dress style */}
                 {isPendingDressSelected && (
                     <div className="p-3 rounded-lg bg-orange-50 border border-orange-100 animate-in fade-in slide-in-from-top-2">
                         <p className="text-sm text-orange-700">
-                            <strong>Note:</strong> This dress style is pending approval. Product is shown to the user after the dress style is approved.
+                            <strong>Note:</strong> This dress style is pending approval. Your product will be shown after the style is approved.
                         </p>
                     </div>
                 )}
@@ -404,21 +354,11 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                     onUpdate({ occasion: val, occasionId: existing?.id || "" });
                 }}
                 options={occasionsList.map(o => o.name)}
-                onAddNew={(val) => handleAddNewOption('occasion', val)}
                 placeholder="Select Occasion"
                 isLoading={isLoadingOccasions}
                 actionItem={{
                     label: "Add new occasion",
-                    onClick: async (query) => {
-                        if (!query) return;
-                        setIsLoadingOccasions(true);
-                        const newOcc = await createOccasion(query);
-                        setIsLoadingOccasions(false);
-                        if (newOcc) {
-                            setOccasionsList(prev => [...prev, newOcc]);
-                            onUpdate({ occasion: newOcc.name, occasionId: newOcc.id });
-                        }
-                    }
+                    onClick: (query) => openAddModal("occasion", query)
                 }}
                 hideDefaultAddOption={true}
             />
@@ -431,23 +371,51 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                 <FormSelect
                     label="State"
                     value={data.state || ""}
-                    onChange={(val) => {
-                        onUpdate({ state: val });
-                    }}
+                    onChange={(val) => onUpdate({ state: val })}
                     options={states.map(s => s.name)}
                     isLoading={isLoadingStates}
                     placeholder="Select State"
                 />
             </div>
 
+            {/* ── Modals ── */}
+
             {/* Request Dress Style Modal */}
             <RequestDressStyleModal
                 isOpen={showRequestModal}
                 onClose={() => setShowRequestModal(false)}
                 categoryId={data.categoryId}
-                categoryType={data.category || ''}
+                categoryName={data.category || ""}
                 onStyleRequested={handleStyleRequested}
                 initialName={requestedStyleName}
+            />
+
+            {/* Generic Add-Option Modal — shared for Brand / Material / Occasion */}
+            <AddOptionModal
+                isOpen={addModalType !== null}
+                onClose={closeAddModal}
+                label={
+                    addModalType === "brand" ? "Brand" :
+                        addModalType === "material" ? "Fabric" :
+                            addModalType === "occasion" ? "Occasion" : ""
+                }
+                existingOptions={
+                    addModalType === "brand" ? brands.map(b => b.name) :
+                        addModalType === "material" ? materials.map(m => m.name) :
+                            addModalType === "occasion" ? occasionsList.map(o => o.name) : []
+                }
+                onConfirm={
+                    addModalType === "brand" ? handleConfirmAddBrand :
+                        addModalType === "material" ? handleConfirmAddMaterial :
+                            addModalType === "occasion" ? handleConfirmAddOccasion :
+                                async () => { }
+                }
+                initialName={addModalInitialName}
+                isLoading={
+                    addModalType === "brand" ? isLoadingBrands :
+                        addModalType === "material" ? isLoadingMaterials :
+                            addModalType === "occasion" ? isLoadingOccasions : false
+                }
             />
         </div>
     );

@@ -115,7 +115,7 @@ export async function POST(
             }
             const validated = validation.data
 
-            // Upsert: Find existing address by location OR create new with isBusiness=true
+            // Upsert: Find existing address by location OR create new with isSellerAddress=true
             const address = await prisma.address.upsert({
                 where: {
                     unique_address_location: {
@@ -126,8 +126,8 @@ export async function POST(
                     }
                 },
                 update: {
-                    // Mark existing address as also being a business address
-                    isBusiness: true,
+                    // Mark existing address as also being a seller address
+                    isSellerAddress: true,
                     address2: validated.addressLine2 || null,
                     state: validated.state,
                     country: validated.country
@@ -140,7 +140,7 @@ export async function POST(
                     state: validated.state,
                     postalCode: validated.postalCode,
                     country: validated.country,
-                    isBusiness: true,
+                    isSellerAddress: true,
                     isDefault: false
                 }
             })
@@ -148,7 +148,7 @@ export async function POST(
             // Link to verification AND keep legacy fields for backward compatibility
             updateData = {
                 ...validated,
-                businessAddressId: address.id
+                sellerAddressId: address.id
             }
         } else {
             return NextResponse.json(

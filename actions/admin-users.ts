@@ -13,7 +13,7 @@ export async function revealSensitiveData(verificationId: string, field: 'govIdN
     const { auth } = await import("@/auth");
     const session = await auth();
 
-    if (!session?.user?.id || !['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT'].includes(session.user.role || '')) {
+    if (!session?.user?.id || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
         throw new Error("Unauthorized");
     }
 

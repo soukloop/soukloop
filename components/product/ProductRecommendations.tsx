@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/product-card";
 import { useProducts } from "@/hooks/useProducts";
 import { ProductWithRelations } from "@/types";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 interface ProductRecommendationsProps {
     product: ProductWithRelations;
@@ -12,6 +13,8 @@ interface ProductRecommendationsProps {
 
 export default function ProductRecommendations({ product }: ProductRecommendationsProps) {
     if (!product) return null;
+
+    const { isWithlisted, toggleWishlist } = useWishlist();
 
     const vendorUserId = product.vendor?.userId;
 
@@ -73,7 +76,7 @@ export default function ProductRecommendations({ product }: ProductRecommendatio
                                 size: p.size,
                                 price: `$${p.price}`,
                                 originalPrice: p.comparePrice ? `$${p.comparePrice}` : "",
-                                isWishlist: false,
+                                isWishlist: isWithlisted(p.id),
                                 vendorId: p.vendorId,
                                 vendorUserId: p.vendor?.userId,
                                 createdAt: p.createdAt,
@@ -83,6 +86,7 @@ export default function ProductRecommendations({ product }: ProductRecommendatio
                                 // Add necessary props for card
                             }}
                             handleAddToCart={() => { }} // Placeholder as we might not need add-to-cart in these small cards or it should be handled inside ProductCard
+                            toggleWishlist={() => toggleWishlist(p.id)}
                         />
                     ))}
                 </div>

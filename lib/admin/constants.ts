@@ -1,7 +1,7 @@
 // Admin Panel Constants
 // Static configuration and data extracted from the monolithic page.tsx
 
-import { SidebarItem, StatsCard, Supporter } from './types';
+import { SidebarItem, StatsCard } from './types';
 
 import {
     LayoutDashboard,
@@ -186,14 +186,7 @@ export const DEFAULT_STATS_CARDS: StatsCard[] = [
 ];
 
 // ==================== SUPPORTERS (for assign modal) ====================
-export const SUPPORTERS: Supporter[] = [
-    { id: 1, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-1.png" },
-    { id: 2, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-2.png" },
-    { id: 3, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-3.png" },
-    { id: 4, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-4.png" },
-    { id: 5, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-5.png" },
-    { id: 6, name: "Florencio Dorrance", team: "Supporter team", avatar: "/supporter-6.png" },
-];
+
 
 // ==================== PENDING ACTIONS ====================
 export const PENDING_ACTIONS = [

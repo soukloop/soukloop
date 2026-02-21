@@ -179,3 +179,140 @@ export async function getAdminPayouts({
         totalPages: Math.ceil(totalCount / limit)
     };
 }
+
+
+
+// --- Status Updates ---
+
+/**
+ * Approve a payout request
+ */
+export async function approvePayout(payoutId: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        await requirePermission(session.user.id, "transactions", "edit");
+
+        const payout = await prisma.payout.findUnique({
+            where: { id: payoutId },
+            include: {
+                vendor: { include: { user: true } }
+            }
+        });
+
+        if (!payout) throw new Error("Payout not found");
+        if (payout.status !== 'pending') throw new Error("Payout is not pending");
+
+        // Update Payout
+        const updatedPayout = await prisma.payout.update({
+            where: { id: payoutId },
+            data: {
+                status: 'completed',
+                processedAt: new Date()
+            }
+        });
+
+        // Notify Vendor
+        const { WithdrawalProcessedEmail } = await import('@/lib/email-templates/finance/withdrawal-processed');
+
+        await import('@/lib/notifications/create-notification').then(mod =>
+            mod.createNotification({
+                userId: payout.vendor.userId,
+                type: 'SYSTEM_ALERT', // or a specific PAYMENT type if available
+                title: 'Withdrawal Processed',
+                message: `Your withdrawal of $${Number(payout.amount).toFixed(2)} has been processed.`,
+                actionUrl: '/withdraw-earnings',
+                sendEmail: true,
+                emailSubject: `Withdrawal Processed - ${process.env.NEXT_PUBLIC_APP_NAME || 'SoukLoop'}`,
+                emailReact: WithdrawalProcessedEmail({
+                    amount: Number(payout.amount),
+                    currency: payout.currency,
+                    vendorName: payout.vendor.user.name || undefined,
+                    transactionId: payout.id
+                })
+            })
+        );
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to approve payout:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Reject a payout request
+ */
+export async function rejectPayout(payoutId: string, reason: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        await requirePermission(session.user.id, "transactions", "edit");
+
+        const payout = await prisma.payout.findUnique({
+            where: { id: payoutId },
+            include: {
+                vendor: { include: { user: true } }
+            }
+        });
+
+        if (!payout) throw new Error("Payout not found");
+        if (payout.status !== 'pending') throw new Error("Payout is not pending");
+
+        // Transaction: Mark as rejected AND Refund to Wallet
+        await prisma.$transaction([
+            // 1. Update Payout Status
+            prisma.payout.update({
+                where: { id: payoutId },
+                data: {
+                    status: 'rejected', // or 'failed' based on your preference, sticking to rejected for clarity
+                    processedAt: new Date()
+                }
+            }),
+            // 2. Refund to Wallet
+            prisma.vendor.update({
+                where: { id: payout.vendorId },
+                data: {
+                    walletBalance: { increment: payout.amount }
+                }
+            }),
+            // 3. Create Wallet Transaction Record
+            prisma.walletTransaction.create({
+                data: {
+                    vendorId: payout.vendorId,
+                    amount: payout.amount,
+                    type: 'REFUND', // Ensure this enum exists or use string if not enum
+                    description: `Refund for rejected withdrawal: ${reason}`,
+                    referenceId: payout.id
+                }
+            })
+        ]);
+
+        // Notify Vendor
+        const { WithdrawalRejectedEmail } = await import('@/lib/email-templates/finance/withdrawal-rejected');
+
+        await import('@/lib/notifications/create-notification').then(mod =>
+            mod.createNotification({
+                userId: payout.vendor.userId,
+                type: 'SYSTEM_ALERT',
+                title: 'Withdrawal Rejected',
+                message: `Your withdrawal of $${Number(payout.amount).toFixed(2)} was rejected. Reason: ${reason}`,
+                actionUrl: '/withdraw-earnings',
+                sendEmail: true,
+                emailSubject: `Withdrawal Rejected - ${process.env.NEXT_PUBLIC_APP_NAME || 'SoukLoop'}`,
+                emailReact: WithdrawalRejectedEmail({
+                    userName: payout.vendor.user.name || undefined,
+                    amount: `$${Number(payout.amount).toFixed(2)}`,
+                    reason: reason,
+                    date: payout.createdAt.toLocaleDateString(),
+                    dashboardUrl: `${process.env.NEXTAUTH_URL}/withdraw-earnings`
+                })
+            })
+        );
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to reject payout:", error);
+        return { success: false, error: error.message };
+    }
+}

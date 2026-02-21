@@ -34,7 +34,7 @@ export default async function OverviewTab({ productId }: OverviewTabProps) {
                         include: {
                             profile: true,
                             addresses: {
-                                where: { isBusiness: true },
+                                where: { isSellerAddress: true },
                                 take: 1
                             }
                         }

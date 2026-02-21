@@ -71,6 +71,11 @@ export async function updateProfileBannerAction(url: string) {
 
         if (!user) throw new Error("User not found");
 
+        const allowedRoles = ['SELLER', 'ADMIN', 'SUPER_ADMIN'];
+        if (!allowedRoles.includes(user.role)) {
+            throw new Error("You do not have permission to update the banner");
+        }
+
         await prisma.userProfile.upsert({
             where: { userId: user.id },
             update: { bannerImage: url },

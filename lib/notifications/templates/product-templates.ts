@@ -72,13 +72,26 @@ function generateProductEmailHtml(title: string, message: string, data: ProductD
     `
 }
 
+import { render } from '@react-email/render';
+
 /**
  * Notify seller that their product was successfully listed (LIVE)
  */
 export async function notifySellerProductListed(sellerId: string, data: ProductData) {
+  const { ProductStatusEmail } = await import('@/lib/email-templates/product/product-status'); // Dynamic import
   const actionUrl = `/product/${data.productSlug || data.productId}`
   const title = 'Product Listed Successfully! 📦'
   const message = `Your product is now live on SoukLoop.`
+
+  const emailHtml = render(
+    ProductStatusEmail({
+      productName: data.productName,
+      productImage: data.imageUrl,
+      productPrice: data.price,
+      status: 'Listed', // Or 'Live'
+      actionUrl: `${process.env.NEXTAUTH_URL}${actionUrl}`
+    })
+  );
 
   return createNotification({
     userId: sellerId,
@@ -89,7 +102,7 @@ export async function notifySellerProductListed(sellerId: string, data: ProductD
     actionUrl,
     sendEmail: true,
     emailSubject: `Product Listed - ${data.productName}`,
-    emailHtml: generateProductEmailHtml(title, message, data, actionUrl)
+    emailHtml
   })
 }
 
@@ -97,20 +110,32 @@ export async function notifySellerProductListed(sellerId: string, data: ProductD
  * Notify seller that their product is pending due to Dress Style approval
  */
 export async function notifySellerProductPending(sellerId: string, data: ProductData, styleName?: string) {
+  const { ProductStatusEmail } = await import('@/lib/email-templates/product/product-status');
   const actionUrl = `/product/${data.productSlug || data.productId}`
   const title = 'Product Listed (Pending Approval) ⏳'
-  const message = `Your product "${data.productName}" has been listed, but it will only be visible to the public once the requested dress style "${styleName || 'New Style'}" is approved by our team.`
+
+  const emailHtml = render(
+    ProductStatusEmail({
+      productName: data.productName,
+      productImage: data.imageUrl,
+      productPrice: data.price,
+      status: 'Listed', // Pending isn't an option in prop types, using 'Listed' with a note? 
+      // Actually let's use 'Listed' but the message clarifies it.
+      // Or add 'Pending' to the type if needed, but 'Listed' is fine.
+      actionUrl: `${process.env.NEXTAUTH_URL}${actionUrl}`
+    })
+  );
 
   return createNotification({
     userId: sellerId,
-    type: 'PRODUCT_LISTED', // Or Create a new type if needed, but existing works for now
+    type: 'PRODUCT_LISTED',
     title,
     message: `Product listed privately. Waiting for style "${styleName}" approval.`,
     data,
     actionUrl,
     sendEmail: true,
     emailSubject: `Product Pending - ${data.productName}`,
-    emailHtml: generateProductEmailHtml(title, message, data, actionUrl)
+    emailHtml
   })
 }
 
@@ -163,7 +188,17 @@ export async function notifyFollowersNewProduct(sellerId: string, data: ProductD
   const message = `"${data.productName}" is now available.`
 
   // Generate HTML once
-  const emailHtml = generateProductEmailHtml(title, message, data, actionUrl);
+  const { ProductStatusEmail } = await import('@/lib/email-templates/product/product-status');
+  const emailHtml = render(
+    ProductStatusEmail({
+      vendorName: sellerName, // Providing seller name here for context
+      productName: data.productName,
+      productImage: data.imageUrl,
+      productPrice: data.price,
+      status: 'Live',
+      actionUrl: `${process.env.NEXTAUTH_URL}${actionUrl}`
+    })
+  );
 
   const results = await Promise.allSettled(
     followers.map(f =>
@@ -188,6 +223,17 @@ export async function notifyFollowersNewProduct(sellerId: string, data: ProductD
  * Notify reporter that their product report has been received
  */
 export async function notifyReportReceived(userId: string, data: { productName: string, reason: string }) {
+  const { ReportSubmittedEmail } = await import('@/lib/email-templates/support/report-submitted');
+  const { render } = await import('@react-email/render');
+
+  const emailHtml = render(
+    ReportSubmittedEmail({
+      recipientType: 'REPORTER',
+      targetName: data.productName,
+      reason: data.reason
+    })
+  );
+
   const title = 'Report Received 🛡️'
   const message = `Thank you for reporting "${data.productName}". We take these reports seriously and will review it shortly. The seller has not been notified.`
 
@@ -197,8 +243,9 @@ export async function notifyReportReceived(userId: string, data: { productName: 
     title,
     message,
     data,
-    actionUrl: '/', // Redirect to home or keep generic
-    sendEmail: true, // Use standard email for now
-    emailSubject: `Report Received - ${data.productName}`
+    actionUrl: '/help-center', // Redirect to help center
+    sendEmail: true,
+    emailSubject: `Report Received - ${data.productName}`,
+    emailHtml
   })
 }

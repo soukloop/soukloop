@@ -7,6 +7,7 @@ import { FormSkeleton } from "@/components/ui/skeletons"
 import { useProfile, Address } from '@/hooks/useProfile'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 export default function AddressBookSection({ userId }: { userId?: string }) {
     const {
@@ -21,6 +22,8 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
     } = useProfile(userId)
 
     const [editingAddressId, setEditingAddressId] = useState<string | null>(null)
+    const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [initialFormData, setInitialFormData] = useState<Partial<BillingAddressFormData> | undefined>(undefined)
     const formRef = React.useRef<HTMLDivElement>(null)
@@ -32,6 +35,15 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
     const userPhone = profile?.phone || ''
 
     // Reset form when switching modes
+    // Logic for visibility
+    const userRole = profile?.user?.role;
+    const canManageSellerAddress = ['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(userRole || '');
+    const excludeFields: (keyof BillingAddressFormData)[] = ['email', 'firstName', 'lastName', 'phone'];
+    if (!canManageSellerAddress) {
+        excludeFields.push('isSellerAddress');
+    }
+
+    // Handle editing
     const handleEdit = (addressId: string) => {
         if (addresses) {
             const addressToEdit = addresses.find((a: Address) => a.id === addressId)
@@ -43,7 +55,7 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
                     postalCode: addressToEdit.postalCode,
                     country: addressToEdit.country,
                     email: 'placeholder@example.com',
-                    isBusiness: addressToEdit.isBusiness
+                    isSellerAddress: addressToEdit.isSellerAddress
                 })
             }
         }
@@ -65,19 +77,19 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
             country: data.country,
             isDefault: false,
             isShipping: true, // Default to shipping when adding from Address Book
-            isBusiness: data.isBusiness || false, // Capture the business flag
+            isSellerAddress: data.isSellerAddress || false, // Capture the seller flag
         }
 
         try {
-            // Enforce Exclusivity: If setting as business, unset others first
-            if (data.isBusiness && addresses) {
-                const otherBusinessAddresses = addresses.filter((a: Address) =>
-                    a.isBusiness && a.id !== editingAddressId
+            // Enforce Exclusivity: If setting as seller address, unset others first
+            if (data.isSellerAddress && addresses) {
+                const otherSellerAddresses = addresses.filter((a: Address) =>
+                    a.isSellerAddress && a.id !== editingAddressId
                 )
 
                 // Update them sequentially to avoid race conditions or use Promise.all
-                await Promise.all(otherBusinessAddresses.map((addr: Address) =>
-                    updateAddress(addr.id, { isBusiness: false })
+                await Promise.all(otherSellerAddresses.map((addr: Address) =>
+                    updateAddress(addr.id, { isSellerAddress: false })
                 ))
             }
 
@@ -113,16 +125,23 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
         setInitialFormData(undefined)
     }
 
-    const handleDelete = async (addressId: string) => {
-        if (!window.confirm('Are you sure you want to delete this address?')) {
-            return
-        }
+    const handleDelete = (addressId: string) => {
+        setDeletingAddressId(addressId)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!deletingAddressId) return
+
+        setIsDeleting(true)
         try {
-            await deleteAddress(addressId)
+            await deleteAddress(deletingAddressId)
             toast.success('Address deleted successfully')
+            setDeletingAddressId(null)
         } catch (error) {
             console.error('Failed to delete address', error)
             toast.error('Failed to delete address')
+        } finally {
+            setIsDeleting(false)
         }
     }
 
@@ -187,7 +206,7 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
                             submitButtonText={editingAddressId ? 'Update Address' : 'Save Address'}
                             showDiscardButton={true}
                             onDiscard={handleCancel}
-                            excludeFields={['email', 'firstName', 'lastName', 'phone']}
+                            excludeFields={excludeFields}
                         />
                     </div>
                 )}
@@ -244,8 +263,8 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
                                             {displayPhone && <p className="text-gray-500">{displayPhone}</p>}
                                             {/* Purpose badges */}
                                             <div className="flex flex-wrap gap-1 mt-2">
-                                                {address.isBusiness && (
-                                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Business</span>
+                                                {canManageSellerAddress && address.isSellerAddress && (
+                                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Seller Address</span>
                                                 )}
                                                 {address.isShipping && (
                                                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Shipping</span>
@@ -280,6 +299,17 @@ export default function AddressBookSection({ userId }: { userId?: string }) {
                         </div>
                     )}
                 </div>
+
+                <ConfirmDialog
+                    isOpen={!!deletingAddressId}
+                    onClose={() => setDeletingAddressId(null)}
+                    onConfirm={handleConfirmDelete}
+                    title="Delete Address"
+                    message="Are you sure you want to delete this address? This action cannot be undone."
+                    type="danger"
+                    confirmText="Delete"
+                    isLoading={isDeleting}
+                />
             </div>
         </div>
     )

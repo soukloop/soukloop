@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from '@/components/ui/badge';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AccessDenied from '@/components/admin/AccessDenied';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const fetcher = (url: string) => fetch(url).then((res) => {
     if (!res.ok) throw new Error('Failed to fetch data');
@@ -27,7 +28,8 @@ export default function RefundDetailsPage() {
     const params = useParams();
     const id = params?.id as string;
     const { isAuthChecking, hasPermission } = useAdminAuth();
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [actionToConfirm, setActionToConfirm] = useState<'PROCESSED' | 'REJECTED' | null>(null);
 
     const { data: refund, error, isLoading } = useSWR(id ? `/api/refunds/${id}` : null, fetcher);
 
@@ -51,13 +53,19 @@ export default function RefundDetailsPage() {
         </div>
     );
 
-    const handleProcessRefund = async (status: 'PROCESSED' | 'REJECTED') => {
+    const initiateRefundAction = (status: 'PROCESSED' | 'REJECTED') => {
+        setActionToConfirm(status);
+        setShowConfirmModal(true);
+    };
+
+    const handleProcessRefund = async () => {
+        if (!actionToConfirm) return;
         setIsProcessing(true);
         try {
             const res = await fetch(`/api/refunds/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
+                body: JSON.stringify({ status: actionToConfirm })
             });
 
             if (!res.ok) {
@@ -65,8 +73,9 @@ export default function RefundDetailsPage() {
                 throw new Error(data.error || 'Failed to update refund status');
             }
 
-            toast.success(`Refund request ${status === 'PROCESSED' ? 'approved' : 'rejected'} successfully`);
+            toast.success(`Refund request ${actionToConfirm === 'PROCESSED' ? 'approved' : 'rejected'} successfully`);
             mutate(`/api/refunds/${id}`);
+            setShowConfirmModal(false);
         } catch (err: any) {
             toast.error(err.message || 'Failed to process refund');
         } finally {
@@ -102,14 +111,14 @@ export default function RefundDetailsPage() {
                             <Button
                                 variant="outline"
                                 className="text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={() => handleProcessRefund('REJECTED')}
+                                onClick={() => initiateRefundAction('REJECTED')}
                                 disabled={isProcessing}
                             >
                                 <XCircle className="mr-2 h-4 w-4" /> Reject
                             </Button>
                             <Button
                                 className="bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleProcessRefund('PROCESSED')}
+                                onClick={() => initiateRefundAction('PROCESSED')}
                                 disabled={isProcessing}
                             >
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
@@ -348,6 +357,22 @@ export default function RefundDetailsPage() {
                     </div>
                 </div>
             </div>
-        </div>
+
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                onConfirm={handleProcessRefund}
+                title={actionToConfirm === 'PROCESSED' ? "Approve Refund" : "Reject Refund"}
+                message={actionToConfirm === 'PROCESSED'
+                    ? "Are you sure you want to approve this refund? This will trigger the refund process."
+                    : "Are you sure you want to reject this request? The buyer will be notified."
+                }
+                confirmText={actionToConfirm === 'PROCESSED' ? "Approve & Refund" : "Reject Request"}
+                type={actionToConfirm === 'PROCESSED' ? "success" : "danger"}
+                isLoading={isProcessing}
+            />
+        </div >
     );
 }

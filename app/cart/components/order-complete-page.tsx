@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Loader2, Package, Truck, Check, Copy } from "lucide-react";
+import { Loader2, Package, Truck } from "lucide-react";
 import Image from "next/image";
 import useSWR from "swr";
 import { getDeliveryStatusText } from "@/hooks/useOrders";
+import { CopyButton } from "@/components/ui/copy-button";
 
 interface OrderCompletePageProps {
   orderId?: string;
@@ -22,7 +23,6 @@ const fetcher = async (url: string) => {
 
 export default function OrderCompletePage({ orderId }: OrderCompletePageProps) {
   const { clearCart } = useCart();
-  const [isCopied, setIsCopied] = useState(false);
 
   // Get session_id from URL if present
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -61,13 +61,7 @@ export default function OrderCompletePage({ orderId }: OrderCompletePageProps) {
   // Get delivery status
   const deliveryStatus = order?.vendorOrders ? getDeliveryStatusText(order) : '';
 
-  const handleCopyOrderId = () => {
-    if (!order) return;
-    const textToCopy = order.orderNumber || order.id;
-    navigator.clipboard.writeText(textToCopy);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,13 +148,11 @@ export default function OrderCompletePage({ orderId }: OrderCompletePageProps) {
                           <span className="font-bold text-gray-900 font-mono">
                             {order.orderNumber || `#${order.id.slice(0, 8)}`}
                           </span>
-                          <button
-                            onClick={handleCopyOrderId}
-                            className={`transition-colors ${isCopied ? "text-green-500" : "text-gray-400 hover:text-[#E87A3F]"}`}
-                            title={isCopied ? "Copied!" : "Copy ID"}
-                          >
-                            {isCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                          </button>
+                          <CopyButton
+                            value={order.orderNumber || order.id}
+                            className="p-0 h-auto text-gray-400 hover:text-[#E87A3F]"
+                            size="sm"
+                          />
                         </div>
                       </div>
                       <div className="flex justify-between items-center text-sm">

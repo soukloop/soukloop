@@ -179,7 +179,7 @@ export async function PATCH(
             const updateData: any = {}
             if (details.govIdType) updateData.govIdType = details.govIdType
             if (details.taxIdType) updateData.taxIdType = details.taxIdType
-            if (details.businessAddressId) updateData.businessAddressId = details.businessAddressId
+            if (details.sellerAddressId) updateData.sellerAddressId = details.sellerAddressId
             if (details.govIdFrontUrl) updateData.govIdFrontUrl = details.govIdFrontUrl
             if (details.govIdBackUrl) updateData.govIdBackUrl = details.govIdBackUrl
 

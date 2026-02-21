@@ -36,7 +36,7 @@ interface SavedAddress {
     state: string
     postalCode: string
     country: string
-    isBusiness?: boolean
+    isSellerAddress?: boolean
     isShipping?: boolean
     isBilling?: boolean
     user?: {
@@ -116,7 +116,7 @@ function OnboardingFormContent() {
         addresses,
         addressesLoading,
         createAddress,
-        setBusinessAddress,
+        setSellerAddress,
         profile,
         updateProfile
     } = useProfile()
@@ -525,19 +525,7 @@ function OnboardingFormContent() {
         )
     }
 
-    // Admin check - show proper message instead of infinite spinner
-    if ((session?.user as any)?.model === 'AdminUser' || session?.user?.role === 'ADMIN') {
-        return (
-            <div className="flex h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-                <AlertCircle className="size-12 text-orange-500" />
-                <h2 className="text-xl font-bold text-gray-900">Admin Access Restricted</h2>
-                <p className="text-gray-600 max-w-md">Admin accounts cannot apply to become a seller. Please use a regular user account to complete seller verification.</p>
-                <Button onClick={() => router.push('/admin')} className="bg-[#E87A3F] hover:bg-[#d96d34] mt-4">
-                    Return to Admin Dashboard
-                </Button>
-            </div>
-        )
-    }
+
 
     if (isStatusLoading || !isPersistenceLoaded) {
         // Show skeleton that matches the form layout
@@ -641,14 +629,16 @@ function OnboardingFormContent() {
         )
     }
 
-    // If already submitted or approved, show the status box for consistency
-    if (isSubmitted || isApproved) {
+    const isExistingSeller = ['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(session?.user?.role as string)
+
+    // If already submitted or approved OR is an existing seller (Admin/SuperAdmin), show the status box
+    if (isSubmitted || isApproved || isExistingSeller) {
         return (
             <div className="max-w-3xl mx-auto py-12 px-4 space-y-8">
                 <ApplicationStatusBox
                     status={isApproved ? 'approved' : 'submitted'}
                     rejectionReason={verification?.rejectionReason}
-                    isExistingSeller={session?.user?.role === 'SELLER'}
+                    isExistingSeller={isExistingSeller}
                 />
             </div>
         )
@@ -858,7 +848,7 @@ function OnboardingFormContent() {
             {currentStep === 'address' && (
                 <div className="space-y-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-gray-900">Business Address</h3>
+                        <h3 className="text-xl font-bold text-gray-900">Seller Address</h3>
                         {!isAddingNewAddress && (
                             <Button
                                 onClick={() => setIsAddingNewAddress(true)}
@@ -872,7 +862,7 @@ function OnboardingFormContent() {
                     {isAddingNewAddress ? (
                         <div className="rounded-2xl bg-gray-50/50 p-1 animate-in slide-in-from-top-4 duration-300">
                             <div className="flex items-center justify-between p-4 mb-2">
-                                <h4 className="font-bold text-gray-900 text-lg">Add New Business Address</h4>
+                                <h4 className="font-bold text-gray-900 text-lg">Add New Seller Address</h4>
                                 {addresses && addresses.length > 0 && (
                                     <Button
                                         variant="ghost"
@@ -901,7 +891,7 @@ function OnboardingFormContent() {
                                                 postalCode: data.postalCode,
                                                 country: countryCode,
                                                 isDefault: false,
-                                                isBusiness: false // Don't auto-set as business
+                                                isSellerAddress: false // Don't auto-set as seller address
                                             })
 
                                             setAddressData({
@@ -915,8 +905,8 @@ function OnboardingFormContent() {
 
                                             if (newAddress?.id) {
                                                 setSelectedAddressId(newAddress.id)
-                                                // Set this new address as the ONLY business address
-                                                await setBusinessAddress(newAddress.id)
+                                                // Set this new address as the ONLY seller address
+                                                await setSellerAddress(newAddress.id)
                                             }
 
                                             setIsAddingNewAddress(false)
@@ -931,7 +921,7 @@ function OnboardingFormContent() {
                                     showTitle={false}
                                     submitButtonText="Save and Use Address"
                                     showDiscardButton={false}
-                                    excludeFields={['firstName', 'lastName', 'phone', 'email', 'company']}
+                                    excludeFields={['firstName', 'lastName', 'phone', 'email']}
                                 />
                             </div>
                         </div>
@@ -963,7 +953,7 @@ function OnboardingFormContent() {
                                             onClick={async () => {
                                                 setSelectedAddressId(addr.id)
                                                 const countryCode = addr.country && addr.country.length > 2
-                                                    ? ({ 'United States': 'US', 'Canada': 'CA', 'United Kingdom': 'GB', 'Pakistan': 'PK' }[addr.country] || 'US')
+                                                    ? ({ 'United States': 'US', 'Canada': 'CA', 'United Kingdom': 'GB', 'Pakistan': 'PK' } as any)[addr.country] || 'US'
                                                     : (addr.country || 'US')
 
                                                 setAddressData({
@@ -975,8 +965,8 @@ function OnboardingFormContent() {
                                                     country: countryCode
                                                 })
 
-                                                // Set this address as the ONLY business address
-                                                await setBusinessAddress(addr.id)
+                                                // Set this address as the ONLY seller address
+                                                await setSellerAddress(addr.id)
                                             }}
                                             className={`group relative cursor-pointer rounded-2xl border-2 p-5 transition-all duration-300 hover:shadow-md ${selectedAddressId === addr.id ? 'border-[#E87A3F] bg-orange-50/50 ring-1 ring-[#E87A3F]' : 'border-gray-50 bg-white hover:border-[#E87A3F]/30 hover:bg-orange-50/20'
                                                 }`}
@@ -985,7 +975,7 @@ function OnboardingFormContent() {
                                                 <div className="space-y-2">
                                                     <div className="flex items-center gap-2">
                                                         <MapPin className={`size-4 ${selectedAddressId === addr.id ? 'text-[#E87A3F]' : 'text-gray-400 opacity-50'}`} />
-                                                        <p className="font-bold text-gray-900 text-sm">Business Address</p>
+                                                        <p className="font-bold text-gray-900 text-sm">Seller Address</p>
                                                     </div>
                                                     <div className="text-sm text-gray-600 leading-relaxed">
                                                         <p className="font-semibold text-gray-800">
@@ -1038,7 +1028,7 @@ function OnboardingFormContent() {
                     <div className="space-y-4">
                         <ReviewItem label="Tax ID" value={`${identityData.taxIdType}: ${identityData.taxId}`} />
                         <ReviewItem label="Gov ID" value={`${identityData.govIdType.replace('_', ' ')}: ${identityData.govIdNumber}`} />
-                        <ReviewItem label="Business Address" value={`${addressData.addressLine1}, ${addressData.city}, ${addressData.state}`} />
+                        <ReviewItem label="Seller Address" value={`${addressData.addressLine1}, ${addressData.city}, ${addressData.state}`} />
                     </div>
 
                     <div className="rounded-xl bg-orange-50 p-4 text-sm text-orange-800 border border-orange-100">

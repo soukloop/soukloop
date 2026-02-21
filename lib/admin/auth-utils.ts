@@ -37,7 +37,7 @@ export async function verifyAdminAuth(request: NextRequest): Promise<AdminVerify
         // Check if session exists and has a valid admin role
         if (session?.user?.id) {
             const userRole = session.user.role as string;
-            const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'SUPPORT'];
+            const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
 
             if (allowedRoles.includes(userRole)) {
                 return {

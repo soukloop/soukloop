@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { MapPin, User, ShieldCheck, ImageIcon, Wallet, Receipt, CreditCard, Building2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { revealSensitiveData } from "../actions";
+// revealSensitiveData removed - sensitive field decryption is now done lazily inside EditVendorForm
 import { EditUserModal } from "../modals/edit-user-modal";
 import { Package } from "lucide-react";
 
@@ -38,26 +38,7 @@ export default async function OverviewTab({ userId }: { userId: string }) {
     const verification = user.userVerifications[0];
     const isVendor = !!user.vendor;
 
-    // Decrypt sensitive data for the edit form
-    let decryptedTaxId = "";
-    let decryptedGovIdNumber = "";
-
-    if (verification) {
-        if (verification.taxId) {
-            try {
-                decryptedTaxId = await revealSensitiveData(verification.taxId);
-            } catch (e) {
-                console.error("Failed to decrypt Tax ID", e);
-            }
-        }
-        if (verification.govIdNumber) {
-            try {
-                decryptedGovIdNumber = await revealSensitiveData(verification.govIdNumber);
-            } catch (e) {
-                console.error("Failed to decrypt Gov ID", e);
-            }
-        }
-    }
+    // taxId and govIdNumber are now lazily decrypted inside EditVendorForm via getDecryptedVendorData()
 
     return (
         <div className="space-y-6">
@@ -143,10 +124,9 @@ export default async function OverviewTab({ userId }: { userId: string }) {
                                     vendorInitialData={{
                                         slug: user.vendor.slug,
                                         taxIdType: verification?.taxIdType || "",
-                                        taxId: decryptedTaxId || verification?.taxId || "",
+                                        // taxId and govIdNumber are NOT passed here — EditVendorForm
+                                        // fetches them asynchronously via getDecryptedVendorData()
                                         govIdType: verification?.govIdType || "",
-                                        govIdNumber: decryptedGovIdNumber || verification?.govIdNumber || "",
-                                        // Pass image URLs for editing
                                         govIdFrontUrl: verification?.govIdFrontUrl || "",
                                         govIdBackUrl: verification?.govIdBackUrl || "",
                                         selfieUrl: verification?.selfieUrl || "",
@@ -295,7 +275,7 @@ export default async function OverviewTab({ userId }: { userId: string }) {
                                             <MapPin className="h-4 w-4 text-orange-500" />
                                         </div>
                                         <div className="flex gap-1.5">
-                                            {addr.isBusiness && <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Business</Badge>}
+                                            {addr.isSellerAddress && <Badge variant="secondary" className="px-1.5 h-5 text-[10px] bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Seller</Badge>}
                                             {addr.isDefault && <Badge className="px-1.5 h-5 text-[10px] bg-green-600 hover:bg-green-700">Default</Badge>}
                                         </div>
                                     </div>

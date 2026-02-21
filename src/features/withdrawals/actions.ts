@@ -98,6 +98,18 @@ export async function saveBankAccount(data: any) {
 
     revalidatePath("/withdraw-earnings");
     revalidatePath("/editprofile");
+
+    // Notify user
+    const { notifyBankAdded } = await import('@/lib/notifications/templates/finance-templates');
+    const userName = session.user.name || 'Vendor';
+    // We only have encrypted account number here. 
+    // Ideally we pass the last 4 from the input `validated` data before encryption.
+    const last4 = validated.accountNumber.slice(-4);
+
+    notifyBankAdded(session.user.id, validated.bankName, last4, userName).catch(err =>
+        console.error('Failed to notify bank added:', err)
+    );
+
     return account;
 }
 

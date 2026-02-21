@@ -19,6 +19,9 @@ interface EditUserModalProps {
     userId: string;
     mode: EditMode;
     trigger?: React.ReactNode;
+    /** Optional: control open state externally (no trigger button needed) */
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
     // Data props for initial values if needed
     vendorInitialData?: {
         slug?: string;
@@ -32,10 +35,20 @@ interface EditUserModalProps {
         businessLicenseUrl?: string;
         addressProofUrl?: string;
     };
+    /** If true, hides the vendor slug field in the form */
+    hideSlug?: boolean;
 }
 
-export function EditUserModal({ userId, mode, trigger, vendorInitialData }: EditUserModalProps) {
-    const [open, setOpen] = useState(false);
+export function EditUserModal({ userId, mode, trigger, open: externalOpen, onOpenChange: externalOnOpenChange, vendorInitialData, hideSlug }: EditUserModalProps) {
+    // Internal state for when the modal is used with a trigger button
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    // Determine open state: prefer external control if provided
+    const isControlled = externalOpen !== undefined;
+    const open = isControlled ? externalOpen : internalOpen;
+    const setOpen = isControlled
+        ? (val: boolean) => externalOnOpenChange?.(val)
+        : setInternalOpen;
 
     const getTitle = () => {
         switch (mode) {
@@ -46,6 +59,47 @@ export function EditUserModal({ userId, mode, trigger, vendorInitialData }: Edit
         }
     };
 
+    const content = (
+        <DialogContent className="w-full sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+                <DialogTitle>{getTitle()}</DialogTitle>
+            </DialogHeader>
+
+            <div className="py-4">
+                {mode === "general" && (
+                    <div className="profile-edit-wrapper">
+                        <EditProfileSection userId={userId} hideSections={true} />
+                    </div>
+                )}
+
+                {mode === "address" && (
+                    <div className="address-edit-wrapper">
+                        <AddressBookSection userId={userId} />
+                    </div>
+                )}
+
+                {mode === "vendor" && vendorInitialData && (
+                    <EditVendorForm
+                        userId={userId}
+                        initialData={vendorInitialData}
+                        hideSlug={hideSlug}
+                        onSuccess={() => setOpen(false)}
+                    />
+                )}
+            </div>
+        </DialogContent>
+    );
+
+    // When triggered externally (no trigger button), render without DialogTrigger
+    if (isControlled) {
+        return (
+            <Dialog open={open} onOpenChange={setOpen}>
+                {content}
+            </Dialog>
+        );
+    }
+
+    // When triggered by an internal button
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -55,34 +109,7 @@ export function EditUserModal({ userId, mode, trigger, vendorInitialData }: Edit
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="w-full sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{getTitle()}</DialogTitle>
-                </DialogHeader>
-
-                <div className="py-4">
-                    {mode === "general" && (
-                        // Wrapping in a div to isolate styles if needed
-                        <div className="profile-edit-wrapper">
-                            <EditProfileSection userId={userId} hideSections={true} />
-                        </div>
-                    )}
-
-                    {mode === "address" && (
-                        <div className="address-edit-wrapper">
-                            <AddressBookSection userId={userId} />
-                        </div>
-                    )}
-
-                    {mode === "vendor" && vendorInitialData && (
-                        <EditVendorForm
-                            userId={userId}
-                            initialData={vendorInitialData}
-                            onSuccess={() => setOpen(false)}
-                        />
-                    )}
-                </div>
-            </DialogContent>
+            {content}
         </Dialog>
     );
 }

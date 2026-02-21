@@ -1,11 +1,12 @@
 "use client";
 
-import { Camera, Edit, Loader2 } from "lucide-react";
+import { Camera, Edit, Loader2, Info } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toggleFollowAction, updateProfileBannerAction } from "@/src/features/user/actions";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProfileHeaderProps {
     user: {
@@ -13,6 +14,7 @@ interface ProfileHeaderProps {
         name: string | null;
         email: string;
         image: string | null;
+        role?: string;
         createdAt: Date | string;
     };
     profile: any;
@@ -31,9 +33,24 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
     const userName = user?.name || "User";
     const bannerImage = profile?.bannerImage || "/hero-banner.png";
 
+    const canEditBanner = isOwner && user.role && ['SELLER', 'ADMIN', 'SUPER_ADMIN'].includes(user.role);
+
     const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validation: Size < 5MB
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image size is larger than 5MB");
+            return;
+        }
+
+        // Validation: Type (JPG, PNG, WEBP)
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error("Only JPG, PNG, and WEBP formats are allowed");
+            return;
+        }
 
         try {
             setIsUploadingBanner(true);
@@ -45,7 +62,11 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
                 body: formData,
             });
 
-            if (!uploadRes.ok) throw new Error("Upload failed");
+            if (!uploadRes.ok) {
+                const errorData = await uploadRes.json().catch(() => ({}));
+                throw new Error(errorData.error || "Upload failed. Please check your connection.");
+            }
+
             const { url } = await uploadRes.json();
 
             const result = await updateProfileBannerAction(url);
@@ -55,9 +76,18 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
                 throw new Error(result.error);
             }
         } catch (error: any) {
-            toast.error(error.message || "Failed to update banner");
+            console.error(error);
+            if (error.message === "Unauthorized") {
+                toast.error("Session expired. Please login again.");
+            } else {
+                toast.error(error.message || "Failed to update banner");
+            }
         } finally {
             setIsUploadingBanner(false);
+            // Reset input so same file can be selected again if needed
+            if (bannerInputRef.current) {
+                bannerInputRef.current.value = "";
+            }
         }
     };
 
@@ -81,23 +111,38 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
             <div className="relative h-[160px] sm:h-[240px] md:h-[300px] w-full bg-gray-100 group">
                 <img src={bannerImage} alt="Banner" className="size-full object-cover object-center" />
 
-                {isOwner && (
+                {canEditBanner && (
                     <>
                         <input
                             type="file"
                             ref={bannerInputRef}
                             onChange={handleBannerUpload}
-                            accept="image/*"
+                            accept="image/png, image/jpeg, image/webp"
                             className="hidden"
                         />
-                        <button
-                            onClick={() => bannerInputRef.current?.click()}
-                            disabled={isUploadingBanner}
-                            className="absolute bottom-4 right-4 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:shadow-xl"
-                        >
-                            {isUploadingBanner ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
-                            {isUploadingBanner ? "Uploading..." : "Edit Banner"}
-                        </button>
+                        <div className="absolute bottom-4 right-4 flex items-center gap-2">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 cursor-help">
+                                            <Info className="size-4" />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Banner Image: Max 5MB. Formats: JPG, PNG, WEBP.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+
+                            <button
+                                onClick={() => bannerInputRef.current?.click()}
+                                disabled={isUploadingBanner}
+                                className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:shadow-xl disabled:opacity-70"
+                            >
+                                {isUploadingBanner ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+                                {isUploadingBanner ? "Uploading..." : "Edit Banner"}
+                            </button>
+                        </div>
                     </>
                 )}
             </div>

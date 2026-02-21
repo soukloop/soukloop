@@ -15,7 +15,10 @@ const addressUpdateSchema = z.object({
     postalCode: z.string().min(1).optional(),
     country: z.string().min(1).optional(),
     phone: z.string().optional(),
-    isDefault: z.boolean().optional()
+    isDefault: z.boolean().optional(),
+    isSellerAddress: z.boolean().optional(),
+    isShipping: z.boolean().optional(),
+    isBilling: z.boolean().optional()
 })
 
 export async function GET(
@@ -118,6 +121,14 @@ export async function PUT(
             where: { id: params.id },
             data
         })
+
+        // Notify user about address update
+        const { notifyProfileUpdated } = await import('@/lib/notifications/templates/account-templates');
+        const userName = session.user.name || 'User';
+
+        notifyProfileUpdated(session.user.id, userName, 'Address').catch(err =>
+            console.error('Failed to send address update notification:', err)
+        );
 
         return NextResponse.json(address)
 

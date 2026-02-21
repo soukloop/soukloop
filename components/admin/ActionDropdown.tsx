@@ -17,7 +17,9 @@ export interface ActionItem {
     onClick?: () => void;
     href?: string;
     className?: string;
+    className?: string;
     disabled?: boolean;
+    icon?: React.ReactNode;
 }
 
 interface ActionDropdownProps {
@@ -64,6 +66,9 @@ export default function ActionDropdown({ actions, className = '' }: ActionDropdo
                             onClick={action.href ? undefined : action.onClick}
                             disabled={action.disabled}
                         >
+
+
+                            {action.icon && <span className="mr-2 h-4 w-4">{action.icon}</span>}
                             {action.label}
                         </DropdownMenuItem>
                     );

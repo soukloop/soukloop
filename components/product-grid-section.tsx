@@ -6,6 +6,7 @@ import ProductCard from "./product-card";
 import { toast } from "sonner";
 import { CardSkeleton } from "@/components/ui/skeletons";
 import { useSession } from "next-auth/react";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 interface ProductGridSectionProps {
   title?: string;
@@ -185,38 +186,16 @@ export default function ProductGridSection({ title = "Featured Products", catego
     }, 1200);
   };
 
-  const toggleWishlist = async (id: string) => {
-    if (status !== "authenticated") {
-      window.dispatchEvent(new Event('open-auth-modal'));
-      return;
-    }
+  /* REMOVED MANUAL TOGGLE LOGIC - Using useWishlist hook downstream */
+  const { isWithlisted, toggleWishlist } = useWishlist();
 
-    const product = products.find(p => p.id === id);
-    if (!product) return;
-
-    const currentlyFavorited = product.isWishlist;
-
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => (p.id === id ? { ...p, isWishlist: !p.isWishlist } : p))
-    );
-
-    try {
-      if (currentlyFavorited) {
-        await fetch(`/api/favorites?productId=${id}`, { method: 'DELETE' });
-      } else {
-        await fetch('/api/favorites', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: id })
-        });
-      }
-    } catch (error) {
-      console.error("Failed to toggle wishlist", error);
-      setProducts((prevProducts) =>
-        prevProducts.map((p) => (p.id === id ? { ...p, isWishlist: currentlyFavorited } : p))
-      );
-    }
-  };
+  /* 
+     We also don't need to manually fetch favorites in useEffect anymore usually,
+     BUT `setProducts` initializes `isWishlist: false`.
+     The `useWishlist` hook handles the state.
+     However, we are mapping `products` state to `ProductCard`.
+     We should update the render to use `isWithlisted(product.id)`.
+  */
 
   if (isLoading) {
     return (
@@ -236,10 +215,13 @@ export default function ProductGridSection({ title = "Featured Products", catego
         {products.map((product) => (
           <ProductCard
             key={product.id}
-            product={product}
+            product={{
+              ...product,
+              isWishlist: isWithlisted(product.id)
+            }}
             animatingId={animatingId}
             handleAddToCart={handleAddToCart}
-            toggleWishlist={toggleWishlist}
+            toggleWishlist={() => toggleWishlist(product.id)}
           />
         ))}
       </div>

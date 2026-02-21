@@ -5,6 +5,7 @@ import { Loader2, Plus, Trash2, Edit2, CheckCircle2, Building2, User, CreditCard
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -29,6 +30,8 @@ export default function BankAccountsSection() {
     const [isSaving, setIsSaving] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+    const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -102,14 +105,22 @@ export default function BankAccountsSection() {
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this bank account?')) return
+    const handleDelete = (id: string) => {
+        setDeletingAccountId(id)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!deletingAccountId) return
+        setIsDeleting(true)
         try {
-            await deleteBankAccount(id)
+            await deleteBankAccount(deletingAccountId)
             toast.success('Bank account deleted')
             await fetchAccounts()
+            setDeletingAccountId(null)
         } catch (error: any) {
             toast.error(error.message || 'Failed to delete bank account')
+        } finally {
+            setIsDeleting(false)
         }
     }
 
@@ -277,6 +288,17 @@ export default function BankAccountsSection() {
                     ))
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deletingAccountId}
+                onClose={() => setDeletingAccountId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Bank Account"
+                message="Are you sure you want to delete this bank account? This action cannot be undone."
+                type="danger"
+                confirmText="Delete"
+                isLoading={isDeleting}
+            />
         </div>
     )
 }

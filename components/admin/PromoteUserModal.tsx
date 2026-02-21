@@ -112,8 +112,8 @@ export default function PromoteUserModal({ isOpen, onClose, onSuccess }: Promote
                                         key={user.id}
                                         onClick={() => setSelectedUser(user)}
                                         className={`flex items-center justify-between p-3 rounded-lg cursor-pointer border transition-colors ${selectedUser?.id === user.id
-                                                ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-300'
-                                                : 'bg-white hover:bg-gray-100 border-gray-200'
+                                            ? 'bg-orange-50 border-orange-200 ring-1 ring-orange-300'
+                                            : 'bg-white hover:bg-gray-100 border-gray-200'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
@@ -145,13 +145,13 @@ export default function PromoteUserModal({ isOpen, onClose, onSuccess }: Promote
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Assign Role</label>
                                 <div className="grid grid-cols-3 gap-2 mt-1">
-                                    {['ADMIN', 'MODERATOR', 'SUPPORT'].map((role) => (
+                                    {['ADMIN'].map((role) => (
                                         <button
                                             key={role}
                                             onClick={() => setSelectedRole(role)}
                                             className={`px-3 py-2 text-xs font-medium rounded-md border transition-all ${selectedRole === role
-                                                    ? 'bg-gray-900 text-white border-gray-900'
-                                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                                ? 'bg-gray-900 text-white border-gray-900'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                                                 }`}
                                         >
                                             {role}

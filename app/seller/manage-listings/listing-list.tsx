@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useTransition, useState } from "react";
 import ProductCard from "@/components/product-card";
 import { Pagination } from "@/components/ui/pagination";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -39,6 +39,11 @@ export default function ListingList({ products, totalPages, currentPage, userId 
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
+    // Confirmation Modal State
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const [optimisticProducts, setOptimisticProducts] = useOptimistic(
         products,
         (state, action: OptimisticAction) => {
@@ -56,14 +61,30 @@ export default function ListingList({ products, totalPages, currentPage, userId 
         router.push(`/seller/post-new-product?edit=${product.id}`);
     };
 
-    const handleDelete = async (productId: string) => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
+    const handleDeleteClick = (productId: string) => {
+        setProductToDelete(productId);
+        setShowDeleteModal(true);
+    };
 
+    const performDelete = async () => {
+        if (!productToDelete) return;
+        setIsDeleting(true);
+
+        // Optimistic update happens immediately via startTransition
         startTransition(async () => {
-            setOptimisticProducts({ type: 'delete', id: productId });
-            const result = await deleteProductAction(productId);
+            setOptimisticProducts({ type: 'delete', id: productToDelete });
+            const result = await deleteProductAction(productToDelete);
+
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+            setProductToDelete(null);
+
             if (!result.success) {
                 toast.error(result.error || "Failed to delete product");
+                // Note: To rollback optimistic update, we would need a way to reload or undo.
+                // React's useOptimistic doesn't support easy rollback unless we revert state trigger.
+                // For now, we assume success or page refresh on error.
+                router.refresh();
             } else {
                 toast.success("Product deleted successfully");
             }
@@ -130,7 +151,7 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                         handleAddToCart={() => { }}
                         toggleWishlist={() => { }}
                         onEdit={() => handleEdit(item)}
-                        onDelete={() => handleDelete(item.id)}
+                        onDelete={() => handleDeleteClick(item.id)}
                         onDeactivate={() => handleStatusUpdate(item.id, "INACTIVE", "deactivate")}
                         onMarkSold={() => handleStatusUpdate(item.id, "SOLD", "mark as sold")}
                     />
@@ -146,6 +167,20 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                     />
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setProductToDelete(null);
+                }}
+                onConfirm={performDelete}
+                title="Delete Product"
+                message="Are you sure you want to delete this product? This action cannot be undone."
+                confirmText="Delete Product"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 }

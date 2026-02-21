@@ -56,12 +56,31 @@ export async function notifyNewReport(data: {
     reporterName?: string
     reportedItemName?: string
 }) {
+    const { ReportSubmittedEmail } = await import('@/lib/email-templates/support/report-submitted');
+    const { render } = await import('@react-email/render');
+
+    const emailHtml = render(
+        ReportSubmittedEmail({
+            recipientType: 'ADMIN',
+            reportId: data.reportId,
+            reporterName: data.reporterName,
+            targetName: data.reportedItemName || `a ${data.type}`,
+            reason: data.reason,
+            actionUrl: `${process.env.NEXTAUTH_URL}/admin/reports`
+        })
+    );
+
     return notifyAllAdmins(
         'NEW_REPORT',
         `New ${data.type === 'product' ? 'Product' : 'User'} Report 🚩`,
         `${data.reporterName || 'Someone'} reported ${data.reportedItemName || `a ${data.type}`}: "${data.reason.substring(0, 50)}${data.reason.length > 50 ? '...' : ''}"`,
         data,
-        `/admin/reports`
+        `/admin/reports`,
+        {
+            sendEmail: true,
+            emailSubject: `New Report Alert - ${data.type.toUpperCase()}`,
+            emailHtml
+        }
     )
 }
 

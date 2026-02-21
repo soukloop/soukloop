@@ -16,9 +16,7 @@ export default async function SupportTicketsPage() {
     const userRole = session?.user?.role;
     if (
         userRole !== "ADMIN" &&
-        userRole !== "SUPER_ADMIN" &&
-        userRole !== "MODERATOR" &&
-        userRole !== "SUPPORT"
+        userRole !== "SUPER_ADMIN"
     ) {
         redirect("/");
     }

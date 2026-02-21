@@ -18,12 +18,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if already a seller
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { role: true }
-        })
-
-        if (user?.role === 'SELLER') {
+        const { isAtLeastSeller } = await import("@/lib/roles");
+        if (isAtLeastSeller(session.user.role) && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
             return NextResponse.json(
                 { error: 'Already a seller' },
                 { status: 400 }

@@ -80,10 +80,6 @@ export function useAdminAuth(): UseAdminAuthReturn {
         if (role === Role.SUPER_ADMIN) return true;
         if (role === Role.ADMIN) return true; // Admins generally have access
 
-        // Add specific role logic if needed
-        if (role === Role.MODERATOR && ['users', 'reviews', 'reports'].includes(resource)) return true;
-        if (role === Role.SUPPORT && ['users', 'orders', 'tickets'].includes(resource)) return true;
-
         return false;
     }, [session?.user]);
 
