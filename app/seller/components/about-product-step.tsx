@@ -155,14 +155,19 @@ export default function AboutProductStep({
                 <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</div>
                     <Input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
                         value={data.price}
-                        onChange={(e) => onUpdate({ price: e.target.value })}
+                        onChange={(e) => {
+                            // Only allow valid decimal number characters
+                            const val = e.target.value;
+                            if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
+                                onUpdate({ price: val });
+                            }
+                        }}
                         className="h-14 pl-8 w-full rounded-xl border-gray-100 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#E87A3F] focus-visible:border-[#E87A3F]"
                         style={{ boxShadow: "0px 2px 4px rgba(0,0,0,0.02)" }}
-                        min="0"
-                        step="0.01"
                     />
                 </div>
             </div>

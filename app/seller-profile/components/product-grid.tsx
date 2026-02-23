@@ -93,6 +93,7 @@ export default function ProductGrid({ activeTab, products }: ProductGridProps) {
                   <WishlistButton
                     isWishlisted={isWithlisted(product.id)}
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       toggleWishlist(product.id);
                     }}

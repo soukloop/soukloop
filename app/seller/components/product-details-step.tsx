@@ -55,7 +55,11 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
             try {
                 const styles = await getDressStylesByCategory(data.categoryId);
                 if (styles) {
-                    setDressStyles(styles.map((s: any) => ({ ...s, status: "approved", isPending: false })));
+                    setDressStyles(styles.map((s: any) => ({
+                        ...s,
+                        status: s.status || "approved",
+                        isPending: s.status === "pending"
+                    })));
                 }
             } catch (error) {
                 console.error("Failed to fetch dress styles:", error);
@@ -77,13 +81,11 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
     const [materials, setMaterials] = useState<{ id: string; name: string }[]>([]);
     const [occasionsList, setOccasionsList] = useState<{ id: string; name: string }[]>([]);
     const [colorsList, setColorsList] = useState<{ id: string; name: string }[]>([]);
-    const [states, setStates] = useState<{ id: string; name: string }[]>([]);
     const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
 
     const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
     const [isLoadingOccasions, setIsLoadingOccasions] = useState(false);
     const [isLoadingColors, setIsLoadingColors] = useState(false);
-    const [isLoadingStates, setIsLoadingStates] = useState(false);
     const [isLoadingBrands, setIsLoadingBrands] = useState(false);
 
     // Initial Data Fetching
@@ -109,12 +111,7 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
             .catch(err => console.error("Failed to fetch colors", err))
             .finally(() => setIsLoadingColors(false));
 
-        setIsLoadingStates(true);
-        fetch("/api/locations/states")
-            .then(res => res.json())
-            .then(d => { if (Array.isArray(d)) setStates(d); })
-            .catch(err => console.error("Failed to fetch states", err))
-            .finally(() => setIsLoadingStates(false));
+
 
         setIsLoadingBrands(true);
         fetch("/api/brands")
@@ -363,20 +360,7 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                 hideDefaultAddOption={true}
             />
 
-            {/* Location Section */}
-            <div className="mt-8 pt-6 border-t border-gray-100" />
-            <h3 className="text-lg font-bold text-gray-900">Item Location</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormSelect
-                    label="State"
-                    value={data.state || ""}
-                    onChange={(val) => onUpdate({ state: val })}
-                    options={states.map(s => s.name)}
-                    isLoading={isLoadingStates}
-                    placeholder="Select State"
-                />
-            </div>
 
             {/* ── Modals ── */}
 

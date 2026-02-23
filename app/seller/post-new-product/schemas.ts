@@ -41,5 +41,7 @@ export const step4Schema = z.object({
     video: z.string().nullable(),
     videoFile: z.any().optional(),
     videoIsUploading: z.boolean().optional(),
+    videoUploadUrl: z.string().nullable().optional(),
+    videoUploadProgress: z.number().optional(),
     videoUploadError: z.string().nullable().optional()
 });

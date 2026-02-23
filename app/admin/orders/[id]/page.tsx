@@ -2,7 +2,8 @@ import { getOrderDetails } from "@/features/orders/actions";
 import StatusBadge from "@/components/admin/StatusBadge";
 import OrderStatusSelect from "@/components/admin/orders/OrderStatusSelect";
 import OrderActions from "@/components/admin/orders/OrderActions";
-import { Package, Truck, User, CreditCard, Calendar, ChevronLeft, Store, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Search, Calendar, Package, MoreVertical, SearchIcon, Filter, X, RefreshCw, Mail, Phone, CalendarHeart, Trash2, Tag, Copy, HelpCircle, Truck, User, CreditCard, ChevronLeft, Store, ExternalLink } from "lucide-react";
+import { getOverallStatus } from "@/services/orders.service";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -52,27 +53,29 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
             <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Order #{order.orderNumber}</h1>
-                            <StatusBadge status={order.status} type="order" className="scale-110" />
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+                            <span className="text-slate-400 font-medium">Order</span> #{order.orderNumber}
+                            <StatusBadge status={getOverallStatus(order as any)} type="order" className="scale-110" />
+                        </h1>
+                        <div className="flex items-center gap-2 text-slate-500 mt-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>Placed on {new Date(order.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                            <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                <Calendar className="h-4 w-4 text-orange-500" />
-                                Placed on {formatDate(order.createdAt)}
-                            </span>
                             <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
                                 <CreditCard className="h-4 w-4 text-orange-500" />
                                 {order.currency} {order.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-end gap-1">
-                            <span className="text-sm font-medium text-gray-400">Status</span>
-                            <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
+                    {!order.isParentOrder && (
+                        <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-end gap-1">
+                                <span className="text-sm font-medium text-gray-400">Status</span>
+                                <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -226,51 +229,63 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                     <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
                         <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                             <Store className="h-5 w-5 text-orange-500" />
-                            Seller
+                            {order.isParentOrder ? "Sellers Involved" : "Seller"}
                         </h2>
                         <div className="space-y-6">
-                            <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-gray-100 overflow-hidden relative border border-gray-100 flex-shrink-0">
-                                    {order.vendor?.logo ? (
-                                        <Image src={order.vendor.logo} alt={order.vendor.slug} fill className="object-cover" />
-                                    ) : (
-                                        <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold text-lg">
-                                            {order.vendor?.slug?.[0].toUpperCase()}
+                            {(order.isParentOrder ? (order.vendorOrders || []) : [order]).map((vo: any, idx: number) => {
+                                const v = order.isParentOrder ? vo.vendor : order.vendor;
+                                if (!v) return null;
+                                return (
+                                    <div key={v.id || idx} className={`flex items-center gap-4 ${idx > 0 ? 'pt-4 border-t border-gray-50' : ''}`}>
+                                        <div className="h-12 w-12 rounded-2xl bg-gray-100 overflow-hidden relative border border-gray-100 flex-shrink-0">
+                                            {v.logo ? (
+                                                <Image src={v.logo} alt={v.slug} fill className="object-cover" />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold text-lg">
+                                                    {v.slug?.[0].toUpperCase() || 'V'}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-900 truncate">{order.vendor?.slug}</p>
-                                    <p className="text-xs text-gray-500 truncate mt-0.5">{order.vendor?.user?.name}</p>
-                                    <p className="text-[10px] text-gray-400 truncate mt-0.5">{order.vendor?.user?.email}</p>
-                                </div>
-                                <Link
-                                    href={`/admin/sellers/${order.vendor?.id}`}
-                                    className="ml-auto p-2 rounded-xl text-gray-300 hover:text-orange-500 hover:bg-orange-50 transition-all shadow-sm border border-transparent hover:border-orange-100"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                </Link>
-                            </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-gray-900 truncate">{v.slug}</p>
+                                            <p className="text-xs text-gray-500 truncate mt-0.5">{v.user?.name}</p>
+                                            {order.isParentOrder && vo.status && (
+                                                <StatusBadge status={vo.status} type="order" className="mt-1 scale-75 origin-left" />
+                                            )}
+                                        </div>
+                                        <Link
+                                            href={`/admin/sellers/${v.id}`}
+                                            className="ml-auto p-2 rounded-xl text-gray-300 hover:text-orange-500 hover:bg-orange-50 transition-all shadow-sm border border-transparent hover:border-orange-100"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </Link>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Payment Status Info */}
+                    {/* Logistics Info */}
                     <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
                         <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                             <Truck className="h-5 w-5 text-orange-500" />
                             Logistics
                         </h2>
                         <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Tracking Number</p>
-                                <div className="flex items-center justify-between gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                    {order.trackingNumber ? (
-                                        <CopyButton value={order.trackingNumber} className="text-sm font-bold text-gray-900 p-0 h-auto" variant="ghost" displayText={order.trackingNumber} />
-                                    ) : (
-                                        <p className="text-sm text-gray-400 italic">No tracking number</p>
-                                    )}
+                            {order.isParentOrder ? (
+                                <p className="text-sm text-gray-500 italic">Tracking details are managed individually by each seller for multi-vendor orders.</p>
+                            ) : (
+                                <div className="space-y-1.5">
+                                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Tracking Number</p>
+                                    <div className="flex items-center justify-between gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                        {order.trackingNumber ? (
+                                            <CopyButton value={order.trackingNumber} className="text-sm font-bold text-gray-900 p-0 h-auto" variant="ghost" displayText={order.trackingNumber} />
+                                        ) : (
+                                            <p className="text-sm text-gray-400 italic">No tracking number</p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>

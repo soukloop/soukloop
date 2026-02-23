@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Play, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface ProductGalleryProps {
     images: string[];
@@ -52,19 +53,22 @@ export default function ProductGallery({ images = [], video, productName }: Prod
                         preload="metadata"
                     />
                 ) : (
-                    <img
+                    <Image
                         src={images && images.length > 0
                             ? images[selectedImage]
                             : "/images/placeholder.png"}
                         alt={productName}
-                        className="h-full w-full object-contain transition-transform duration-200 ease-out"
+                        fill
+                        className="object-contain transition-transform duration-200 ease-out"
                         style={zoomStyle}
+                        sizes="(max-width: 768px) 100vw, 800px"
+                        priority
                     />
                 )}
 
                 {/* Zoom/Lightbox Hint */}
                 {!isVideoSelected && (
-                    <div className="absolute bottom-4 right-4 rounded-full bg-black/20 px-3 py-1.5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-4 right-4 rounded-full bg-black/20 px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <p className="text-[10px] font-bold text-white uppercase tracking-wider">Click to Zoom</p>
                     </div>
                 )}
@@ -84,7 +88,13 @@ export default function ProductGallery({ images = [], video, productName }: Prod
                             : "border-transparent hover:border-gray-200"
                             }`}
                     >
-                        <img src={img} alt={`Thumbnail ${index + 1}`} className="h-full w-full object-cover" />
+                        <Image
+                            src={img}
+                            alt={`Thumbnail ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="80px"
+                        />
                     </button>
                 ))}
 
@@ -102,10 +112,12 @@ export default function ProductGallery({ images = [], video, productName }: Prod
                             </div>
                         </div>
                         {images?.[0] ? (
-                            <img
+                            <Image
                                 src={images[0]}
-                                className="h-full w-full object-cover opacity-80"
+                                fill
+                                className="object-cover opacity-80"
                                 alt="Video thumbnail"
+                                sizes="80px"
                             />
                         ) : (
                             <div className="h-full w-full flex items-center justify-center bg-gray-200">
@@ -137,12 +149,15 @@ export default function ProductGallery({ images = [], video, productName }: Prod
                     </Button>
 
                     {/* Lightbox Content */}
-                    <img
-                        src={images[selectedImage]}
-                        alt="Lightbox"
-                        className="max-h-[90vh] max-w-[90vw] object-contain"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                    <div className="relative h-[90vh] w-[90vw]">
+                        <Image
+                            src={images[selectedImage]}
+                            alt="Lightbox"
+                            fill
+                            className="object-contain"
+                            sizes="90vw"
+                        />
+                    </div>
                 </div>
             )}
         </div>

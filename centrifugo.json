@@ -17,6 +17,10 @@
             {
                 "name": "personal",
                 "allow_subscribe_for_client": false
+            },
+            {
+                "name": "conversation",
+                "allow_subscribe_for_client": true
             }
         ]
     },

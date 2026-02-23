@@ -2,6 +2,7 @@
 
 import DataTable, { Column } from '@/components/admin/DataTable';
 import StatusBadge from '@/components/admin/StatusBadge';
+import { getOverallStatus } from "@/services/orders.service";
 import { CopyButton } from "@/components/ui/copy-button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -34,7 +35,7 @@ export default function OrdersClient({ orders, total, page, limit }: OrdersClien
             email: o.user?.email,
             date: new Date(o.createdAt).toLocaleDateString(),
             total: `$${Number(o.total).toFixed(2)}`,
-            status: o.status,
+            status: getOverallStatus(o as any),
             productNames,
             productImages,
             itemsCount: items.length

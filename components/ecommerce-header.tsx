@@ -263,7 +263,14 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
             {/* Logo */}
             <Link href="/">
               <div className="text-2xl font-bold sm:text-3xl">
-                <img src="/images/logo.png" alt="SoukLoop" className="h-10" />
+                <Image
+                  src="/images/logo.png"
+                  alt="SoukLoop"
+                  width={160}
+                  height={40}
+                  className="h-10 w-auto"
+                  priority
+                />
               </div>
             </Link>
 
@@ -273,7 +280,7 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
 
               {/* Wishlist Button - Only for logged-in users */}
               {user && (
-                <Link href="/editprofile?section=wishlist">
+                <Link href="/edit-profile?section=wishlist">
                   <Button
                     variant="outline"
                     size="icon"
@@ -293,7 +300,7 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
 
               {/* Wishlist Button - Only for logged-in users */}
               {user && (
-                <Link href="/editprofile?section=wishlist">
+                <Link href="/edit-profile?section=wishlist">
                   <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
                     <Heart className="size-5 text-[#ff4500] fill-[#ff4500]" />
                   </button>

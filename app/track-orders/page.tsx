@@ -2,9 +2,11 @@
 
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Check, Package, Truck, Info, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ReportIssueModal from "@/components/order/report-issue-modal";
@@ -15,28 +17,11 @@ import useSWR from "swr";
 import { trackOrderPublic } from "@/features/orders/actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getOverallStatus, getDeliveryStatusText } from "@/services/orders.service";
+import StatusBadge from "@/components/admin/StatusBadge";
 
 // Fetcher for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-// Status Badge Component
-const StatusBadge = ({ status }: { status: string }) => {
-  const s = status?.toUpperCase() || "PENDING";
-  let colors = "bg-gray-100 text-gray-600";
-
-  if (s === "DELIVERED") colors = "bg-green-100 text-green-700";
-  else if (s === "SHIPPED") colors = "bg-blue-100 text-blue-700";
-  else if (s === "PAID") colors = "bg-emerald-100 text-emerald-700";
-  else if (s === "PROCESSING") colors = "bg-orange-100 text-orange-700";
-  else if (s === "CANCELLED" || s === "CANCELED") colors = "bg-red-100 text-red-700";
-  else if (s === "PENDING") colors = "bg-amber-100 text-amber-700";
-
-  return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase ${colors}`}>
-      {s === "PAID" ? "PAID" : s}
-    </span>
-  );
-};
 
 export default function TrackOrderPage() {
   const searchParams = useSearchParams();
@@ -65,6 +50,12 @@ export default function TrackOrderPage() {
   const [guestIdentifier, setGuestIdentifier] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [isTracking, setIsTracking] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // ------------------------------------------------------------------
   // 1. SWR Hook for List View (Lightweight Mode)
@@ -312,8 +303,7 @@ export default function TrackOrderPage() {
             const firstItem = allItems[0];
             const otherItemsCount = Math.max(0, allItems.length - 1);
 
-            // Lite mode might return a condensed status inside vendorOrders check
-            const displayStatus = order.vendorOrders?.[0]?.status || order.status || "PROCESSING";
+            const displayStatus = getOverallStatus(order as any) as string;
 
             return (
               <div
@@ -329,10 +319,12 @@ export default function TrackOrderPage() {
                     {allItems.length > 0 ? (
                       allItems.slice(0, 3).map((item: any, idx: number) => (
                         <div key={idx} className="h-20 w-20 bg-white rounded-2xl overflow-hidden flex-shrink-0 relative border-4 border-white shadow-sm ring-1 ring-gray-100">
-                          <img
+                          <Image
                             src={item.product?.images?.[0]?.url || "/placeholder.png"}
-                            className="object-cover w-full h-full"
-                            alt=""
+                            alt={item.product?.name || "Product"}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
                           />
                         </div>
                       ))
@@ -461,7 +453,7 @@ export default function TrackOrderPage() {
 
             <div className="relative">
               <div className="flex items-center gap-4 mb-3">
-                <StatusBadge status={fetchedOrder.status || fetchedOrder.vendorOrders?.[0]?.status || "PROCESSING"} />
+                <StatusBadge status={getOverallStatus(fetchedOrder as any)} type="order" />
                 <span className="text-gray-400 text-sm font-medium">Placed {formatDate(fetchedOrder.createdAt)}</span>
               </div>
               <h1 className="text-4xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
@@ -531,7 +523,13 @@ export default function TrackOrderPage() {
                     {shipment.items?.map((item: any, i: number) => (
                       <div key={i} className="flex gap-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:bg-white hover:shadow-md transition-all duration-300">
                         <div className="h-20 w-20 bg-white rounded-xl flex-shrink-0 relative overflow-hidden border border-gray-100">
-                          <img src={item.product?.images?.[0]?.url || "/placeholder.png"} className="object-cover w-full h-full" alt="" />
+                          <Image
+                            src={item.product?.images?.[0]?.url || "/placeholder.png"}
+                            alt={item.product?.name || "Product"}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                          />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
                           <p className="font-bold text-gray-900 line-clamp-2 leading-tight">{item.product?.name || "Product"}</p>
@@ -626,9 +624,13 @@ export default function TrackOrderPage() {
       />
 
       {/* Success Popup */}
-      {showSuccessPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 animate-in fade-in duration-200 backdrop-blur-sm">
-          <div className="bg-white p-10 rounded-[40px] text-center max-w-sm w-full animate-in zoom-in-95 shadow-2xl">
+      {mounted && showSuccessPopup && createPortal(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/60 px-4 animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowSuccessPopup(false)}
+          />
+          <div className="bg-white p-10 rounded-[40px] text-center max-w-sm w-full animate-in zoom-in-95 shadow-2xl relative z-10">
             <div className="h-24 w-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="h-12 w-12 text-green-600" />
             </div>
@@ -636,13 +638,18 @@ export default function TrackOrderPage() {
             <p className="text-gray-500 mb-8 font-medium text-lg leading-relaxed">Your request has been submitted successfully.</p>
             <Button onClick={() => setShowSuccessPopup(false)} className="w-full rounded-full bg-[#E87A3F] font-bold h-14 text-lg hover:bg-[#d96d34] shadow-lg shadow-orange-200">Great, thanks!</Button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Rating Popup (Can be extracted similarly later) */}
-      {showRatingPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 animate-in fade-in duration-200 backdrop-blur-sm">
-          <div className="bg-white p-10 rounded-[40px] w-full max-w-lg animate-in zoom-in-95 shadow-2xl">
+      {mounted && showRatingPopup && createPortal(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/60 px-4 animate-in fade-in duration-200">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowRatingPopup(false)}
+          />
+          <div className="bg-white p-10 rounded-[40px] w-full max-w-lg animate-in zoom-in-95 shadow-2xl relative z-10">
             <h3 className="text-3xl font-black mb-3 text-center tracking-tight">Rate your experience</h3>
             <p className="text-gray-500 mb-8 text-center font-medium">How was your order?</p>
             <div className="flex gap-3 mb-8 justify-center">
@@ -667,7 +674,8 @@ export default function TrackOrderPage() {
               <Button className="flex-1 rounded-full bg-[#E87A3F] h-14 font-bold text-lg hover:bg-[#d96d34] shadow-lg shadow-orange-200" onClick={() => { setShowRatingPopup(false); setShowSuccessPopup(true); }}>Submit Review</Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <FooterSection />

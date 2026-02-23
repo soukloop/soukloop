@@ -147,7 +147,7 @@ export default function ReportIssueModal({ order, isOpen, onClose, onSuccess }: 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
@@ -175,8 +175,8 @@ export default function ReportIssueModal({ order, isOpen, onClose, onSuccess }: 
                                         key={item.id}
                                         onClick={() => handleToggleItem(item.id)}
                                         className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer ${selectedItemIds.includes(item.id)
-                                                ? "border-[#E87A3F] bg-orange-50/30 ring-1 ring-[#E87A3F]"
-                                                : "border-gray-100 hover:border-gray-300"
+                                            ? "border-[#E87A3F] bg-orange-50/30 ring-1 ring-[#E87A3F]"
+                                            : "border-gray-100 hover:border-gray-300"
                                             }`}
                                     >
                                         <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${selectedItemIds.includes(item.id) ? "bg-[#E87A3F] border-[#E87A3F]" : "border-gray-300 bg-white"

@@ -32,6 +32,10 @@ export async function GET(
 ) {
     try {
         const { id } = await context.params
+        const searchParams = request.nextUrl.searchParams
+        const cursor = searchParams.get('cursor')
+        const limitStr = searchParams.get('limit')
+        const limit = limitStr ? parseInt(limitStr, 10) : 20
 
         const session = await auth()
         if (!session || !session.user) {
@@ -68,6 +72,9 @@ export async function GET(
 
         const messages = await prisma.chatMessage.findMany({
             where: { conversationId: id },
+            take: limit + 1,
+            skip: cursor ? 1 : 0,
+            cursor: cursor ? { id: cursor } : undefined,
             include: {
                 sender: {
                     select: {
@@ -79,10 +86,21 @@ export async function GET(
                     }
                 }
             },
-            orderBy: { createdAt: 'asc' }
+            orderBy: { createdAt: 'desc' }
         })
 
-        return NextResponse.json(messages)
+        let nextCursor: string | null = null;
+        if (messages.length > limit) {
+            const nextItem = messages.pop();
+            if (nextItem) {
+                nextCursor = nextItem.id;
+            }
+        }
+
+        return NextResponse.json({
+            messages: messages.reverse(),
+            nextCursor
+        })
 
     } catch (error) {
         console.error('Messages GET error:', error)
@@ -150,64 +168,70 @@ export async function POST(
             }
         }
 
-        // 1. Create message in DB
-        const chatMessage = await prisma.chatMessage.create({
-            data: {
-                conversationId: id,
-                senderId: session.user.id,
-                message: messageText,
-                imageUrl,
-                attachments: attachments || undefined,
-                messageType: finalMessageType,
-                latitude,
-                longitude,
-                status: 'sent'
-            },
-            include: {
-                sender: { select: { id: true, name: true, image: true } }
+        // 1 & 2. Create message in DB & Queue for real-time delivery in a single transaction
+        const chatMessage = await prisma.$transaction(async (tx) => {
+            const message = await tx.chatMessage.create({
+                data: {
+                    conversationId: id,
+                    senderId: session.user.id,
+                    message: messageText,
+                    imageUrl,
+                    attachments: attachments || undefined,
+                    messageType: finalMessageType,
+                    latitude,
+                    longitude,
+                    status: 'sent'
+                },
+                include: {
+                    sender: { select: { id: true, name: true, image: true } }
+                }
+            })
+
+            const payload = {
+                ...message,
+                productImage: conversation.product?.images?.[0]?.url || null
             }
-        })
 
-        // 2. Queue for real-time delivery via Centrifugo Outbox
-        const payload = {
-            ...chatMessage,
-            productImage: conversation.product?.images?.[0]?.url || null
-        }
+            // Emit to the specific conversation room
+            await outbox.publish(`conversation:${id}`, {
+                type: 'new-message',
+                data: payload
+            }, tx);
 
-        // Emit to the specific conversation room
-        await outbox.publish(`conversation:${id}`, {
-            type: 'new-message',
-            data: payload
+            // Emit to both users' personal rooms
+            await outbox.sendToUser(conversation.buyerId, {
+                type: 'new-message',
+                data: payload
+            }, tx);
+
+            await outbox.sendToUser(conversation.sellerId, {
+                type: 'new-message',
+                data: payload
+            }, tx);
+
+            return message;
         });
 
-        // Emit to both users' personal rooms
-        await outbox.sendToUser(conversation.buyerId, {
-            type: 'new-message',
-            data: payload
-        });
-
-        await outbox.sendToUser(conversation.sellerId, {
-            type: 'new-message',
-            data: payload
-        });
-
-        console.log(`📡 Outbox entry created for new-message in conversation:${id}`)
+        console.log(`📡 Outbox entries created transactionally for new-message in conversation:${id}`)
 
         // 3. Notify recipient (Mobile Push/Email)
         const recipientId = session.user.id === conversation.buyerId ? conversation.sellerId : conversation.buyerId;
 
-        try {
-            await notifyNewMessage(recipientId, {
-                conversationId: id,
-                senderName: session.user.name || 'User',
-                senderId: session.user.id,
-                preview: messageText || (imageUrl ? 'Sent an image' : 'Sent an attachment'),
-                productName: conversation.product?.name || undefined,
-                productId: conversation.productId || undefined
-            });
-        } catch (err) {
-            console.error('Failed to notify new message:', err);
-        }
+        // Run notification in the background without blocking the response
+        Promise.resolve().then(async () => {
+            try {
+                await notifyNewMessage(recipientId, {
+                    conversationId: id,
+                    senderName: session.user.name || 'User',
+                    senderId: session.user.id,
+                    preview: messageText || (imageUrl ? 'Sent an image' : 'Sent an attachment'),
+                    productName: conversation.product?.name || undefined,
+                    productId: conversation.productId || undefined
+                });
+            } catch (err) {
+                console.error('Failed to notify new message in background:', err);
+            }
+        });
 
         return NextResponse.json(chatMessage, { status: 201 })
 

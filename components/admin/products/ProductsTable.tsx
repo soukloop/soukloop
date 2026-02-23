@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import DataTable, { Column, FilterOption } from '@/components/admin/DataTable';
+import Image from 'next/image';
 import { CopyButton } from "@/components/ui/copy-button";
 import { ActionItem } from '@/components/admin/ActionDropdown';
 import StatusBadge from '@/components/admin/StatusBadge';
@@ -135,11 +136,15 @@ export default function ProductsTable({
                     className="flex items-center gap-3 cursor-pointer group"
                     onClick={() => router.push(`/admin/products/${product.id}`)}
                 >
-                    <img
-                        src={product.thumbnail}
-                        alt={product.productName}
-                        className="h-12 w-12 rounded-lg object-cover ring-1 ring-gray-200 group-hover:ring-[#E87A3F] transition-all flex-shrink-0"
-                    />
+                    <div className="h-12 w-12 rounded-lg relative overflow-hidden ring-1 ring-gray-200 group-hover:ring-[#E87A3F] transition-all flex-shrink-0">
+                        <Image
+                            src={product.thumbnail}
+                            alt={product.productName}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                        />
+                    </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                             <p className="font-medium text-gray-900 group-hover:text-[#E87A3F] transition-colors truncate max-w-[140px] sm:max-w-xs" title={product.productName}>

@@ -230,7 +230,7 @@ export default function OrderCompletePage({ orderId }: OrderCompletePageProps) {
               {/* Action Buttons */}
               <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
-                  href={order ? "/track-orders" : "/editprofile?section=my-orders"}
+                  href={order ? "/track-orders" : "/edit-profile?section=my-orders"}
                   className="w-full sm:flex-1 max-w-[280px]"
                 >
                   <Button className="w-full h-14 rounded-full bg-orange-50 text-[#E87A3F] border border-orange-100 text-base font-bold hover:bg-orange-100 hover:text-[#d96d34] transition-all">

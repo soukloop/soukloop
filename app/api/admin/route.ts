@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
                 profile: true,
                 userVerifications: {
                   orderBy: { createdAt: 'desc' },
-                  include: { businessAddress: true }
+                  include: { sellerAddress: true }
                 },
                 addresses: true,
                 customerOrders: {
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
                   addresses: true,
                   userVerifications: {
                     orderBy: { createdAt: 'desc' },
-                    include: { businessAddress: true }
+                    include: { sellerAddress: true }
                   },
                   customerOrders: {
                     orderBy: { createdAt: 'desc' },
@@ -180,12 +180,12 @@ export async function GET(request: NextRequest) {
 
           if (verification) {
             vendors = [{
-              id: verification.id, // Use verification ID as the "Seller" ID for this view
-              realId: verification.id, // Helper
+              id: verification.id,
+              realId: verification.id,
               kycStatus: 'PENDING' as KycStatus,
-              storeName: verification.user.name + " (Applicant)",
+              storeName: (verification.user as any).name + " (Applicant)",
               createdAt: verification.submittedAt || verification.createdAt,
-              user: verification.user,
+              user: verification.user as any,
               userId: verification.userId,
               isActive: false,
               isApplicant: true,
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
                 profile: true,
                 userVerifications: {
                   orderBy: { createdAt: 'desc' },
-                  include: { businessAddress: true }
+                  include: { sellerAddress: true }
                 }
               }
             },
@@ -390,7 +390,8 @@ export async function PATCH(request: NextRequest) {
       const product = await prisma.product.update({
         where: { id: productId },
         data: {
-          isActive: action === 'approve' ? true : action === 'reject' ? false : undefined
+          isActive: action === 'approve' || action === 'activate' ? true : action === 'reject' || action === 'block' ? false : undefined,
+          status: action === 'approve' || action === 'activate' ? 'ACTIVE' : action === 'reject' || action === 'block' ? 'BLOCKED' : undefined
         },
         include: {
           vendor: true,

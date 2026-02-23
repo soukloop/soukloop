@@ -221,7 +221,8 @@ export async function getProductDetail(idOrSlug: string) {
 
     const serializedProduct = serializeProduct(product);
     const hasActiveOrder = (product.orderItems && product.orderItems.length > 0);
-    if (!product.isActive) {
+    // Preserve BLOCKED status if set by admin; only set INACTIVE for user-deactivated products
+    if (!product.isActive && product.status !== 'BLOCKED') {
         serializedProduct.status = 'INACTIVE';
     } else if (hasActiveOrder || product.status === 'SOLD') {
         serializedProduct.status = 'SOLD';

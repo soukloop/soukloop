@@ -10,8 +10,10 @@ import { MapPin, User, ShieldCheck, ImageIcon, Wallet, Receipt, CreditCard, Buil
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 // revealSensitiveData removed - sensitive field decryption is now done lazily inside EditVendorForm
+import { revealSensitiveData } from "../actions";
 import { EditUserModal } from "../modals/edit-user-modal";
 import { Package } from "lucide-react";
+import { SellerApprovalActions } from "@/components/admin/users/ui/seller-approval-actions";
 
 export default async function OverviewTab({ userId }: { userId: string }) {
     const user = await prisma.user.findUnique({
@@ -37,6 +39,9 @@ export default async function OverviewTab({ userId }: { userId: string }) {
 
     const verification = user.userVerifications[0];
     const isVendor = !!user.vendor;
+    const showSellerInfo = isVendor || !!verification;
+    const vendorKycStatus = user.vendor?.kycStatus || verification?.status;
+    const isApproved = vendorKycStatus === 'APPROVED' || vendorKycStatus === 'approved';
 
     // taxId and govIdNumber are now lazily decrypted inside EditVendorForm via getDecryptedVendorData()
 
@@ -106,7 +111,7 @@ export default async function OverviewTab({ userId }: { userId: string }) {
             </Card>
 
             {/* SECTION 2: SELLER INFORMATION (Conditional) */}
-            {isVendor && user.vendor && (
+            {showSellerInfo && (
                 <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
                     <CardHeader className="pb-4 border-b border-slate-100 bg-white">
                         <div className="flex items-center justify-between">
@@ -115,14 +120,17 @@ export default async function OverviewTab({ userId }: { userId: string }) {
                                 Vendor Verification & Identity
                             </CardTitle>
                             <div className="flex items-center gap-3">
-                                <Badge variant="outline" className={cn("bg-white/80 backdrop-blur-sm", user.vendor.kycStatus === 'APPROVED' ? "text-green-700 border-green-200" : "text-orange-700 border-orange-200")}>
-                                    {user.vendor.kycStatus === 'APPROVED' ? 'Verified Seller' : user.vendor.kycStatus}
+                                <Badge variant="outline" className={cn("bg-white/80", isApproved ? "text-green-700 border-green-200" : (vendorKycStatus === 'rejected' ? "text-red-700 border-red-200" : "text-orange-700 border-orange-200"))}>
+                                    {isApproved ? 'Verified Seller' : (vendorKycStatus?.toUpperCase() || 'UNKNOWN')}
                                 </Badge>
+                                {!isApproved && verification && verification.status === 'submitted' && (
+                                    <SellerApprovalActions verificationId={user.vendor?.id || verification.id} />
+                                )}
                                 <EditUserModal
                                     userId={userId}
                                     mode="vendor"
                                     vendorInitialData={{
-                                        slug: user.vendor.slug,
+                                        slug: user.vendor?.slug || "",
                                         taxIdType: verification?.taxIdType || "",
                                         // taxId and govIdNumber are NOT passed here — EditVendorForm
                                         // fetches them asynchronously via getDecryptedVendorData()
@@ -141,46 +149,50 @@ export default async function OverviewTab({ userId }: { userId: string }) {
                     <CardContent className="space-y-8 pt-6">
 
                         {/* Stats Row - Styled */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="p-4 rounded-xl bg-orange-50/50 border border-orange-100 shadow-[0_2px_8px_-2px_rgba(234,88,12,0.05)]">
-                                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                                    <Wallet className="h-3.5 w-3.5 text-orange-500" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700/70">Wallet</span>
+                        {user.vendor && (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="p-4 rounded-xl bg-orange-50/50 border border-orange-100 shadow-[0_2px_8px_-2px_rgba(234,88,12,0.05)]">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                                        <Wallet className="h-3.5 w-3.5 text-orange-500" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700/70">Wallet</span>
+                                    </div>
+                                    <div className="text-2xl font-bold text-slate-900 tracking-tight">${Number(user.vendor.walletBalance).toFixed(2)}</div>
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 tracking-tight">${Number(user.vendor.walletBalance).toFixed(2)}</div>
-                            </div>
-                            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-                                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                                    <Receipt className="h-3.5 w-3.5 text-slate-500" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</span>
+                                <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                                        <Receipt className="h-3.5 w-3.5 text-slate-500" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Orders</span>
+                                    </div>
+                                    <div className="text-2xl font-bold text-slate-900 tracking-tight">{user.vendor._count.orders}</div>
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 tracking-tight">{user.vendor._count.orders}</div>
-                            </div>
-                            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-                                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                                    <Package className="h-3.5 w-3.5 text-slate-500" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Products</span>
+                                <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                                        <Package className="h-3.5 w-3.5 text-slate-500" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Products</span>
+                                    </div>
+                                    <div className="text-2xl font-bold text-slate-900 tracking-tight">{user.vendor._count.products}</div>
                                 </div>
-                                <div className="text-2xl font-bold text-slate-900 tracking-tight">{user.vendor._count.products}</div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Business Identity */}
-                            <div className="space-y-4">
-                                <h4 className="text-[11px] font-bold uppercase tracking-widest text-orange-900/60 flex items-center gap-2">
-                                    <Building2 className="h-3 w-3" />
-                                    Business Identity
-                                </h4>
-                                <div className="bg-white rounded-xl border border-orange-100 p-5 space-y-4 shadow-sm">
-                                    <DetailItem label="Vendor Slug" value={user.vendor.slug} copyable />
-                                    <Separator className="bg-orange-50" />
-                                    <DetailItem label="Vendor ID" value={user.vendor.id} isSensitive />
+                            {user.vendor && (
+                                <div className="space-y-4">
+                                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-orange-900/60 flex items-center gap-2">
+                                        <Building2 className="h-3 w-3" />
+                                        Business Identity
+                                    </h4>
+                                    <div className="bg-white rounded-xl border border-orange-100 p-5 space-y-4 shadow-sm">
+                                        <DetailItem label="Vendor Slug" value={user.vendor.slug} copyable />
+                                        <Separator className="bg-orange-50" />
+                                        <DetailItem label="Vendor ID" value={user.vendor.id} isSensitive />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Legal Identity */}
-                            <div className="space-y-4">
+                            <div className={cn("space-y-4", !user.vendor ? "lg:col-span-2" : "")}>
                                 <h4 className="text-[11px] font-bold uppercase tracking-widest text-orange-900/60 flex items-center gap-2">
                                     <ShieldCheck className="h-3 w-3" />
                                     Legal Identity

@@ -14,7 +14,13 @@ export default function FooterSection() {
             <div className="mb-3">
               <Link href="/">
                 <h2 className="text-2xl font-bold">
-                  <img src="/images/logo.png" alt="SoukLoop" className="h-10" />
+                  <Image
+                    src="/images/logo.png"
+                    alt="SoukLoop"
+                    width={160}
+                    height={40}
+                    className="h-10 w-auto"
+                  />
                 </h2>
               </Link>
             </div>

@@ -1,6 +1,8 @@
+import { prisma } from '@/lib/prisma'
 import { createNotification } from '../create-notification'
 
 interface PaymentData {
+    [key: string]: any
     orderId: string
     orderNumber: string
     amount: number
@@ -21,17 +23,47 @@ function formatCurrency(amount: number, currency: string = 'USD'): string {
  * Notify buyer of successful payment
  */
 export async function notifyPaymentSuccess(buyerId: string, data: PaymentData) {
-    const formatted = formatCurrency(data.amount, data.currency)
+    const { render } = await import('@react-email/render');
+    const { OrderPlacedEmail } = await import('@/lib/email-templates/orders/order-placed');
+
+    const items = await prisma.orderItem.findMany({
+        where: {
+            OR: [
+                { orderId: data.orderId },
+                { order: { customerOrderId: data.orderId } }
+            ]
+        },
+        include: {
+            product: {
+                select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                }
+            }
+        }
+    });
+
+    const emailHtml = await render(
+        OrderPlacedEmail({
+            orderNumber: data.orderNumber,
+            total: data.amount,
+            itemCount: items.length,
+            currency: data.currency || 'USD',
+            orderUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`,
+            items: items as any
+        })
+    );
 
     return createNotification({
         userId: buyerId,
         type: 'PAYMENT_SUCCESS',
         title: 'Payment Successful! ✅',
-        message: `Your payment of ${formatted} for order #${data.orderNumber} was successful.`,
+        message: `Your payment for order #${data.orderNumber} was successful.`,
         data,
-        actionUrl: '/editprofile?section=my-orders',
+        actionUrl: `/trackorders?order=${data.orderId}`,
         sendEmail: true,
-        emailSubject: `Payment Confirmed - Order #${data.orderNumber}`
+        emailSubject: `Payment Confirmed - Order #${data.orderNumber}`,
+        emailHtml
     })
 }
 
@@ -41,6 +73,7 @@ export async function notifyPaymentSuccess(buyerId: string, data: PaymentData) {
 export async function notifyPaymentFailed(buyerId: string, data: PaymentData & { reason?: string }) {
     const formatted = formatCurrency(data.amount, data.currency)
 
+    // Using default professional template for now, can be improved with specific React template later
     return createNotification({
         userId: buyerId,
         type: 'PAYMENT_FAILED',
@@ -67,7 +100,7 @@ export async function notifyRefundRequested(
     const { render } = await import('@react-email/render');
     const { RefundRequestedEmail } = await import('@/lib/email-templates/order/refund-requested');
 
-    const emailHtml = render(
+    const emailHtml = await render(
         RefundRequestedEmail({
             orderNumber: data.orderNumber,
             refundAmount: data.amount,
@@ -97,17 +130,48 @@ export async function notifyRefundProcessed(
     buyerId: string,
     data: PaymentData & { refundId: string }
 ) {
+    const { render } = await import('@react-email/render');
+    const { OrderStatusUpdateEmail } = await import('@/lib/email-templates/orders/order-status-update');
+
+    const items = await prisma.orderItem.findMany({
+        where: {
+            OR: [
+                { orderId: data.orderId },
+                { order: { customerOrderId: data.orderId } }
+            ]
+        },
+        include: {
+            product: {
+                select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                }
+            }
+        }
+    });
+
     const formatted = formatCurrency(data.amount, data.currency)
+
+    const emailHtml = await render(
+        OrderStatusUpdateEmail({
+            orderNumber: data.orderNumber,
+            statusTitle: 'Refund Processed! 💰',
+            statusMessage: `Your refund of ${formatted} for order #${data.orderNumber} has been processed. It may take 5-10 business days to appear in your account.`,
+            items: items as any,
+            actionUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`
+        })
+    );
 
     return createNotification({
         userId: buyerId,
         type: 'REFUND_PROCESSED',
         title: 'Refund Processed! 💰',
-        message: `Your refund of ${formatted} for order #${data.orderNumber} has been processed. It may take 5-10 business days to appear in your account.`,
+        message: `Your refund of ${formatted} for order #${data.orderNumber} has been processed.`,
         data,
         actionUrl: '/editprofile?section=my-orders',
         sendEmail: true,
-        emailSubject: `Refund Processed - ${formatted}`
+        emailSubject: `Refund Processed - ${formatted}`,
+        emailHtml
     })
 }
 

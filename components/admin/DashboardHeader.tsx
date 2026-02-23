@@ -5,13 +5,11 @@ import { MONTHS } from '@/lib/admin/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DashboardHeaderProps {
-    period: 'daily' | 'weekly';
     selectedMonth: number;
     selectedYear: number;
 }
 
 export default function DashboardHeader({
-    period,
     selectedMonth,
     selectedYear
 }: DashboardHeaderProps) {
@@ -55,28 +53,6 @@ export default function DashboardHeader({
                         ))}
                     </SelectContent>
                 </Select>
-
-                {/* Period Toggle */}
-                <div className="flex bg-gray-100 p-1 rounded-lg">
-                    <button
-                        onClick={() => updateParam('period', 'daily')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${period === 'daily'
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                    >
-                        Daily
-                    </button>
-                    <button
-                        onClick={() => updateParam('period', 'weekly')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${period === 'weekly'
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                    >
-                        Weekly
-                    </button>
-                </div>
             </div>
         </div>
     );

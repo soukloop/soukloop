@@ -9,6 +9,9 @@ export default async function ChatsTab({ productId }: ChatsTabProps) {
     const product = await prisma.product.findUnique({
         where: { id: productId },
         select: {
+            vendor: {
+                select: { userId: true }
+            },
             chatConversations: {
                 include: {
                     buyer: {
@@ -56,14 +59,15 @@ export default async function ChatsTab({ productId }: ChatsTabProps) {
     if (!product) return null;
 
     const conversations = product.chatConversations || [];
-    // Use the seller of the first conversation as the "impersonated" user for the UI (right side)
-    const sellerId = conversations[0]?.sellerId;
+    // Use the seller of the product as the "impersonated" user for the UI (right side)
+    const sellerId = product.vendor.userId;
 
     return (
         <div className="animate-in fade-in duration-300 h-[800px]">
             <MessagingInterface
                 initialConversations={conversations as any}
                 readOnly={true}
+                isAdmin={true}
                 impersonatedUserId={sellerId}
             />
         </div>

@@ -11,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface AdminHeaderProps {
     adminUser: AdminUser | null;
@@ -72,11 +73,16 @@ export default function AdminHeader({
                     <DropdownMenuTrigger asChild id="admin-user-menu-trigger">
                         <Button variant="ghost" className="flex items-center gap-2 px-2">
 
-                            <img
-                                src={adminUser?.image || "/admin-avatar.png"}
-                                alt="Admin"
-                                className="h-8 w-8 rounded-full object-cover"
-                            />
+                            <div className="h-8 w-8 rounded-full overflow-hidden relative">
+                                <Image
+                                    src={adminUser?.image || "/admin-avatar.png"}
+                                    alt="Admin"
+                                    fill
+                                    className="object-cover"
+                                    sizes="32px"
+                                    priority
+                                />
+                            </div>
                             <div className="hidden text-left sm:block">
                                 <p className="text-sm font-medium text-gray-900">
                                     {adminUser?.email || 'Admin'}

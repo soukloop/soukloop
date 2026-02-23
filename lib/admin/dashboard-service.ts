@@ -99,33 +99,25 @@ function getDateRanges(period: 'daily' | 'weekly') {
 }
 
 /**
- * Core data fetching function (uncached)
+ * Fetch metric cards (Need-based fetching)
  */
-async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: number, year: number) {
-    console.log(`[DashboardService] Fetching fresh stats for period=${period}`);
-
+export async function fetchMetricCardsInsecure(period: 'daily' | 'weekly'): Promise<DashboardMetrics> {
+    console.log(`[DashboardService] Fetching metrics for period=${period}`);
     const dateRanges = getDateRanges(period);
 
     try {
         const [
-            // 1. Total Counts (Absolute totals for the cards)
             totalUsersCount,
             currentUsers,
             previousUsers,
             totalOrdersCount,
             currentOrders,
             previousOrders,
-            // 2. Financials
             revenueAgg,
             earningsAgg,
-            // 3. Sellers
             totalActiveSellers,
             currentActiveSellers,
-            previousActiveSellers,
-            // 4. Pending Actions
-            pendingCountAgg,
-            // 5. Chart Data
-            chartData
+            previousActiveSellers
         ] = await Promise.all([
             prisma.user.count(),
             prisma.user.count({ where: { createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } } }),
@@ -147,18 +139,8 @@ async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: nu
             prisma.vendor.count({ where: { isActive: true } }),
             prisma.vendor.count({ where: { isActive: true, createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } } }),
             prisma.vendor.count({ where: { isActive: true, createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } } }),
-
-            Promise.all([
-                prisma.vendor.count({ where: { kycStatus: 'PENDING' } }),
-                prisma.report.count({ where: { status: 'pending' } }),
-                prisma.payout.count({ where: { status: 'pending' } }),
-                prisma.refund.count({ where: { status: 'PENDING' } })
-            ]),
-
-            getMonthlyChartData(month, year)
         ]);
 
-        // Trend Calculations
         const [previousRevenueAgg, previousEarningsAgg] = await Promise.all([
             prisma.order.aggregate({
                 _sum: { total: true },
@@ -176,7 +158,64 @@ async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: nu
         const earningsChange = calculatePercentageChange(earningsAgg._sum.platformFee || 0, previousEarningsAgg._sum.platformFee || 0);
         const sellerChange = calculatePercentageChange(currentActiveSellers, previousActiveSellers);
 
-        // Top Selling Dress Styles
+        return {
+            totalUsers: { value: totalUsersCount, previousValue: totalUsersCount - (currentUsers - previousUsers), percentageChange: userChange.percentage, trend: userChange.trend },
+            totalOrders: { value: totalOrdersCount, previousValue: totalOrdersCount - (currentOrders - previousOrders), percentageChange: orderChange.percentage, trend: orderChange.trend },
+            revenueThisMonth: { value: revenueAgg._sum.total || 0, previousValue: previousRevenueAgg._sum.total || 0, percentageChange: revenueChange.percentage, trend: revenueChange.trend },
+            platformEarnings: { value: earningsAgg._sum.platformFee || 0, previousValue: previousEarningsAgg._sum.platformFee || 0, percentageChange: earningsChange.percentage, trend: earningsChange.trend },
+            activeSellers: { value: totalActiveSellers, previousValue: totalActiveSellers - (currentActiveSellers - previousActiveSellers), percentageChange: sellerChange.percentage, trend: sellerChange.trend },
+            period,
+            comparisonText: period === 'daily' ? 'from yesterday' : 'from last week'
+        };
+    } catch (error) {
+        console.error("[DashboardService] Failed to fetch metrics:", error);
+        throw new Error("Failed to load dashboard metrics.");
+    }
+}
+
+export const getMetricCards = unstable_cache(
+    async (period: 'daily' | 'weekly') => fetchMetricCardsInsecure(period),
+    ['admin-dashboard-metrics'],
+    { revalidate: 300, tags: ['admin-dashboard'] }
+);
+
+/**
+ * Fetch pending actions
+ */
+export async function getPendingActionsCount(): Promise<PendingActionsCount> {
+    const [pendingVendors, pendingReports, pendingPayouts, pendingRefunds] = await Promise.all([
+        prisma.vendor.count({ where: { kycStatus: 'PENDING' } }),
+        prisma.report.count({ where: { status: 'pending' } }),
+        prisma.payout.count({ where: { status: 'pending' } }),
+        prisma.refund.count({ where: { status: 'PENDING' } })
+    ]);
+    return { pendingVendors, pendingReports, pendingPayouts, pendingRefunds };
+}
+
+/**
+ * Fetch base stats (Charts, Actions)
+ */
+export async function getDashboardBaseStats(month: number, year: number) {
+    const [chartData, pendingActions] = await Promise.all([
+        getMonthlyChartData(month, year),
+        getPendingActionsCount()
+    ]);
+    return { chartData, pendingActions };
+}
+
+export const getCachedDashboardBaseStats = unstable_cache(
+    async (month: number, year: number) => getDashboardBaseStats(month, year),
+    ['admin-dashboard-base'],
+    { revalidate: 300, tags: ['admin-dashboard'] }
+);
+
+/**
+ * Fetch paginated top styles
+ */
+export async function getPaginatedTopStyles(type: 'selling' | 'listed', page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+
+    if (type === 'selling') {
         const topSellingRaw = await prisma.$queryRaw<any[]>`
             SELECT 
                 ds.id as "id",
@@ -193,20 +232,31 @@ async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: nu
             WHERE o."status" IN ('PAID', 'DELIVERED')
             GROUP BY ds.id, ds.name, c.name, p.id
             ORDER BY "totalValue" DESC
-            LIMIT 10
+            LIMIT ${limit} OFFSET ${offset}
         `;
 
-        const topSellingStyles = topSellingRaw.map(row => ({
+        const totalRaw = await prisma.$queryRaw<any[]>`
+            SELECT COUNT(DISTINCT ds.id) as count
+            FROM "order_items" oi
+            JOIN "orders" o ON oi."orderId" = o.id
+            JOIN "products" p ON oi."productId" = p.id
+            JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
+            WHERE o."status" IN ('PAID', 'DELIVERED')
+        `;
+        const total = Number(totalRaw[0]?.count || 0);
+
+        const styles: TopStyleData[] = topSellingRaw.map(row => ({
             id: row.id,
             name: row.name,
             category: row.category || 'Uncategorized',
             value: Number(row.totalValue),
             count: Number(row.totalCount),
             image: row.imageUrl,
-            percentage: 0 // Will need inventory context for a true % sold, setting 0 for now
+            percentage: 0
         }));
 
-        // Top Listed Dress Styles
+        return { styles, total, page, totalPages: Math.ceil(total / limit) };
+    } else {
         const topListedRaw = await prisma.$queryRaw<any[]>`
             SELECT 
                 ds.id as "id",
@@ -220,10 +270,18 @@ async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: nu
             WHERE p."isActive" = true
             GROUP BY ds.id, ds.name, c.name, p.id
             ORDER BY "totalCount" DESC
-            LIMIT 10
+            LIMIT ${limit} OFFSET ${offset}
         `;
 
-        const topListedStyles = topListedRaw.map(row => ({
+        const totalRaw = await prisma.$queryRaw<any[]>`
+            SELECT COUNT(DISTINCT ds.id) as count
+            FROM "products" p
+            JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
+            WHERE p."isActive" = true
+        `;
+        const total = Number(totalRaw[0]?.count || 0);
+
+        const styles: ListedStyleData[] = topListedRaw.map(row => ({
             id: row.id,
             name: row.name,
             category: row.category || 'Uncategorized',
@@ -231,41 +289,40 @@ async function fetchDashboardStatsInsecure(period: 'daily' | 'weekly', month: nu
             image: row.imageUrl
         }));
 
-        return {
-            totalUsers: { value: totalUsersCount, previousValue: totalUsersCount - (currentUsers - previousUsers), percentageChange: userChange.percentage, trend: userChange.trend },
-            totalOrders: { value: totalOrdersCount, previousValue: totalOrdersCount - (currentOrders - previousOrders), percentageChange: orderChange.percentage, trend: orderChange.trend },
-            revenueThisMonth: { value: revenueAgg._sum.total || 0, previousValue: previousRevenueAgg._sum.total || 0, percentageChange: revenueChange.percentage, trend: revenueChange.trend },
-            platformEarnings: { value: earningsAgg._sum.platformFee || 0, previousValue: previousEarningsAgg._sum.platformFee || 0, percentageChange: earningsChange.percentage, trend: earningsChange.trend },
-            activeSellers: { value: totalActiveSellers, previousValue: totalActiveSellers - (currentActiveSellers - previousActiveSellers), percentageChange: sellerChange.percentage, trend: sellerChange.trend },
-            salesChart: chartData.salesChart,
-            ordersChart: chartData.ordersChart,
-            pendingVendors: pendingCountAgg[0],
-            pendingReports: pendingCountAgg[1],
-            pendingPayouts: pendingCountAgg[2],
-            pendingRefunds: pendingCountAgg[3],
-            topSellingStyles,
-            topListedStyles,
-            period,
-            comparisonText: period === 'daily' ? 'from yesterday' : 'from last week'
-        };
-    } catch (error) {
-        console.error("[DashboardService] Failed to fetch stats:", error);
-        throw new Error("Failed to load dashboard statistics. Database might be unreachable.");
+        return { styles, total, page, totalPages: Math.ceil(total / limit) };
     }
 }
 
 /**
- * Cached version of getDashboardStats
- * Revalidates every 5 minutes (300 seconds)
- * Tag 'admin-dashboard' enables manual invalidation on major events
+ * Fetch paginated recent orders
  */
-export const getDashboardStats = unstable_cache(
-    async (period: 'daily' | 'weekly', month: number, year: number) => {
-        return fetchDashboardStatsInsecure(period, month, year);
-    },
-    ['admin-dashboard-stats'], // This key should ideally include params, but unstable_cache handles it if they are passed to the wrapper
-    {
-        revalidate: 300,
-        tags: ['admin-dashboard']
-    }
-);
+export async function getPaginatedRecentOrders(page: number = 1, limit: number = 10) {
+    const offset = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                items: {
+                    take: 1, // Only need one item to show an image
+                    include: {
+                        product: {
+                            include: {
+                                images: {
+                                    where: { isPrimary: true },
+                                    take: 1
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit
+        }),
+        prisma.order.count()
+    ]);
+
+    return { orders, total, page, totalPages: Math.ceil(total / limit) };
+}

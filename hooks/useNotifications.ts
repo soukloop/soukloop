@@ -28,6 +28,7 @@ export function useNotifications() {
     if (pageIndex === 0) return `/api/notifications?limit=20`;
 
     // Subsequent pages
+    if (!previousPageData) return null;
     return `/api/notifications?limit=20&cursor=${previousPageData.nextCursor}`;
   };
 
@@ -44,8 +45,9 @@ export function useNotifications() {
     getKey,
     fetcher,
     {
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
       revalidateOnMount: true,
+      dedupingInterval: 10000,
       refreshInterval: 0, // Disable polling to rely on sockets + manual refresh
     }
   );

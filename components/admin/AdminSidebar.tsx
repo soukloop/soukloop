@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Shield } from 'lucide-react';
 import { SIDEBAR_ITEMS } from '@/lib/admin/constants';
@@ -90,7 +91,13 @@ export default function AdminSidebar({
                     {/* Header */}
                     <div className="flex h-16 items-center justify-between border-b px-4">
                         <div className="flex items-center gap-2">
-                            <img src="/logo.png" alt="Soukloop" className="h-8 w-auto" />
+                            <Image
+                                src="/logo.png"
+                                alt="Soukloop"
+                                width={120}
+                                height={32}
+                                className="h-8 w-auto"
+                            />
                         </div>
                         <button
                             onClick={onMobileClose}
@@ -137,7 +144,13 @@ export default function AdminSidebar({
             <div className="flex h-16 items-center justify-between border-b px-4">
                 {!collapsed && (
                     <div className="flex items-center gap-2">
-                        <img src="/logo.png" alt="Soukloop" className="h-8 w-auto" />
+                        <Image
+                            src="/logo.png"
+                            alt="Soukloop"
+                            width={120}
+                            height={32}
+                            className="h-8 w-auto"
+                        />
                     </div>
                 )}
                 <button

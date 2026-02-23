@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') || ''
-
+    const mode = searchParams.get('mode') || 'full'
     const session = await auth()
 
     if (!session || !session.user) {
@@ -34,9 +34,32 @@ export async function GET(request: NextRequest) {
       ...(status && { status: status as any })
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
+    const limitParam = parseInt(searchParams.get('limit') || '10')
+    const pageParam = parseInt(searchParams.get('page') || '1')
+
+    const includeQuery = mode === 'lite'
+      ? {
+        items: {
+          take: 3,
+          select: {
+            quantity: true,
+            price: true,
+            product: {
+              select: {
+                name: true,
+                images: { take: 1, select: { url: true } }
+              }
+            }
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+      : {
         items: {
           include: {
             product: {
@@ -54,11 +77,27 @@ export async function GET(request: NextRequest) {
           }
         },
         payments: true
-      },
-      orderBy: { createdAt: 'desc' }
-    })
+      }
 
-    return NextResponse.json({ items: orders })
+    // Run count and query in parallel
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        take: limitParam,
+        skip: (pageParam - 1) * limitParam,
+        include: includeQuery as any,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.order.count({ where })
+    ])
+
+    return NextResponse.json({
+      items: orders,
+      total,
+      page: pageParam,
+      limit: limitParam,
+      totalPages: Math.ceil(total / limitParam),
+    })
 
   } catch (error) {
     console.error('Vendor orders GET error:', error)

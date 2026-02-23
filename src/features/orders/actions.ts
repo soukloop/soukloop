@@ -111,7 +111,8 @@ export async function getOrderDetails(orderId: string) {
     try {
         await checkAdmin();
 
-        const order = await prisma.order.findUnique({
+        // 1. Try finding as a specific Vendor Order
+        let order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
                 user: {
@@ -157,6 +158,95 @@ export async function getOrderDetails(orderId: string) {
                 }
             }
         });
+
+        // 2. If not found, try finding as a Parent Customer Order
+        if (!order) {
+            const customerOrder = await prisma.customerOrder.findUnique({
+                where: { id: orderId },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            image: true,
+                            createdAt: true,
+                            profile: {
+                                select: {
+                                    phone: true,
+                                    avatar: true
+                                }
+                            }
+                        }
+                    },
+                    vendorOrders: {
+                        include: {
+                            items: {
+                                include: {
+                                    product: {
+                                        include: {
+                                            images: { take: 1, orderBy: { order: 'asc' } }
+                                        }
+                                    }
+                                }
+                            },
+                            vendor: {
+                                select: {
+                                    id: true,
+                                    slug: true,
+                                    logo: true,
+                                    user: {
+                                        select: {
+                                            name: true,
+                                            email: true
+                                        }
+                                    }
+                                }
+                            },
+                            history: true
+                        }
+                    }
+                }
+            });
+
+            if (customerOrder) {
+                // Synthesize the data to be compatible with the existing detail page UI
+                const vendorOrders = customerOrder.vendorOrders || [];
+
+                // Calculate totals from sub-orders
+                const subtotal = vendorOrders.reduce((sum, vo) => sum + Number(vo.subtotal || 0), 0);
+                const tax = vendorOrders.reduce((sum, vo) => sum + Number(vo.tax || 0), 0);
+                const shipping = vendorOrders.reduce((sum, vo) => sum + Number(vo.shipping || 0), 0);
+                const total = vendorOrders.reduce((sum, vo) => sum + Number(vo.total || 0), 0);
+
+                // Flatten items and history
+                const allItems = vendorOrders.flatMap(vo => vo.items || []);
+                const allHistory = vendorOrders.flatMap(vo => vo.history || [])
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+                // Return a combined object
+                return {
+                    ...customerOrder,
+                    id: customerOrder.id,
+                    orderNumber: customerOrder.orderNumber,
+                    createdAt: customerOrder.createdAt,
+                    status: 'PARENT', // Special status for UI to know it's a parent order
+                    subtotal,
+                    tax,
+                    shipping,
+                    total: customerOrder.totalAmount || total,
+                    items: allItems,
+                    history: allHistory,
+                    user: customerOrder.user,
+                    shippingAddress: customerOrder.shippingAddress,
+                    billingAddress: customerOrder.billingAddress,
+                    notes: customerOrder.notes,
+                    // Note: We don't attach a single 'vendor' here, the UI will see it's missing or use vendorOrders
+                    vendorOrders: vendorOrders,
+                    isParentOrder: true
+                } as any;
+            }
+        }
 
         if (!order) throw new Error("Order not found");
 
@@ -452,16 +542,29 @@ export async function getMyOrders(params: {
             if (status && status !== 'All' && status !== 'all') {
                 const map: any = {
                     'Pending': 'PENDING',
-                    'Processing': ['PAID', 'PROCESSING', 'PARTIAL'], // Group these?
-                    'Shipped': 'PARTIAL', // API mapped Shipped to Partial?
+                    'Paid': 'PAID',
+                    'Processing': 'PROCESSING',
+                    'Shipped': 'SHIPPED',
                     'Delivered': 'DELIVERED',
-                    'Cancelled': 'CANCELED'
+                    'Canceled': 'CANCELED',
+                    'Refunded': 'REFUNDED',
                 };
 
-                const target = map[status] || status.toUpperCase();
-                orders = orders.filter(o =>
-                    Array.isArray(target) ? target.includes(o.status) : o.status === target
-                );
+                // The tabs pass lowercase sometimes
+                const lowerStatus = status.toLowerCase();
+                if (lowerStatus === 'processing') {
+                    orders = orders.filter((o: any) => o.status === 'PROCESSING');
+                } else if (lowerStatus === 'shipped') {
+                    orders = orders.filter((o: any) => o.status === 'SHIPPED');
+                } else if (lowerStatus === 'delivered') {
+                    orders = orders.filter((o: any) => o.status === 'DELIVERED');
+                } else {
+                    const target = map[status] || status.toUpperCase();
+                    orders = orders.filter((o: any) =>
+                        Array.isArray(target) ? target.includes(o.status) : o.status === target
+                    );
+                }
+
                 // Adjust total after filter? 
                 // Usually total reflects DB total matching Query. 
                 // Since we filtered in memory, we update total.

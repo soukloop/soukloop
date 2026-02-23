@@ -38,7 +38,7 @@ export default function UserMenu() {
         { icon: Settings, label: "Edit Profile", href: "/edit-profile" },
         { icon: Bell, label: "Notification settings", href: "/notifications", hasBadge: hasUnreadGeneral },
         { icon: RotateCcw, label: "Refunds & Returns", href: "/refunds-and-returns" },
-        { icon: Package, label: "My orders", href: "/editprofile?section=my-orders", hasBadge: hasUnreadOrders },
+        { icon: Package, label: "My orders", href: "/edit-profile?section=my-orders", hasBadge: hasUnreadOrders },
         { icon: Truck, label: "Track Order", href: "/track-orders" },
         { icon: Gift, label: "Rewards", href: "/reward-points" },
         { icon: MessageCircle, label: "Chat box", href: "/chats", hasBadge: hasUnreadMessages },
@@ -135,7 +135,7 @@ export default function UserMenu() {
                                         </div>
                                         <div>
                                             <h3 className="text-base font-medium text-gray-900">
-                                                {displayUser?.name || displayUser?.username || "Guest"}
+                                                {displayUser?.name || "Guest"}
                                             </h3>
                                             {displayUser?.email && (
                                                 <p className="text-xs text-gray-400">
@@ -249,6 +249,7 @@ export default function UserMenu() {
                                                 src={userAvatar}
                                                 alt="User avatar"
                                                 fill
+                                                sizes="40px"
                                                 className="object-cover"
                                             />
                                         </div>
@@ -325,7 +326,7 @@ export default function UserMenu() {
             {showLogoutModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div
-                        className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black bg-opacity-30"
                         onClick={() => setShowLogoutModal(false)}
                     />
                     <div
@@ -391,7 +392,7 @@ export default function UserMenu() {
                         <Button
                             onClick={() => {
                                 if (hasApplication) {
-                                    router.push('/editprofile?section=edit-profile#become-seller-section');
+                                    router.push('/edit-profile?section=edit-profile#become-seller-section');
                                 } else {
                                     router.push('/become-a-seller');
                                 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { Star, X } from "lucide-react";
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ProfileStatsProps {
     stats: {
@@ -18,6 +20,12 @@ export default function ProfileStats({ stats, userId }: ProfileStatsProps) {
     const [followers, setFollowers] = useState<any[]>([]);
     const [following, setFollowing] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     const handleFetchFollowers = async () => {
         setShowFollowersModal(true);
@@ -76,8 +84,12 @@ export default function ProfileStats({ stats, userId }: ProfileStatsProps) {
             </div>
 
             {/* Follow Modals */}
-            {(showFollowersModal || showFollowingModal) && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
+            {mounted && (showFollowersModal || showFollowingModal) && createPortal(
+                <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/60 p-4">
+                    <div
+                        className="absolute inset-0"
+                        onClick={() => { setShowFollowersModal(false); setShowFollowingModal(false); }}
+                    />
                     <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-gray-900">
@@ -96,8 +108,16 @@ export default function ProfileStats({ stats, userId }: ProfileStatsProps) {
                                 <div className="py-20 text-center text-gray-500">Loading...</div>
                             ) : (showFollowersModal ? followers : following).length > 0 ? (
                                 (showFollowersModal ? followers : following).map((f: any) => (
-                                    <div key={f.id} className="flex items-center gap-4 p-2 rounded-xl transition-colors hover:bg-orange-50/50">
-                                        <img src={f.image || "/icons/user-avatar.png"} className="size-12 rounded-full border border-gray-100 object-cover" />
+                                    <div className="flex items-center gap-4 p-2 rounded-xl transition-colors hover:bg-orange-50/50">
+                                        <div className="relative size-12 rounded-full border border-gray-100 overflow-hidden shrink-0">
+                                            <Image
+                                                src={f.image || "/icons/user-avatar.png"}
+                                                alt={f.name || "User"}
+                                                fill
+                                                sizes="48px"
+                                                className="object-cover"
+                                            />
+                                        </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-bold text-gray-900 truncate">{f.name || "User"}</p>
                                             <p className="text-xs text-gray-500 truncate">{f.email}</p>
@@ -111,7 +131,8 @@ export default function ProfileStats({ stats, userId }: ProfileStatsProps) {
                             )}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

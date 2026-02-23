@@ -11,7 +11,7 @@ export default async function SellerManagementPage(props: {
     // Parse Params
     const page = Number(searchParams?.page) || 1;
     const search = searchParams?.search as string | undefined;
-    const status = (searchParams?.status as string) || 'ACTIVE'; // Default to Active
+    const status = (searchParams?.status as string) || 'ALL'; // Default to All
 
     // Server Side Fetch
     const { sellers, total, currentPage } = await getPaginatedSellers({

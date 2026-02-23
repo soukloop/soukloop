@@ -210,7 +210,7 @@ export function TestimonialModal({ isOpen, onClose, testimonial }: TestimonialMo
                                         </div>
                                     )}
                                     {isUploadingProfile && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60">
                                             <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
                                         </div>
                                     )}
@@ -407,7 +407,7 @@ export function TestimonialModal({ isOpen, onClose, testimonial }: TestimonialMo
                                                 <ImageIcon className="w-4 h-4 text-gray-400" />
                                             )}
                                             {isUploadingProduct && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-lg">
+                                                <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
                                                     <Loader2 className="w-3 h-3 text-orange-500 animate-spin" />
                                                 </div>
                                             )}

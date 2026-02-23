@@ -144,7 +144,7 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                             vendorUserId: userId,
                             hasPendingStyle: item.hasPendingStyle,
                             status: item.status,
-                            isActive: item.status !== 'INACTIVE',
+                            isActive: item.status !== 'INACTIVE' && item.status !== 'BLOCKED',
                             images: item.images,
                             createdAt: item.createdAt
                         } as any}
@@ -152,7 +152,14 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                         toggleWishlist={() => { }}
                         onEdit={() => handleEdit(item)}
                         onDelete={() => handleDeleteClick(item.id)}
-                        onDeactivate={() => handleStatusUpdate(item.id, "INACTIVE", "deactivate")}
+                        onDeactivate={() => {
+                            // Toggle: If currently inactive, activate; otherwise deactivate
+                            if (item.status === 'INACTIVE') {
+                                handleStatusUpdate(item.id, "ACTIVE", "activate");
+                            } else {
+                                handleStatusUpdate(item.id, "INACTIVE", "deactivate");
+                            }
+                        }}
                         onMarkSold={() => handleStatusUpdate(item.id, "SOLD", "mark as sold")}
                     />
                 ))}

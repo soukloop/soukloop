@@ -186,7 +186,7 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
                           </div>
 
                           {/* Product Image */}
-                          <a href={`/productdetails?id=${item.productId}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50 shadow-sm">
+                          <a href={`/product/${item.product?.slug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50 shadow-sm">
                             <Image
                               src={item.product?.images?.[0]?.url || "/premium-brown-leather-bag.png"}
                               alt={item.product?.name || "Product"}
@@ -205,7 +205,7 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
                           {/* Info & Actions */}
                           <div className="flex flex-1 flex-col justify-between min-w-0">
                             <div className="flex justify-between items-start gap-4">
-                              <a href={`/productdetails?id=${item.productId}`}>
+                              <a href={`/product/${item.product?.slug}`}>
                                 <h3 className={`block font-bold text-base md:text-lg transition-colors truncate ${isOutOfStock ? "text-gray-500 line-through" : "text-gray-900 group-hover:text-[#E87A3F]"}`}>
                                   {item.product?.name || "Product"}
                                 </h3>

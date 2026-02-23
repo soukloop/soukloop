@@ -209,10 +209,10 @@ export default function WithdrawalClient({ initialData }: WithdrawalClientProps)
                             <Card className="overflow-hidden border-none shadow-premium bg-gradient-to-br from-[#E87A3F] to-[#d96d34] text-white">
                                 <CardContent className="p-8">
                                     <div className="flex items-center justify-between mb-4">
-                                        <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md">
+                                        <div className="p-3 rounded-2xl bg-white/10">
                                             <Wallet className="h-6 w-6" />
                                         </div>
-                                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md">
+                                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-none">
                                             Available for Payout
                                         </Badge>
                                     </div>

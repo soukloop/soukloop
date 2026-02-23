@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Tag } from 'lucide-react';
+import Image from 'next/image';
 
 interface StyleDetail {
     name: string;
@@ -137,10 +138,12 @@ export default function TopCategories({
                             {/* Image or Letter Fallback */}
                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                                 {style.image ? (
-                                    <img
+                                    <Image
                                         src={style.image}
                                         alt={style.name}
-                                        className="h-full w-full object-cover"
+                                        fill
+                                        className="object-cover"
+                                        sizes="64px"
                                     />
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center bg-orange-100 text-xl font-bold text-orange-600">

@@ -43,8 +43,7 @@ interface CartContextType {
   deselectAll: () => void;
   selectableItemsCount: number;
   isAllSelected: boolean;
-  selectableItemsCount: number;
-  isAllSelected: boolean;
+  isSyncing: boolean;
   stockUpdates: Map<string, number>;
 }
 
@@ -69,10 +68,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return data;
     },
     {
-      revalidateOnFocus: true, // Allow background refresh
+      revalidateOnFocus: false, // Disable aggressive fetching on window focus
+      dedupingInterval: 10000, // Prevent duplicate requests within 10 seconds
       shouldRetryOnError: false,
       keepPreviousData: true, // CRITICAL: Show previous (cached) data while fetching new
-      refreshInterval: 30000, // Fallback polling: Check every 30s in case WebSockets fail
+      refreshInterval: 60000, // Fallback polling: Check every 60s in case WebSockets fail
       onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
         if (error.message.includes('401') || error.message.includes('403')) return;
         if (retryCount >= 3) return;
@@ -471,7 +471,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Centrifugo Listener for Stock Updates
   useEffect(() => {
-    if (!isConnected || !socketContext) return;
+    if (!isConnected || !subscribe) return;
 
     // Subscribe to a public channel for stock updates
     const unsubscribe = subscribe('product-stock-updates', (ctx: any) => {
@@ -499,7 +499,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
 
     return unsubscribe;
-  }, [isConnected, socketContext, subscribe, enrichedCart?.items?.length]);
+  }, [isConnected, subscribe]);
 
   // Initialize selection when cart loads - DEPENDS ON STOCK
   const itemIdsKey = enrichedCart?.items?.map((i: any) => i.id).join(',') || '';
@@ -587,6 +587,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     selectableItemsCount,
     isAllSelected,
     selectAll,
+    deselectAll,
     // Note: stockUpdates is purposefully omitted here -> REVERTED: Needed for CartPage
     stockUpdates,
   }), [

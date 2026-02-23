@@ -203,34 +203,62 @@ export interface MetricData {
     trend: 'up' | 'down' | 'neutral';
 }
 
-export interface DashboardStats {
+export interface DashboardMetrics {
     totalUsers: MetricData;
     totalOrders: MetricData;
     revenueThisMonth: MetricData;
     platformEarnings: MetricData;
     activeSellers: MetricData;
-    salesChart: { name: string; value: number }[];
-    ordersChart: { name: string; value: number }[];
+    period: 'daily' | 'weekly';
+    comparisonText: string;
+}
+
+export interface PendingActionsCount {
     pendingVendors: number;
     pendingReports: number;
     pendingPayouts: number;
     pendingRefunds: number;
-    topSellingStyles: {
-        id: string;
-        name: string;
-        category: string;
-        value: number;
-        count: number;
-        image?: string | null;
-        percentage: number;
-    }[];
-    topListedStyles: {
-        id: string;
-        name: string;
-        category: string;
-        count: number;
-        image?: string | null;
-    }[];
-    period: 'daily' | 'weekly';
-    comparisonText: string;
 }
+
+export interface TopStyleData {
+    id: string;
+    name: string;
+    category: string;
+    value: number;
+    count: number;
+    image?: string | null;
+    percentage: number;
+}
+
+export interface ListedStyleData {
+    id: string;
+    name: string;
+    category: string;
+    count: number;
+    image?: string | null;
+}
+
+export interface PaginatedTopStyles {
+    styles: TopStyleData[];
+    total: number;
+    page: number;
+    totalPages: number;
+}
+
+export interface PaginatedListedStyles {
+    styles: ListedStyleData[];
+    total: number;
+    page: number;
+    totalPages: number;
+}
+
+export interface DashboardStats {
+    metrics: DashboardMetrics;
+    salesChart: { name: string; value: number }[];
+    ordersChart: { name: string; value: number }[];
+    pendingActions: PendingActionsCount;
+    topSellingStyles: TopStyleData[]; // Kept for backward compatibility or replace entirely if updating page.tsx
+    topListedStyles: ListedStyleData[];
+    period?: 'daily' | 'weekly';
+}
+

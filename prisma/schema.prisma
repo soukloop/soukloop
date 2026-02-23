@@ -437,6 +437,7 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, type])
+  @@index([userId, createdAt])
   @@index([createdAt])
   @@map("notifications")
 }
@@ -707,6 +708,7 @@ model ChatMessage {
   conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User             @relation(fields: [senderId], references: [id])
 
+  @@index([conversationId, createdAt])
   @@map("chat_messages")
 }
 

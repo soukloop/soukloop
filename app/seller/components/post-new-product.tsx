@@ -36,11 +36,13 @@ export default function PostNewProduct({ onShowPaymentModal }: PostNewProductPro
     // Helper to upload a single file
     const uploadFile = async (file: File): Promise<string | null> => {
         try {
-            const formData = new FormData();
-            formData.append("file", file);
             const res = await fetch("/api/upload", {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "x-filename": file.name,
+                    "content-type": file.type,
+                },
+                body: file,
             });
             if (!res.ok) throw new Error("Upload failed");
             const data = await res.json();

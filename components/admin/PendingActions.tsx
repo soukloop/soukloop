@@ -48,7 +48,7 @@ export default function PendingActions({
             count: pendingPayouts,
             action: "Withdraw",
             actionColor: "bg-teal-600 hover:bg-teal-700",
-            href: "/admin/transactions",
+            href: "/admin/transactions", // Assuming transactions handles payouts
             icon: CreditCard
         },
         {
@@ -58,7 +58,7 @@ export default function PendingActions({
             count: pendingRefunds,
             action: "Refunds",
             actionColor: "bg-orange-500 hover:bg-orange-600",
-            href: "/admin/orders?status=REFUNDED", // Assuming filtering by status
+            href: "/admin/refunds-and-returns",
             icon: Package
         }
     ];

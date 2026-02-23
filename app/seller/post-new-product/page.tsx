@@ -14,19 +14,17 @@ import { Button } from "@/components/ui/button";
 import { StatefulButton } from "@/components/ui/StatefulButton";
 import { ProductData, initialProductData, PhotoSlot } from "../components/types";
 import { useSellerAuth } from "@/hooks/useSellerAuth";
-import { Loader2 } from "lucide-react";
 import { FormSkeleton } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/useAuth";
 import { useProductPersistence } from "@/hooks/useProductPersistence";
-import { step1Schema, step2Schema, step3Schema, step4Schema } from "./schemas";
+import { step1Schema, step2Schema, step3Schema } from "./schemas";
 import { toast } from "sonner";
 
 export default function PostNewProductPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user } = useAuth(); // Auth needed for session
+    const { user } = useAuth();
 
-    // Check if editing existing product
     const editProductId = searchParams?.get("edit");
     const isEditMode = !!editProductId;
 
@@ -35,37 +33,30 @@ export default function PostNewProductPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
-    // Ref to prevent double-submit
     const isSubmittingRef = useRef(false);
-
-    // Seller authentication check
     const { isSeller, isLoading: isAuthLoading } = useSellerAuth();
 
-    // Fetch product data if in edit mode
     useEffect(() => {
         async function fetchProduct() {
             if (!editProductId) return;
-
             try {
                 setIsLoadingProduct(true);
-                const res = await fetch(`/api/products/${editProductId}`);
-
+                const res = await fetch(`/api/products/${editProductId}?mode=edit`);
                 if (res.ok) {
-                    const product = await res.json();
-
                     // Map product data to form format
+                    const product = await res.json();
                     const photos = product.images?.map((img: any, index: number) => ({
-                        id: index + 1,
+                        id: String(index + 1),
                         label: img.alt || `Photo ${index + 1}`,
                         image: img.url,
                         file: null,
                     })) || [];
 
                     // Fill in empty photo slots
-                    while (photos.length < 6) {
+                    while (photos.length < 10) {
                         photos.push({
-                            id: photos.length + 1,
-                            label: `Back${photos.length > 3 ? ' 2' : ''}`,
+                            id: String(photos.length + 1),
+                            label: photos.length === 0 ? "Add a photo" : `Photo ${photos.length + 1}`,
                             image: null,
                             file: null,
                         });
@@ -76,20 +67,32 @@ export default function PostNewProductPage() {
                         name: product.name || "",
                         title: product.name || "",
                         category: product.category || "",
+                        categoryId: product.categoryId || "",
                         condition: product.condition || "",
                         occasion: product.occasion || "",
+                        occasionId: product.occasionId || "",
                         gender: product.gender || "",
                         size: product.size || "",
                         color: product.color || "",
+                        colorId: product.colorId || "",
                         fabric: product.fabric || "",
+                        materialId: product.materialId || "",
                         brand: product.brand || "",
-                        price: product.price || 0,
-                        comparePrice: product.comparePrice || 0,
+                        brandId: product.brandId || "",
+                        price: product.price ? String(product.price) : "",
+                        comparePrice: product.comparePrice ? String(product.comparePrice) : "",
                         description: product.description || "",
                         tags: product.tags || "",
                         dress: product.dress || "",
+                        dressStyleId: product.dressStyleId || "",
+                        hasPendingStyle: product.hasPendingStyle || false,
+                        state: product.location || "",
                         video: product.video || null,
                         videoFile: null,
+                        videoIsUploading: false,
+                        videoUploadUrl: null,
+                        videoUploadError: null,
+                        videoUploadProgress: 0,
                     });
                 } else {
                     toast.error("Failed to load product");
@@ -102,11 +105,9 @@ export default function PostNewProductPage() {
                 setIsLoadingProduct(false);
             }
         }
-
         fetchProduct();
-    }, [editProductId]);
+    }, [editProductId, router]);
 
-    // Show BecomeSellerCTA if user is not a seller
     if (!isAuthLoading && !isSeller) {
         return (
             <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans">
@@ -121,7 +122,6 @@ export default function PostNewProductPage() {
         setProductData((prev) => ({ ...prev, ...updates }));
     };
 
-    // Scroll to top on step change
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             window.scrollTo({ top: 0, behavior: "smooth" });
@@ -129,15 +129,13 @@ export default function PostNewProductPage() {
         return () => clearTimeout(timeoutId);
     }, [addProductStep]);
 
-    // Generate/Manage Draft ID
     const draftIdParam = searchParams?.get("draftId");
     const [draftId, setDraftId] = useState(draftIdParam);
 
     useEffect(() => {
         if (!searchParams) return;
-
         if (!isEditMode && !draftIdParam) {
-            const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+            const newId = crypto.randomUUID();
             setDraftId(newId);
             const params = new URLSearchParams(searchParams.toString());
             params.set("draftId", newId);
@@ -147,14 +145,8 @@ export default function PostNewProductPage() {
         }
     }, [isEditMode, draftIdParam, router, searchParams]);
 
-    // Construct Storage Key
-    const storageKey = isEditMode
-        ? `product_edit_${editProductId}`
-        : draftId
-            ? `product_draft_${draftId}`
-            : "";
+    const storageKey = isEditMode ? `product_edit_${editProductId}` : draftId ? `product_draft_${draftId}` : "";
 
-    // Persistence Hook
     const { clearPersistence } = useProductPersistence(
         storageKey,
         productData,
@@ -163,7 +155,6 @@ export default function PostNewProductPage() {
             if (!isEditMode && storageKey) {
                 setProductData(loadedData);
                 setAddProductStep(loadedStep);
-                console.log('Restored form state from IDB', storageKey);
             }
         }
     );
@@ -175,208 +166,153 @@ export default function PostNewProductPage() {
         { number: 4, label: "Upload Video" },
     ];
 
-    // --- UPLOAD LOGIC (Optimistic & Binary Streaming) ---
-
     const uploadFileBinary = async (file: File): Promise<string> => {
-        // Binary Upload Pattern: Direct stream, no FormData overhead
         const headers: HeadersInit = {
-            // Let browser set Content-Type for binary? 
-            // Actually, explicitly setting it is better for our API check
             "Content-Type": file.type || "application/octet-stream",
             "X-Filename": file.name.replace(/\s+/g, '-'),
         };
-
-        const res = await fetch("/api/upload", {
-            method: "POST",
-            headers,
-            body: file // Direct binary
-        });
-
-        if (!res.ok) {
-            const errorText = await res.text().catch(() => "Unknown error");
-            throw new Error(`Upload failed: ${res.status} (${errorText})`);
-        }
-
+        const res = await fetch("/api/upload", { method: "POST", headers, body: file });
+        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         const data = await res.json();
         return data.url;
     };
 
-    const handlePhotosChange = async (updatedPhotos: PhotoSlot[]) => {
-        // 1. Update state immediately (Optimistic Preview)
-        setProductData(prev => ({ ...prev, photos: updatedPhotos }));
+    const uploadVideoBinaryXHR = (file: File) => {
+        return new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener("progress", (event) => {
+                if (event.lengthComputable) {
+                    const progress = Math.round((event.loaded / event.total) * 100);
+                    updateProductData({ videoUploadProgress: progress });
+                }
+            });
+            xhr.addEventListener("load", () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response.url);
+                    } catch (e) {
+                        reject(new Error("Invalid response"));
+                    }
+                } else {
+                    reject(new Error(`Upload failed: ${xhr.status}`));
+                }
+            });
+            xhr.addEventListener("error", () => reject(new Error("Network error")));
+            xhr.open("POST", "/api/upload");
+            xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+            xhr.setRequestHeader("X-Filename", file.name.replace(/\s+/g, '-'));
+            xhr.send(file);
+        });
+    };
 
-        // 2. Identify and Trigger Uploads
-        const processingPhotos = updatedPhotos.map(async (photo) => {
-            // If it has a file, NO url, and NOT already uploading/error -> Start Upload
+    const handlePhotosChange = async (updatedPhotos: PhotoSlot[]) => {
+        setProductData(prev => ({ ...prev, photos: updatedPhotos }));
+        updatedPhotos.forEach(async (photo) => {
             if (photo.file && !photo.uploadUrl && !photo.isUploading && !photo.uploadError) {
-                // Set uploading state
                 setProductData(prev => ({
                     ...prev,
                     photos: prev.photos.map(p => p.id === photo.id ? { ...p, isUploading: true } : p)
                 }));
-
                 try {
                     const url = await uploadFileBinary(photo.file);
-
-                    // Success Update
                     setProductData(prev => ({
                         ...prev,
-                        photos: prev.photos.map(p => p.id === photo.id ? {
-                            ...p,
-                            isUploading: false,
-                            uploadUrl: url
-                        } : p)
+                        photos: prev.photos.map(p => p.id === photo.id ? { ...p, isUploading: false, uploadUrl: url } : p)
                     }));
-                } catch (error: any) {
-                    console.error("Photo upload error:", error);
-                    // Error Update
+                } catch (error) {
                     setProductData(prev => ({
                         ...prev,
-                        photos: prev.photos.map(p => p.id === photo.id ? {
-                            ...p,
-                            isUploading: false,
-                            uploadError: "Failed"
-                        } : p)
+                        photos: prev.photos.map(p => p.id === photo.id ? { ...p, isUploading: false, uploadError: "Failed" } : p)
                     }));
-                    toast.error(`Failed to upload ${photo.label}`);
                 }
             }
         });
-
-        // We don't await Promise.all here inside the handler to avoid blocking UI
-        // The individual async tasks will update state as they finish
     };
 
-    const handleVideoChange = async (video: string | null) => {
-        // This is called when video is REMOVED
-        if (video === null) {
-            updateProductData({ video: null, videoFile: null });
+    const handleVideoChange = async (videoUrl: string | null, file?: File | null) => {
+        if (videoUrl === null) {
+            updateProductData({ video: null, videoFile: null, videoIsUploading: false, videoUploadUrl: null, videoUploadProgress: 0, videoUploadError: null });
             return;
         }
-        // If it's a string update from input? (Usually this is file upload)
+        updateProductData({ video: videoUrl, videoFile: file, videoIsUploading: true, videoUploadUrl: null, videoUploadProgress: 0, videoUploadError: null });
+        if (file) {
+            try {
+                const url = await uploadVideoBinaryXHR(file);
+                updateProductData({ videoIsUploading: false, videoUploadUrl: url, videoUploadProgress: 100 });
+                toast.success("Video ready to post!");
+            } catch (error) {
+                updateProductData({ videoIsUploading: false, videoUploadError: "Failed" });
+                toast.error("Video upload failed.");
+            }
+        }
     };
-
-    // Custom wrapper if we want to support video file selection similar to photos
-    // But currently UploadVideoStep might just pass the URL or file?
-    // Let's assume standard update pattern for now, but hook into VideoFile change if needed.
-
-    // --- VALIDATION & NAVIGATION ---
 
     const handleNext = async () => {
         if (addProductStep < addProductSteps.length) {
-            let isValid = false;
             let schema;
-
-            // Select Schema
             switch (addProductStep) {
                 case 1: schema = step1Schema; break;
                 case 2: schema = step2Schema; break;
                 case 3: schema = step3Schema; break;
             }
-
             if (schema) {
                 const result = schema.safeParse(productData);
                 if (!result.success) {
-                    const firstError = result.error.errors[0];
-                    toast.error(firstError.message);
-                    return;
-                }
-                isValid = true;
-            }
-
-            // Step 1 Specific: Check for pending/failed uploads
-            if (addProductStep === 1) {
-                const hasPending = productData.photos.some(p => p.isUploading);
-                if (hasPending) {
-                    toast.info("Please wait for images to finish uploading.");
+                    toast.error(result.error.errors[0].message);
                     return;
                 }
             }
-
-            if (isValid) {
-                setAddProductStep(addProductStep + 1);
+            if (addProductStep === 1 && productData.photos.some(p => p.isUploading)) {
+                toast.info("Please wait for images to finish uploading.");
+                return;
             }
+            setAddProductStep(addProductStep + 1);
         } else {
-            // SUBMIT STEP (4)
             if (isSubmittingRef.current) return;
-
-            // Final Validation
-            const pendingUploads = productData.photos.some(p => p.isUploading);
-            if (pendingUploads) {
-                toast.info("Uploads are still in progress. Please wait.");
+            if (productData.photos.some(p => p.isUploading)) {
+                toast.info("Uploads in progress.");
                 return;
             }
-
-            // Prepare Payload
-            // Filter photos: Must have a URL (either uploadUrl or existing image)
-            const validPhotos = productData.photos.filter(p => !p.uploadError && (p.uploadUrl || p.image || p.file));
-
+            const validPhotos = productData.photos.filter(p => !p.uploadError && (p.uploadUrl || p.image));
             if (validPhotos.length === 0) {
-                toast.error("Please upload at least one valid photo.");
+                toast.error("Upload at least one photo.");
                 return;
             }
-
             isSubmittingRef.current = true;
             setIsSubmitting(true);
-
             try {
-                // Prepare final image list
-                const finalImages = validPhotos.map((p, index) => {
-                    // Critical: Prefer uploadUrl (new), fallback to image (edit mode existing), fallback to error
-                    const url = p.uploadUrl || p.image;
-                    if (!url || url.startsWith('blob:')) {
-                        throw new Error(`Image ${index + 1} is not uploaded. Please retry.`);
-                    }
-                    return {
-                        url: url,
-                        alt: p.label,
-                        order: index,
-                        isPrimary: index === 0
-                    };
-                });
+                const finalImages = validPhotos.map((p, index) => ({
+                    url: p.uploadUrl || p.image!,
+                    alt: p.label,
+                    order: index,
+                    isPrimary: index === 0
+                }));
 
-                // Video Logic (if needed) - Assuming similar optimistic pattern or direct
-                let videoUrl = productData.video;
-                // If video file exists but no URL, we might need to handle it.
-                // For now, assuming video implementation hooks into similar logic or is optional.
+                let videoUrl = productData.videoUploadUrl || productData.video;
+                if (videoUrl?.startsWith('blob:')) videoUrl = null;
 
-                // Payload
                 const { photos, videoFile, ...cleanProductData } = productData;
-                const finalPrice = parseFloat(String(cleanProductData.price));
-                const finalComparePrice = cleanProductData.comparePrice ? parseFloat(String(cleanProductData.comparePrice)) : undefined;
-
                 const payload = {
                     ...cleanProductData,
-                    price: finalPrice,
+                    price: parseFloat(String(cleanProductData.price)),
                     images: finalImages,
                     video: videoUrl,
-                    comparePrice: (finalComparePrice && !isNaN(finalComparePrice)) ? finalComparePrice : undefined,
+                    comparePrice: cleanProductData.comparePrice ? parseFloat(String(cleanProductData.comparePrice)) : undefined,
                     dressStyleId: cleanProductData.dressStyleId || undefined,
                 };
 
-                const url = isEditMode ? `/api/products/${editProductId}` : "/api/products";
-                const method = isEditMode ? "PUT" : "POST";
-
-                const res = await fetch(url, {
-                    method,
+                const res = await fetch(isEditMode ? `/api/products/${editProductId}` : "/api/products", {
+                    method: isEditMode ? "PATCH" : "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload),
                 });
 
-                if (!res.ok) {
-                    const text = await res.text();
-                    let errorData: any = {};
-                    try { errorData = JSON.parse(text); } catch (e) { }
-                    const errorMessage = errorData.error || (isEditMode ? "Failed to update" : "Failed to create");
-                    throw new Error(errorMessage);
-                }
-
-                toast.success(isEditMode ? "Product updated successfully!" : "Product created successfully!");
+                if (!res.ok) throw new Error("Submission failed");
+                toast.success("Product saved!");
                 clearPersistence();
                 router.push("/seller/manage-listings");
-
             } catch (error: any) {
-                console.error("Submission error:", error);
                 toast.error(error.message);
             } finally {
                 isSubmittingRef.current = false;
@@ -385,26 +321,19 @@ export default function PostNewProductPage() {
         }
     };
 
-    const handleBack = () => {
-        if (addProductStep > 1) {
-            setAddProductStep(addProductStep - 1);
-        }
-    };
+    const handleBack = () => addProductStep > 1 && setAddProductStep(addProductStep - 1);
 
-    if (isLoadingProduct) {
-        return (
-            <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans">
-                <EcommerceHeader />
-                <FormSkeleton />
-                <FooterSection />
-            </div>
-        );
-    }
+    if (isLoadingProduct) return (
+        <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans">
+            <EcommerceHeader />
+            <FormSkeleton />
+            <FooterSection />
+        </div>
+    );
 
     return (
         <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans sm:mt-[-6rem] mt-[-4.2rem]">
             <EcommerceHeader />
-
             <main className="mx-auto w-full flex-1 bg-white pt-20 sm:pt-24">
                 <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
                     <div className="mb-6 sm:mb-8 scroll-mt-24">
@@ -415,45 +344,23 @@ export default function PostNewProductPage() {
                             {isEditMode ? "Update your product details." : "Share info about your product."}
                         </p>
                     </div>
-
                     <div className="mb-8 sm:mb-12">
                         <AddProductStepper currentStep={addProductStep} steps={addProductSteps} />
                     </div>
-
                     <div className="min-h-[350px] sm:min-h-[400px]">
-                        {addProductStep === 1 && (
-                            <UploadPhotosStep
-                                photos={productData.photos}
-                                onPhotosChange={handlePhotosChange} // OPTIMISTIC HANDLER
-                            />
-                        )}
-                        {addProductStep === 2 && (
-                            <AboutProductStep
-                                data={productData}
-                                onUpdate={updateProductData}
-                            />
-                        )}
-                        {addProductStep === 3 && (
-                            <ProductDetailsStep
-                                data={productData}
-                                onUpdate={updateProductData}
-                            />
-                        )}
+                        {addProductStep === 1 && <UploadPhotosStep photos={productData.photos} onPhotosChange={handlePhotosChange} />}
+                        {addProductStep === 2 && <AboutProductStep data={productData} onUpdate={updateProductData} />}
+                        {addProductStep === 3 && <ProductDetailsStep data={productData} onUpdate={updateProductData} />}
                         {addProductStep === 4 && (
                             <UploadVideoStep
                                 video={productData.video}
-                                onVideoChange={(video) => updateProductData({ video })}
+                                isUploading={productData.videoIsUploading}
+                                progress={productData.videoUploadProgress}
+                                error={productData.videoUploadError}
+                                onVideoChange={handleVideoChange}
                             />
                         )}
                     </div>
-
-                    {/* Step 1 Validation state for button */}
-                    {addProductStep === 1 && !productData.photos.some(p => p.image || p.uploadUrl) && (
-                        <p className="mt-4 text-center text-sm text-orange-600 font-medium animate-in fade-in slide-in-from-top-2">
-                            Please upload at least one image to proceed.
-                        </p>
-                    )}
-
                     <div className="mt-10 sm:mt-12 flex flex-col sm:flex-row items-center justify-end gap-3 sm:gap-4">
                         <Button
                             variant="ghost"
@@ -463,11 +370,13 @@ export default function PostNewProductPage() {
                         >
                             Go Back
                         </Button>
-
                         <StatefulButton
                             onClick={handleNext}
                             isLoading={isSubmitting}
-                            disabled={addProductStep === 1 && (!productData.photos.some(p => p.image || p.uploadUrl) || productData.photos.some(p => p.isUploading))}
+                            disabled={
+                                (addProductStep === 1 && (!productData.photos.some(p => p.image || p.uploadUrl) || productData.photos.some(p => p.isUploading))) ||
+                                (addProductStep === 4 && productData.videoIsUploading)
+                            }
                             loadingText={isEditMode ? "Saving..." : "Creating..."}
                             className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold text-white bg-[#E87A3F] hover:bg-[#d96d34] disabled:opacity-50 disabled:cursor-not-allowed"
                         >

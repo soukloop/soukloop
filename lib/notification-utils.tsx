@@ -177,7 +177,7 @@ export function getActionButton(notification: NotificationData): { text: string;
         case "ORDER_CANCELLED":
         case "PAYMENT_SUCCESS":
         case "REFUND_PROCESSED":
-            return { text: "View Orders", link: "/editprofile?section=my-orders" };
+            return { text: "View Orders", link: "/edit-profile?section=my-orders" };
 
         case "KYC_APPROVED":
             return { text: "Start Selling", link: "/seller/dashboard" };

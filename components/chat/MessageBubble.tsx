@@ -233,6 +233,7 @@ export function MessageBubble({ message, isOwn, onRetry }: MessageBubbleProps) {
                         src={viewerMedia}
                         controls
                         autoPlay
+                        playsInline
                         className="max-w-full max-h-full"
                         onClick={(e) => e.stopPropagation()}
                     />
@@ -290,6 +291,7 @@ function VideoAttachment({ attachment, onClick }: { attachment: Attachment, onCl
                 className={`max-w-[280px] max-h-[280px] object-contain rounded-lg bg-black transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
                 preload="metadata"
                 muted
+                playsInline
                 onLoadedData={() => setIsLoading(false)}
             />
             {/* Play button overlay */}

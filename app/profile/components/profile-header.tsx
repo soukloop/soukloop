@@ -1,6 +1,7 @@
 "use client";
 
 import { Camera, Edit, Loader2, Info } from "lucide-react";
+import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -39,9 +40,9 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validation: Size < 5MB
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("Image size is larger than 5MB");
+        // Validation: Size < 10MB
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("Image size is larger than 10MB");
             return;
         }
 
@@ -54,15 +55,20 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
 
         try {
             setIsUploadingBanner(true);
-            const formData = new FormData();
-            formData.append("file", file);
 
             const uploadRes = await fetch("/api/upload", {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "x-filename": file.name,
+                    "content-type": file.type,
+                },
+                body: file,
             });
 
             if (!uploadRes.ok) {
+                if (uploadRes.status === 413) {
+                    throw new Error("Image size is too large for the server (Max 10MB).");
+                }
                 const errorData = await uploadRes.json().catch(() => ({}));
                 throw new Error(errorData.error || "Upload failed. Please check your connection.");
             }
@@ -109,7 +115,14 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
         <div className="w-full">
             {/* Banner */}
             <div className="relative h-[160px] sm:h-[240px] md:h-[300px] w-full bg-gray-100 group">
-                <img src={bannerImage} alt="Banner" className="size-full object-cover object-center" />
+                <Image
+                    src={bannerImage}
+                    alt="Banner"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover object-center"
+                />
 
                 {canEditBanner && (
                     <>
@@ -124,20 +137,21 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 cursor-help">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60 cursor-help">
                                             <Info className="size-4" />
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <p>Banner Image: Max 5MB. Formats: JPG, PNG, WEBP.</p>
+                                        <p>Banner Image: Max 10MB. Formats: JPG, PNG, WEBP.</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
 
                             <button
+                                type="button"
                                 onClick={() => bannerInputRef.current?.click()}
                                 disabled={isUploadingBanner}
-                                className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:shadow-xl disabled:opacity-70"
+                                className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-lg transition-all hover:bg-white hover:shadow-xl disabled:opacity-70"
                             >
                                 {isUploadingBanner ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
                                 {isUploadingBanner ? "Uploading..." : "Edit Banner"}
@@ -149,7 +163,13 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
 
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="relative -mt-12 mb-6 size-24 overflow-hidden rounded-full border-4 border-white shadow-lg sm:-mt-16 sm:size-32">
-                    <img src={userImage} alt={userName} className="size-full object-cover object-center" />
+                    <Image
+                        src={userImage}
+                        alt={userName}
+                        fill
+                        sizes="(max-width: 640px) 96px, 128px"
+                        className="object-cover object-center"
+                    />
                 </div>
 
                 <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">

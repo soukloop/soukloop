@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import Image from 'next/image';
+
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -65,9 +67,15 @@ export default function UsersTable({ initialUsers, totalRecords, initialPage }: 
             render: (user) => (
                 <div className="flex items-center gap-3">
                     <Link href={`/admin/users/${user.id}`} className="block shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <div className="h-10 w-10 text-gray-400 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+                        <div className="h-10 w-10 text-gray-400 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200 relative">
                             {user.avatar ? (
-                                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                                <Image
+                                    src={user.avatar}
+                                    alt={user.name}
+                                    fill
+                                    className="object-cover"
+                                    sizes="40px"
+                                />
                             ) : (
                                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                             )}

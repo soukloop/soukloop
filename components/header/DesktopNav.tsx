@@ -15,6 +15,7 @@ import {
 import ProductCard from "@/components/product-card";
 import { CardSkeleton } from "@/components/ui/skeletons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 const STALE_TIME = 30 * 60 * 1000; // 30 minutes
 
@@ -25,6 +26,7 @@ interface DesktopNavProps {
 export default function DesktopNav({ initialDressStyles }: DesktopNavProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
+    const { isWithlisted, toggleWishlist } = useWishlist();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     // Core categories are ALWAYS present - hardcoded
@@ -225,12 +227,15 @@ export default function DesktopNav({ initialDressStyles }: DesktopNavProps) {
                                                 price: `$${product.price ? product.price.toFixed(2) : "0.00"}`,
                                                 originalPrice: product.comparePrice ? `$${product.comparePrice.toFixed(2)}` : "",
                                                 slug: product.slug,
-                                                isWishlist: false, // DesktopNav doesn't track wishlist state perfectly yet
+                                                isWishlist: isWithlisted(product.id),
                                                 isActive: true,
                                                 status: "APPROVED"
                                             }}
-                                            handleAddToCart={() => { }} // Dummy as per instructions/context (header preview)
-                                            toggleWishlist={() => { }}
+                                            handleAddToCart={(p) => {
+                                                // Prevent default routing if wishlist is clicked? Handled inside ProductCard
+                                                // handleAddToCart is still dummy here as per original
+                                            }}
+                                            toggleWishlist={toggleWishlist}
                                         />
                                     ))
                                 ) : (

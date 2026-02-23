@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from "@/auth"
 import { Role } from '@prisma/client'
 import { handleApiError } from '@/lib/api-wrapper'
+import { notifySellerProductListed, notifyFollowersNewProduct, notifySellerProductPending } from '@/lib/notifications/templates/product-templates'
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,33 @@ export async function GET(
   try {
     const { id } = await context.params
     const session = await auth()
+    const mode = request.nextUrl.searchParams.get('mode');
+
+    // ── Lightweight edit-mode query (skips reviews, orders, vendor details) ──
+    if (mode === 'edit') {
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          images: { orderBy: { order: 'asc' } },
+          vendor: { select: { userId: true } }
+        }
+      });
+
+      if (!product) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+
+      // Ownership check
+      const isOwner = session?.user?.id && product.vendor?.userId === session.user.id;
+      const isAdmin = session?.user?.role === Role.ADMIN;
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      return NextResponse.json({ ...product, vendor: undefined });
+    }
+
+    // ── Full product query (product detail page, public view) ──
 
     // Create visibility window for PENDING orders (15 minutes)
     const freshPendingThreshold = new Date(Date.now() - 15 * 60 * 1000);
@@ -119,7 +147,10 @@ export async function GET(
     // Check for active or recent pending orders
     const hasActiveOrder = product.orderItems && product.orderItems.length > 0;
 
-    if (!product.isActive) {
+    if (!product.isActive && product.status === 'BLOCKED') {
+      // Admin-blocked: preserve BLOCKED status
+      status = 'BLOCKED';
+    } else if (!product.isActive) {
       status = 'INACTIVE';
     } else if (hasActiveOrder) {
       // If it has an active or fresh pending order:
@@ -204,7 +235,8 @@ export async function PATCH(
       // cityId not on Product model — location is stored as a string
       location: body.location || body.state || undefined,
       tags: Array.isArray(body.tags) ? body.tags.join(',') : body.tags,
-      video: body.video
+      video: body.video,
+      hasPendingStyle: body.hasPendingStyle !== undefined ? body.hasPendingStyle : undefined
     }
 
     // Handle explicit status updates
@@ -217,14 +249,64 @@ export async function PATCH(
       updateData.status = 'ACTIVE';
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: updateData,
-      include: {
-        images: true,
-        vendor: true
+    const originalHasPendingStyle = existingProduct.hasPendingStyle;
+
+    const product = await prisma.$transaction(async (tx) => {
+      // Handle image updates if provided
+      if (body.images && Array.isArray(body.images)) {
+        // Delete existing images
+        await tx.productImage.deleteMany({ where: { productId: id } });
+        // Create new images
+        await tx.productImage.createMany({
+          data: body.images.map((img: any, index: number) => ({
+            productId: id,
+            url: img.url,
+            alt: img.alt || `Photo ${index + 1}`,
+            order: img.order ?? index,
+            isPrimary: img.isPrimary ?? index === 0,
+          })),
+        });
       }
-    })
+
+      return tx.product.update({
+        where: { id },
+        data: updateData,
+        include: {
+          images: true,
+          vendor: true,
+          dressStyle: true
+        }
+      });
+    });
+
+    // ===== SEND NOTIFICATIONS (fire-and-forget) =====
+    const newHasPendingStyle = product.hasPendingStyle;
+
+    // Only trigger notifications if the pending status changed or if it's currently pending
+    if (newHasPendingStyle !== originalHasPendingStyle || newHasPendingStyle) {
+      const sellerId = product.vendor.userId;
+      const productNotifData = {
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+        price: product.price ? Number(product.price) : undefined,
+        imageUrl: product.images?.[0]?.url
+      };
+
+      if (newHasPendingStyle) {
+        // Notify seller about PENDING status
+        const styleName = product.dressStyle?.name || body.dress || 'Requested Style';
+        notifySellerProductPending(sellerId, productNotifData, styleName)
+          .catch(err => console.error('[Product PATCH] Failed to notify pending:', err));
+      } else if (originalHasPendingStyle && !newHasPendingStyle) {
+        // Product was pending and is now LIVE
+        notifySellerProductListed(sellerId, productNotifData)
+          .catch(err => console.error('[Product PATCH] Failed to notify live:', err));
+
+        notifyFollowersNewProduct(sellerId, productNotifData)
+          .catch(err => console.error('[Product PATCH] Failed to notify followers:', err));
+      }
+    }
 
     return NextResponse.json(product)
 

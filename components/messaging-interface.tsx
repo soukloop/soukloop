@@ -18,6 +18,8 @@ import { VoiceRecorder } from "@/components/chat/VoiceRecorder"
 import { MediaPreview, AttachedFile } from "@/components/chat/MediaPreview"
 import { MessageBubble } from "@/components/chat/MessageBubble"
 import { ChatListSkeleton, ConversationSkeleton, AboutUserSkeleton } from "@/components/chat/ChatSkeletons"
+import UserReportModal from "@/components/chat/user-report-modal"
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 // Types
 import { ChatConversation, ChatMessage, User, Product as PrismaProduct } from "@prisma/client"
@@ -64,12 +66,14 @@ const MAX_FILES = 4
 interface MessagingInterfaceProps {
     impersonatedUserId?: string;
     readOnly?: boolean;
+    isAdmin?: boolean;
     initialConversations?: FullConversation[];
 }
 
 export default function MessagingInterface({
     impersonatedUserId,
     readOnly = false,
+    isAdmin = false,
     initialConversations = []
 }: MessagingInterfaceProps = {}) {
     const { data: session } = useSession()
@@ -85,17 +89,14 @@ export default function MessagingInterface({
     const videoInputRef = useRef<HTMLInputElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const [conversations, setConversations] = useState<FullConversation[]>(initialConversations)
+    const queryClient = useQueryClient()
     const [selectedConversation, setSelectedConversation] = useState<FullConversation | null>(null)
-    const [messages, setMessages] = useState<FullMessage[]>([])
     const [newMessage, setNewMessage] = useState("")
-    const [isLoading, setIsLoading] = useState(true)
     const [isSending, setIsSending] = useState(false)
     const [showMobileChat, setShowMobileChat] = useState(false)
     const [showMobileAbout, setShowMobileAbout] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [sellerInfo, setSellerInfo] = useState<any>(null)
-    const [isLoadingMessages, setIsLoadingMessages] = useState(false)
     const [isLoadingSellerInfo, setIsLoadingSellerInfo] = useState(false)
     const [isOtherTyping, setIsOtherTyping] = useState(false)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -108,46 +109,96 @@ export default function MessagingInterface({
     const [isVoiceMode, setIsVoiceMode] = useState(false)
     const voiceRecorder = useVoiceRecorder()
 
+    // Report modal state
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+
     // Socket.io integration
     const { centrifuge, isConnected, subscribe } = useSocket()
     const previousConversationRef = useRef<string | null>(null)
 
-    // Load conversations (only if not provided initially)
+    const { data: conversationsData, isLoading: isLoadingConversations } = useQuery({
+        queryKey: ['chat', 'conversations'],
+        queryFn: async () => {
+            const res = await fetch("/api/chat/conversations")
+            if (!res.ok) throw new Error("Failed to fetch conversations")
+            return res.json() as Promise<FullConversation[]>
+        },
+        enabled: !!currentUserId && initialConversations.length === 0,
+        initialData: initialConversations.length > 0 ? initialConversations : undefined,
+    })
+    const conversations = conversationsData || []
+
+    const {
+        data: messagesData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isLoadingMessages
+    } = useInfiniteQuery({
+        queryKey: ['chat', 'messages', selectedConversation?.id],
+        queryFn: async ({ pageParam = null }) => {
+            const url = new URL(window.location.origin + `/api/chat/conversations/${selectedConversation!.id}/messages`)
+            if (pageParam) url.searchParams.set('cursor', pageParam as string)
+            const res = await fetch(url.toString())
+            if (!res.ok) throw new Error("Failed to fetch messages")
+            return res.json() as Promise<{ messages: FullMessage[], nextCursor: string | null }>
+        },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        enabled: !!selectedConversation?.id,
+        initialPageParam: null as string | null
+    })
+
+    const messages = messagesData?.pages
+        ? [...messagesData.pages].reverse().flatMap(page => page.messages)
+        : []
+
+    // Infinite scroll observer
+    const topObserverRef = useRef<IntersectionObserver | null>(null)
+    const loadingTriggerRef = useCallback((node: HTMLDivElement | null) => {
+        if (isLoadingMessages || isFetchingNextPage) return
+        if (topObserverRef.current) topObserverRef.current.disconnect()
+        topObserverRef.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasNextPage) {
+                const container = messagesContainerRef.current;
+                const prevHeight = container ? container.scrollHeight : 0;
+                fetchNextPage().then(() => {
+                    setTimeout(() => {
+                        if (container) container.scrollTop = container.scrollTop + (container.scrollHeight - prevHeight);
+                    }, 0);
+                });
+            }
+        })
+        if (node) topObserverRef.current.observe(node)
+    }, [isLoadingMessages, isFetchingNextPage, hasNextPage, fetchNextPage])
+
+    // Load seller info when conversation changes
     useEffect(() => {
-        if (currentUserId && initialConversations.length === 0) {
-            fetchConversations()
-        }
-    }, [currentUserId, initialConversations])
+        if (selectedConversation) fetchSellerInfo(selectedConversation)
+    }, [selectedConversation])
 
     // Auto-select conversation from URL
     useEffect(() => {
         const conversationId = searchParams?.get("conversation")
-        if (conversationId && conversations.length > 0) {
+        if (conversationId && conversations.length > 0 && !selectedConversation) {
             const conv = conversations.find(c => c.id === conversationId)
             if (conv) {
                 setSelectedConversation(conv)
                 setShowMobileChat(true)
                 shouldScrollRef.current = true
-                fetchMessages(conv.id)
-                fetchSellerInfo(conv)
             }
         }
-    }, [searchParams, conversations])
+    }, [searchParams, conversations, selectedConversation])
 
     // Scroll to bottom ONLY within messages container
     useEffect(() => {
         if (shouldScrollRef.current && messages.length > lastMessageCountRef.current) {
             setTimeout(() => {
                 const container = messagesContainerRef.current
-                if (container) {
-                    container.scrollTop = container.scrollHeight
-                }
+                if (container) container.scrollTop = container.scrollHeight
             }, 50)
         }
         lastMessageCountRef.current = messages.length
     }, [messages])
-
-
 
     // Centrifugo: Subscribe to conversation channel
     useEffect(() => {
@@ -156,47 +207,62 @@ export default function MessagingInterface({
         const channel = `conversation:${selectedConversation.id}`
 
         const unsubscribe = subscribe(channel, (ctx) => {
-            const message = ctx.data as FullMessage
+            const eventPayload = ctx.data as any
+            const message = (eventPayload?.type === 'new-message' ? eventPayload.data : eventPayload) as FullMessage
             const isOwnMessage = message.senderId === currentUserId
 
             // 1. Update active chat if matching
             if (selectedConversation && selectedConversation.id === message.conversationId) {
                 shouldScrollRef.current = true
-                setMessages(prev => {
-                    if (prev.find(m => m.id === message.id)) return prev
-                    return [...prev, message]
-                })
+                queryClient.setQueryData(
+                    ['chat', 'messages', selectedConversation.id],
+                    (oldData: any) => {
+                        if (!oldData) return oldData
+
+                        // Check if message already exists (from optimistic update)
+                        const exists = oldData.pages.some((page: any) =>
+                            page.messages.some((m: any) => m.id === message.id)
+                        )
+                        if (exists) return oldData
+
+                        const newPages = [...oldData.pages]
+                        // Append to the page that has the newest messages, which is page 0.
+                        newPages[0] = {
+                            ...newPages[0],
+                            messages: [...newPages[0].messages, { ...message, status: 'sent', createdAt: new Date(message.createdAt).toISOString() }]
+                        }
+                        return { ...oldData, pages: newPages }
+                    }
+                )
             }
 
-            // 2. Update conversation list snippet (Run for ALL messages)
-            setConversations(prev => {
-                const updated = prev.map(c => {
-                    if (c.id === message.conversationId) {
-                        return {
-                            ...c,
-                            messages: [{ ...message, createdAt: new Date() } as unknown as FullMessage]
+            // 2. Update conversation list snippet
+            queryClient.setQueryData(
+                ['chat', 'conversations'],
+                (oldConvs: FullConversation[] | undefined) => {
+                    if (!oldConvs) return oldConvs
+                    const updated = oldConvs.map(c => {
+                        if (c.id === message.conversationId) {
+                            return {
+                                ...c,
+                                messages: [{ ...message, createdAt: new Date().toISOString() } as unknown as FullMessage]
+                            }
                         }
-                    }
-                    return c
-                })
-
-                // Move updated conversation to top
-                return updated.sort((a, b) => {
-                    if (a.id === message.conversationId) return -1
-                    if (b.id === message.conversationId) return 1
-                    return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
-                })
-            })
+                        return c
+                    })
+                    return updated.sort((a, b) => {
+                        if (a.id === message.conversationId) return -1
+                        if (b.id === message.conversationId) return 1
+                        return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
+                    })
+                }
+            )
         })
 
         return () => {
             unsubscribe()
         }
-    }, [selectedConversation, isConnected, subscribe, currentUserId])
-
-    // Typing indicator - Centrifugo doesn't have built-in ephemeral messages in the same way as easy socket.io
-    // For now, we'll disable typing indicators or implement via separate channel publication later if needed.
-    // To keep it simple and fix errors, we remove the broken socket code.
+    }, [selectedConversation, isConnected, subscribe, currentUserId, queryClient])
 
     // Emit typing status (Placeholder)
     const emitTypingStatus = (isTyping: boolean) => {
@@ -207,7 +273,6 @@ export default function MessagingInterface({
         if (readOnly) return;
         setNewMessage(e.target.value)
 
-        // Emit typing status with debounce
         emitTypingStatus(true)
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
@@ -215,50 +280,6 @@ export default function MessagingInterface({
             emitTypingStatus(false)
         }, 3000)
     }
-
-    const fetchConversations = async () => {
-        try {
-            setIsLoading(true)
-            const res = await fetch("/api/chat/conversations")
-            if (res.ok) {
-                const data = await res.json()
-                setConversations(data)
-            }
-        } catch (error) {
-            console.error("Failed to fetch conversations:", error)
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const fetchMessages = async (conversationId: string) => {
-        try {
-            setIsLoadingMessages(true)
-            const res = await fetch(`/api/chat/conversations/${conversationId}/messages`)
-            if (res.ok) {
-                const data = await res.json()
-
-                setMessages(prev => {
-                    // Keep messages that are NOT in the polled data AND are currently 'sending'
-                    // This ensures optimistic messages stay until replaced/confirmed
-                    const localSending = prev.filter(m => m.status === 'sending')
-
-                    // Avoid duplicates if the data already contains the message
-                    const filteredLocal = localSending.filter(lm => !data.some((dm: any) => dm.id === lm.id))
-
-                    // Sort by date to keep order
-                    return [...data, ...filteredLocal].sort((a, b) =>
-                        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                    )
-                })
-            }
-        } catch (error) {
-            console.error("Failed to fetch messages:", error)
-        } finally {
-            setIsLoadingMessages(false)
-        }
-    }
-
     const fetchSellerInfo = async (conv: FullConversation) => {
         const otherUserId = conv.buyerId === currentUserId ? conv.sellerId : conv.buyerId
         try {
@@ -353,11 +374,20 @@ export default function MessagingInterface({
 
         // Add optimistically
         shouldScrollRef.current = true
-        setMessages(prev => [...prev, optimisticMessage])
+        queryClient.setQueryData(['chat', 'messages', selectedConversation.id], (oldData: any) => {
+            if (!oldData) return oldData
+            const newPages = [...oldData.pages]
+            newPages[0] = {
+                ...newPages[0],
+                messages: [...newPages[0].messages, optimisticMessage]
+            }
+            return { ...oldData, pages: newPages }
+        })
 
         // Optimistic update for sidebar
-        setConversations(prev => {
-            return prev.map(c => {
+        queryClient.setQueryData(['chat', 'conversations'], (oldConvs: FullConversation[] | undefined) => {
+            if (!oldConvs) return oldConvs
+            const updated = oldConvs.map(c => {
                 if (c.id === selectedConversation.id) {
                     return {
                         ...c,
@@ -365,7 +395,8 @@ export default function MessagingInterface({
                     }
                 }
                 return c
-            }).sort((a, b) => {
+            })
+            return updated.sort((a, b) => {
                 if (a.id === selectedConversation.id) return -1
                 if (b.id === selectedConversation.id) return 1
                 return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
@@ -395,28 +426,37 @@ export default function MessagingInterface({
             if (res.ok) {
                 const realMessage = await res.json()
                 // Replace optimistic with real, avoiding duplicates if socket arrival was faster
-                setMessages(prev => {
-                    // Check if the real message was already added by the socket listener
-                    if (prev.some(m => m.id === realMessage.id)) {
-                        // If so, just remove the temporary one
-                        return prev.filter(m => m.id !== tempId)
+                queryClient.setQueryData(['chat', 'messages', selectedConversation.id], (oldData: any) => {
+                    if (!oldData) return oldData
+                    const newPages = [...oldData.pages]
+
+                    if (newPages[0].messages.some((m: any) => m.id === realMessage.id)) {
+                        newPages[0] = {
+                            ...newPages[0],
+                            messages: newPages[0].messages.filter((m: any) => m.id !== tempId)
+                        }
+                    } else {
+                        newPages[0] = {
+                            ...newPages[0],
+                            messages: newPages[0].messages.map((m: any) => m.id === tempId ? { ...realMessage, status: 'sent' } : m)
+                        }
                     }
-                    // Otherwise, upgrade the temporary one to real
-                    return prev.map(m => m.id === tempId ? { ...realMessage, status: 'sent' } : m)
+                    return { ...oldData, pages: newPages }
                 })
 
                 // Update conversation list snippet
-                setConversations(prev => {
-                    return prev.map(c => {
+                queryClient.setQueryData(['chat', 'conversations'], (oldConvs: FullConversation[] | undefined) => {
+                    if (!oldConvs) return oldConvs
+                    const updated = oldConvs.map(c => {
                         if (c.id === selectedConversation.id) {
                             return {
                                 ...c,
-                                messages: [{ ...realMessage, createdAt: new Date().toISOString() }] // Update snippet
+                                messages: [{ ...realMessage, createdAt: new Date().toISOString() } as unknown as FullMessage]
                             }
                         }
                         return c
-                    }).sort((a, b) => {
-                        // Move updated conversation to top
+                    })
+                    return updated.sort((a, b) => {
                         if (a.id === selectedConversation.id) return -1
                         if (b.id === selectedConversation.id) return 1
                         return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
@@ -424,11 +464,27 @@ export default function MessagingInterface({
                 })
             } else {
                 // Mark as failed
-                setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m))
+                queryClient.setQueryData(['chat', 'messages', selectedConversation.id], (oldData: any) => {
+                    if (!oldData) return oldData
+                    const newPages = [...oldData.pages]
+                    newPages[0] = {
+                        ...newPages[0],
+                        messages: newPages[0].messages.map((m: any) => m.id === tempId ? { ...m, status: 'failed' } : m)
+                    }
+                    return { ...oldData, pages: newPages }
+                })
             }
         } catch (error) {
             console.error("Failed to send message:", error)
-            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m))
+            queryClient.setQueryData(['chat', 'messages', selectedConversation.id], (oldData: any) => {
+                if (!oldData) return oldData
+                const newPages = [...oldData.pages]
+                newPages[0] = {
+                    ...newPages[0],
+                    messages: newPages[0].messages.map((m: any) => m.id === tempId ? { ...m, status: 'failed' } : m)
+                }
+                return { ...oldData, pages: newPages }
+            })
         } finally {
             setIsSending(false)
         }
@@ -515,7 +571,15 @@ export default function MessagingInterface({
         }
 
         shouldScrollRef.current = true
-        setMessages(prev => [...prev, optimisticMessage])
+        queryClient.setQueryData(['chat', 'messages', selectedConversation?.id], (oldData: any) => {
+            if (!oldData) return oldData
+            const newPages = [...oldData.pages]
+            newPages[0] = {
+                ...newPages[0],
+                messages: [...newPages[0].messages, optimisticMessage]
+            }
+            return { ...oldData, pages: newPages }
+        })
 
         try {
             setIsSending(true)
@@ -551,18 +615,37 @@ export default function MessagingInterface({
             if (res.ok) {
                 const realMessage = await res.json()
                 // Replace optimistic with real, avoiding duplicates
-                setMessages(prev => {
-                    if (prev.some(m => m.id === realMessage.id)) {
-                        return prev.filter(m => m.id !== tempId)
+                queryClient.setQueryData(['chat', 'messages', selectedConversation?.id], (oldData: any) => {
+                    if (!oldData) return oldData
+                    const newPages = [...oldData.pages]
+
+                    if (newPages[0].messages.some((m: any) => m.id === realMessage.id)) {
+                        newPages[0] = {
+                            ...newPages[0],
+                            messages: newPages[0].messages.filter((m: any) => m.id !== tempId)
+                        }
+                    } else {
+                        newPages[0] = {
+                            ...newPages[0],
+                            messages: newPages[0].messages.map((m: any) => m.id === tempId ? { ...realMessage, status: 'sent' } : m)
+                        }
                     }
-                    return prev.map(m => m.id === tempId ? { ...realMessage, status: 'sent' } : m)
+                    return { ...oldData, pages: newPages }
                 })
             } else {
                 throw new Error('API failed')
             }
         } catch (error) {
             console.error('Voice send error:', error)
-            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'failed' } : m))
+            queryClient.setQueryData(['chat', 'messages', selectedConversation?.id], (oldData: any) => {
+                if (!oldData) return oldData
+                const newPages = [...oldData.pages]
+                newPages[0] = {
+                    ...newPages[0],
+                    messages: newPages[0].messages.map((m: any) => m.id === tempId ? { ...m, status: 'failed' } : m)
+                }
+                return { ...oldData, pages: newPages }
+            })
         } finally {
             voiceRecorder.resetRecording()
             setIsSending(false)
@@ -627,7 +710,6 @@ export default function MessagingInterface({
         setSelectedConversation(conv)
         setShowMobileChat(true)
         shouldScrollRef.current = true
-        fetchMessages(conv.id)
         fetchSellerInfo(conv)
     }
 
@@ -660,11 +742,19 @@ export default function MessagingInterface({
     // Retry failed message
     const handleRetryMessage = async (messageId: string) => {
         if (readOnly) return;
-        const failedMessage = messages.find(m => m.id === messageId)
+        const failedMessage = messages.find((m: any) => m.id === messageId)
         if (!failedMessage) return
 
         // Remove the failed message
-        setMessages(prev => prev.filter(m => m.id !== messageId))
+        queryClient.setQueryData(['chat', 'messages', selectedConversation?.id], (oldData: any) => {
+            if (!oldData) return oldData
+            const newPages = [...oldData.pages]
+            newPages[0] = {
+                ...newPages[0],
+                messages: newPages[0].messages.filter((m: any) => m.id !== messageId)
+            }
+            return { ...oldData, pages: newPages }
+        })
 
         // Resend
         await sendMessage({
@@ -709,7 +799,7 @@ export default function MessagingInterface({
                 </div>
 
                 <ScrollArea className="flex-1">
-                    {isLoading ? (
+                    {isLoadingConversations ? (
                         <ChatListSkeleton />
                     ) : filteredConversations.length === 0 ? (
                         <div className="flex h-32 items-center justify-center">
@@ -766,7 +856,7 @@ export default function MessagingInterface({
                             </Button>
                             {/* Product Image - Click to open product page */}
                             {selectedConversation.product ? (
-                                <Link href={`/product/${selectedConversation.productId}`} className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:ring-2 hover:ring-[#E87A3F]">
+                                <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.productId}`} className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:ring-2 hover:ring-[#E87A3F]">
                                     {selectedConversation.product.images?.[0]?.url ? (
                                         <Image src={selectedConversation.product.images[0].url} alt={selectedConversation.product.name} fill className="object-cover" />
                                     ) : (
@@ -788,7 +878,7 @@ export default function MessagingInterface({
                                 onClick={() => setShowMobileAbout(true)}
                             >
                                 {selectedConversation.product ? (
-                                    <Link href={`/product/${selectedConversation.productId}`} className="block">
+                                    <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.productId}`} className="block">
                                         <p className="truncate font-semibold hover:text-[#E87A3F] transition-colors">{selectedConversation.product.name}</p>
                                     </Link>
                                 ) : (
@@ -801,18 +891,30 @@ export default function MessagingInterface({
                                     </span>
                                 </p>
                             </div>
-                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-500">
-                                <Flag className="size-4" />
-                            </Button>
+                            {!isAdmin && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-gray-400 hover:text-red-500"
+                                    onClick={() => setIsReportModalOpen(true)}
+                                >
+                                    <Flag className="size-4" />
+                                </Button>
+                            )}
                         </div>
 
                         {/* Messages */}
                         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 scrollbar-hide">
-                            {isLoadingMessages ? (
+                            {isLoadingMessages && !messages.length ? (
                                 <ConversationSkeleton />
                             ) : (
                                 <div className="space-y-3">
-                                    {messages.map((msg) => (
+                                    {hasNextPage && (
+                                        <div ref={loadingTriggerRef} className="h-4 flex items-center justify-center">
+                                            {isFetchingNextPage && <div className="size-4 rounded-full border-2 border-[#E87A3F] border-t-transparent animate-spin" />}
+                                        </div>
+                                    )}
+                                    {messages.map((msg: any) => (
                                         <MessageBubble
                                             key={msg.id}
                                             message={{
@@ -822,7 +924,7 @@ export default function MessagingInterface({
                                                 attachments: msg.attachments as unknown as Attachment[] | undefined,
                                                 createdAt: new Date(msg.createdAt).toISOString(),
                                             }}
-                                            isOwn={msg.senderId === session?.user?.id}
+                                            isOwn={msg.senderId === currentUserId}
                                             onRetry={msg.status === 'failed' ? () => handleRetryMessage(msg.id) : undefined}
                                         />
                                     ))}
@@ -949,7 +1051,7 @@ export default function MessagingInterface({
                                         </div>
                                     </div>
                                 </div>
-                                <Link href={`/profile/${getOtherParticipant(selectedConversation).id}`}>
+                                <Link href={isAdmin ? `/admin/users/${getOtherParticipant(selectedConversation).id}` : `/profile/${getOtherParticipant(selectedConversation).id}`}>
                                     <Button variant="outline" className="mt-4 w-full border-[#E87A3F] text-[#E87A3F] hover:bg-orange-50">
                                         <UserIcon className="mr-2 size-4" />
                                         View Profile
@@ -1013,7 +1115,7 @@ export default function MessagingInterface({
                                     </div>
                                 </div>
                             </div>
-                            <Link href={`/profile/${getOtherParticipant(selectedConversation).id}`}>
+                            <Link href={isAdmin ? `/admin/users/${getOtherParticipant(selectedConversation).id}` : `/profile/${getOtherParticipant(selectedConversation).id}`}>
                                 <Button variant="outline" className="mt-6 w-full h-12 border-[#E87A3F] text-[#E87A3F] hover:bg-orange-50 rounded-xl font-semibold">
                                     <UserIcon className="mr-2 size-5" />
                                     View Full Profile
@@ -1022,6 +1124,16 @@ export default function MessagingInterface({
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* User Report Modal */}
+            {selectedConversation && (
+                <UserReportModal
+                    isOpen={isReportModalOpen}
+                    onClose={() => setIsReportModalOpen(false)}
+                    reportedUserId={getOtherParticipant(selectedConversation).id}
+                    reportedUserName={getOtherParticipant(selectedConversation).name || "User"}
+                />
             )}
         </div>
     )
