@@ -1098,7 +1098,7 @@ function FileUpload({ label, uploaded, onChange, loading }: any) {
 
 export default function SellerOnboardingFormPage() {
     return (
-        <main className="min-h-screen bg-gray-50">
+        <main className="min-h-screen bg-gray-50 sm:mt-[-11rem] mt-[-10.2rem]">
             <EcommerceHeader />
             <div className="pt-16">
                 <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-orange-500" /></div>}>

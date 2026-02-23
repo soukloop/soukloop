@@ -20,7 +20,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-8.5rem] mt-[-6.2rem]">
       <EcommerceHeader />
       <main className="min-h-[70vh]">
         <Suspense fallback={

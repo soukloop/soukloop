@@ -147,6 +147,7 @@ export default function ProductCard({
 
     const isSold = (product as any).quantity === 0 || (product as any).status === 'SOLD';
     const isProcessing = (product as any).status === 'PROCESSING';
+    const isOutOfStock = !isSold && !isProcessing && (product.quantity ?? 0) <= 0;
     // Helper helper to check if product is new (within 48 hours)
     // Only show NEW if NOT sold
     const showNewBadge = isNew && !isManageMode && !isSold;

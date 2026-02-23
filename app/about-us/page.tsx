@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function SoukLoopAbout() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       {/* Hero Section */}

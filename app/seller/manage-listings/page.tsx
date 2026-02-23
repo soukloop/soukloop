@@ -61,7 +61,7 @@ export default async function ManageListingsPage({ searchParams }: ManageListing
     const totalPages = Math.ceil(totalCount / limit);
 
     return (
-        <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans">
+        <div className="mx-auto w-full max-w-[1920px] bg-white min-h-screen flex flex-col font-sans sm:mt-[-4rem] mt-[-3rem]">
             <EcommerceHeader />
 
             <div className="flex flex-1 flex-col" style={{ backgroundColor: "#f9f9f9" }}>

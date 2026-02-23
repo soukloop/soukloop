@@ -91,7 +91,7 @@ export default function FooterSection() {
                 <Link href="/terms-and-conditions" className="text-sm text-gray-900 hover:text-[#E87A3F] transition-colors">
                   Terms &amp; Conditions
                 </Link>
-                <Link href="/privacy" className="text-sm text-gray-900 hover:text-[#E87A3F] transition-colors">
+                <Link href="/privacy-policy" className="text-sm text-gray-900 hover:text-[#E87A3F] transition-colors">
                   Privacy Policy
                 </Link>
                 <Link href="/pricing" className="text-sm text-gray-900 hover:text-[#E87A3F] transition-colors">

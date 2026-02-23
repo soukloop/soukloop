@@ -5,7 +5,7 @@ import { Coins, ShoppingBag, Store, Star, Facebook, Instagram, Truck, ShieldChec
 
 export default function PointsSystemPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       <main className="py-12 sm:py-16">

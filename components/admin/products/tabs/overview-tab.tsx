@@ -84,7 +84,7 @@ export default async function OverviewTab({ productId }: OverviewTabProps) {
                 <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-gray-900">Description</h3>
                     <div className="prose prose-sm max-w-none text-gray-600">
-                        <p className="whitespace-pre-wrap leading-relaxed">{product.description}</p>
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{product.description}</p>
                     </div>
                 </div>
 

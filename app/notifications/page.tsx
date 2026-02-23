@@ -77,7 +77,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white sm:mt-[-8rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
