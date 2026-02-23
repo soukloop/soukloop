@@ -70,24 +70,20 @@ export async function GET(request: NextRequest) {
       const [orders, total] = await Promise.all([
         prisma.order.findMany({
           where,
-          include: {
+          select: {
+            id: true,
+            orderNumber: true,
+            createdAt: true,
+            status: true,
+            total: true,
             items: {
-              include: {
-                product: {
-                  include: {
-                    images: true
-                  }
-                },
-
-              }
-            },
-            vendor: true,
-            payments: true,
-            user: {
               select: {
-                id: true,
-                name: true,
-                email: true
+                product: {
+                  select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                  }
+                }
               }
             }
           },
@@ -140,12 +136,13 @@ export async function GET(request: NextRequest) {
             id: true,
             status: true,
             items: {
-              take: 3, // Only show first 3 items in list for preview
+              take: 2, // Only show first 2 items in list for preview, as UI only displays up to 2
               select: {
                 quantity: true,
                 price: true,
                 product: {
                   select: {
+                    slug: true,
                     name: true,
                     images: { take: 1, select: { url: true } }
                   }
@@ -157,20 +154,40 @@ export async function GET(request: NextRequest) {
         }
       }
       : {
-        // FULL MODE: Fetch everything (existing behavior)
+        // FULL MODE: Refactored to SELECT instead of heavy nested INCLUDE
         vendorOrders: {
-          include: {
+          select: {
+            id: true,
+            status: true,
+            orderNumber: true,
+            total: true,
+            createdAt: true,
             items: {
-              include: {
+              select: {
+                quantity: true,
+                price: true,
                 product: {
-                  include: {
-                    images: true
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    description: false, // Omit heavy string columns if not needed on list
+                    images: { take: 1, select: { url: true } }
                   }
-                },
+                }
               }
             },
-            vendor: true,
-            payments: true
+            vendor: {
+              select: {
+                id: true,
+                storeName: true
+              }
+            },
+            payments: {
+              select: {
+                status: true,
+              }
+            }
           },
           orderBy: { createdAt: 'asc' }
         }

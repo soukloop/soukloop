@@ -6,8 +6,15 @@ const nextConfig = {
 
   // Image optimization
   images: {
-    unoptimized: true,
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.s3.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.s3.*.amazonaws.com',
+      },
       {
         protocol: 'http',
         hostname: 'localhost',
@@ -26,6 +33,11 @@ const nextConfig = {
       },
     ],
     formats: ['image/webp', 'image/avif'],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
   // Webpack configuration - keeping for compatibility if needed, but Next 16 prefers Turbopack
   // To silence the error, we can explicitly opt-out of Turbopack by not providing a turbopack config
@@ -88,7 +100,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: '/FAQs', destination: '/faqs', permanent: true },
       { source: '/contactus', destination: '/contact-us', permanent: true },
       { source: '/editprofile', destination: '/edit-profile', permanent: true },
       { source: '/howtousepoints', destination: '/how-to-use-points', permanent: true },

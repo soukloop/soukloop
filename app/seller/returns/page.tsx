@@ -34,6 +34,7 @@ import {
 import { useSellerAuth } from "@/hooks/useSellerAuth";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import StatusBadge from "@/components/admin/StatusBadge";
 
 interface Refund {
     id: string;
@@ -80,20 +81,6 @@ export default function SellerReturnsPage() {
             toast.error("Error loading returns");
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PROCESSED': // "APPROVED" maps to PROCESSED/REFUNDED usually
-            case 'APPROVED':
-                return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
-            case 'PENDING':
-                return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
-            case 'REJECTED':
-                return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-            default:
-                return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{status}</Badge>;
         }
     };
 
@@ -198,7 +185,7 @@ export default function SellerReturnsPage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell>{new Date(refund.createdAt).toLocaleDateString()}</TableCell>
-                                            <TableCell>{getStatusBadge(refund.status)}</TableCell>
+                                            <TableCell><StatusBadge status={refund.status} type="transaction" /></TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>

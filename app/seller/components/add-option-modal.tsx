@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +27,12 @@ export default function AddOptionModal({
     const [name, setName] = useState(initialName);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     // Pre-fill whenever modal opens
     useEffect(() => {
@@ -35,7 +42,7 @@ export default function AddOptionModal({
         }
     }, [isOpen, initialName]);
 
-    if (!isOpen) return null;
+    if (!mounted || !isOpen) return null;
 
     // Real-time duplicate check (case-insensitive)
     const isDuplicate = name.trim().length > 0 &&
@@ -71,8 +78,8 @@ export default function AddOptionModal({
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    return createPortal(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50"
@@ -117,8 +124,8 @@ export default function AddOptionModal({
                             disabled={isSubmitting}
                             autoFocus
                             className={`w-full rounded-xl border px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 disabled:bg-gray-50 ${isDuplicate
-                                    ? "border-amber-400 focus:ring-amber-300 bg-amber-50"
-                                    : "border-gray-200 focus:ring-[#E87A3F] focus:border-[#E87A3F]"
+                                ? "border-amber-400 focus:ring-amber-300 bg-amber-50"
+                                : "border-gray-200 focus:ring-[#E87A3F] focus:border-[#E87A3F]"
                                 }`}
                         />
 
@@ -171,6 +178,7 @@ export default function AddOptionModal({
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import ProductGallery from "./product-gallery";
 import Link from "next/link";
+import Image from "next/image";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -140,7 +141,15 @@ export default async function OverviewTab({ productId }: OverviewTabProps) {
                                     <Link href={`/admin/users/${buyer.id}`} className="group flex items-center gap-3 rounded-xl bg-white p-3 border border-blue-100 hover:border-blue-300 transition-all shadow-sm hover:shadow-md">
                                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
                                             {buyer.profile?.avatar ? (
-                                                <img src={buyer.profile.avatar} alt={buyer.name || ""} className="h-full w-full object-cover" />
+                                                <div className="relative h-full w-full">
+                                                    <Image
+                                                        src={buyer.profile.avatar}
+                                                        alt={buyer.name || ""}
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="40px"
+                                                    />
+                                                </div>
                                             ) : (
                                                 (buyer.name?.[0] || "B").toUpperCase()
                                             )}
@@ -174,7 +183,15 @@ export default async function OverviewTab({ productId }: OverviewTabProps) {
                         <Link href={`/admin/users/${product.vendor.userId}`} className="flex items-center gap-4 group mb-4">
                             <div className="h-12 w-12 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden">
                                 {product.vendor.user.profile?.avatar ? (
-                                    <img src={product.vendor.user.profile.avatar} alt="Seller" className="h-full w-full object-cover" />
+                                    <div className="relative h-full w-full">
+                                        <Image
+                                            src={product.vendor.user.profile.avatar}
+                                            alt="Seller"
+                                            fill
+                                            className="object-cover"
+                                            sizes="48px"
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold">
                                         {product.vendor.user.name?.[0]?.toUpperCase() || 'S'}

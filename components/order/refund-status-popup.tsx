@@ -15,7 +15,7 @@ import {
     ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CopyText from "@/components/ui/copy-text";
+import { CopyButton } from "@/components/ui/copy-button";
 
 interface RefundStatusPopupProps {
     refund: any;
@@ -103,8 +103,7 @@ export default function RefundStatusPopup({ refund, onClose }: RefundStatusPopup
     if (!refund) return null;
 
     return (
-        // Removed backdrop-blur-sm as requested
-        <div className={`fixed inset-0 z-[1000] flex items-center justify-center transition-all duration-300 ${isVisible ? "bg-black/60" : "bg-black/0 pointer-events-none"}`}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-300 ${isVisible ? "bg-black/60" : "bg-black/0 pointer-events-none"}`}>
             <div
                 // Changed max-w-sm to max-w-2xl (Wide) and grid layout
                 className={`bg-white w-full max-w-3xl rounded-[24px] shadow-2xl overflow-hidden transition-all duration-300 transform ${isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-8"}`}
@@ -116,15 +115,15 @@ export default function RefundStatusPopup({ refund, onClose }: RefundStatusPopup
                         <div className="mb-8">
                             <h2 className="text-2xl font-black mb-1">{refund.status}</h2>
                             <div className="flex flex-col gap-1 items-start">
-                                <CopyText
-                                    text={refund.id}
+                                <CopyButton
+                                    value={refund.id}
                                     displayText={`Ref: #${refund.id.slice(0, 8)}`}
                                     className="opacity-80 text-xs font-medium text-white hover:opacity-100"
                                     iconClassName="text-white/70 group-hover:text-white"
                                 />
                                 {refund.order?.orderNumber && (
-                                    <CopyText
-                                        text={refund.order.orderNumber}
+                                    <CopyButton
+                                        value={refund.order.orderNumber}
                                         displayText={`Order: #${refund.order.orderNumber}`}
                                         className="opacity-80 text-xs font-medium text-white hover:opacity-100"
                                         iconClassName="text-white/70 group-hover:text-white"

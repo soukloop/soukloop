@@ -40,6 +40,9 @@ export function MediaPreview({ files, onRemove, maxFiles }: MediaPreviewProps) {
                                 <video
                                     src={file.preview}
                                     className="size-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                                     <Video className="size-6 text-white" />

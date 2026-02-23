@@ -54,7 +54,7 @@ export default function ProductContent({ slug }: { slug?: string }) {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false); // New state for lightbox
     const [zoomStyle, setZoomStyle] = useState({}); // New state for zoom effect
     const [isStartingChat, setIsStartingChat] = useState(false);
-    const [isWishlist, setIsWishlist] = useState(false); // Placeholder for wishlist state
+    // isWishlist state is managed by the useWishlist hook below
 
     const { addItem, isItemInCart } = useCart();
 
@@ -293,38 +293,48 @@ export default function ProductContent({ slug }: { slug?: string }) {
                                             src={(product as any).video}
                                             controls
                                             autoPlay
+                                            muted
+                                            playsInline
+                                            preload="metadata"
                                             className="h-full w-full object-contain bg-gray-900"
+                                            poster={((product as any).images?.[0]?.url || (product as any).image)}
                                         >
                                             Your browser does not support the video tag.
                                         </video>
                                     ) : (
                                         // Image Display
-                                        <img
-                                            src={product && (product as any).images && (product as any).images.length > 0
-                                                ? (product as any).images[selectedImage]?.url
-                                                : (product as any).image || "/images/placeholder.png"}
-                                            alt={(product as any).name}
-                                            className="h-full w-full object-contain bg-gray-50 transition-transform duration-200 ease-out"
-                                            style={zoomStyle}
-                                        />
+                                        <div className="relative h-full w-full bg-gray-50 transition-transform duration-200 ease-out" style={zoomStyle}>
+                                            <Image
+                                                src={product && (product as any).images && (product as any).images.length > 0
+                                                    ? (product as any).images[selectedImage]?.url
+                                                    : (product as any).image || "/images/placeholder.png"}
+                                                alt={(product as any).name}
+                                                fill
+                                                priority
+                                                sizes="(max-width: 768px) 100vw, 50vw"
+                                                className="object-contain"
+                                            />
+                                        </div>
                                     )}
 
-                                    {/* Wishlist Button Overlay */}
-                                    <div className="absolute right-4 top-4 z-10">
-                                        <WishlistButton
-                                            isWishlisted={isWishlist}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleWishlist(productId);
-                                            }}
-                                            size="lg"
-                                            className="size-11 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
-                                        />
-                                    </div>
+                                    {!(user && sellerId === user.id) && (
+                                        <div className="absolute right-4 top-4 z-10">
+                                            <WishlistButton
+                                                isWishlisted={isWithlisted(product.id)}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    toggleWishlist(product.id);
+                                                }}
+                                                size="lg"
+                                                className="size-11 bg-white/90 shadow-md hover:bg-white"
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* Lightbox Trigger Hint - Only for images */}
                                     {!isVideoSelected && (
-                                        <div className="absolute bottom-4 right-4 rounded-full bg-black/20 px-3 py-1.5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <div className="absolute bottom-4 right-4 rounded-full bg-black/20 px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                             <p className="text-[10px] font-bold text-white uppercase tracking-wider">Click for Fullscreen</p>
                                         </div>
                                     )}
@@ -437,7 +447,13 @@ export default function ProductContent({ slug }: { slug?: string }) {
                                             className={`relative size-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${!isVideoSelected && index === selectedImage ? "border-[#E87A3F] scale-95 shadow-inner" : "border-transparent hover:border-gray-200"
                                                 }`}
                                         >
-                                            <img src={img} alt={`Thumbnail ${index + 1}`} className="h-full w-full object-cover" />
+                                            <Image
+                                                src={img}
+                                                alt={`Thumbnail ${index + 1}`}
+                                                fill
+                                                sizes="80px"
+                                                className="object-cover"
+                                            />
                                         </button>
                                     ))}
 

@@ -47,9 +47,19 @@ export async function updateProductStatusAction(productId: string, status: strin
         await validateProductOwnership(productId);
 
         // Map status to isActive if needed
-        const isActive = status !== 'INACTIVE';
+        // Security: Only allow toggle if NOT BLOCKED by admin
+        const product = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { status: true }
+        });
 
-        await prisma.product.update({
+        if (product?.status === 'BLOCKED') {
+            return { success: false, error: "This product is blocked by admin and cannot be reactivated by the seller." };
+        }
+
+        const isActive = status === 'ACTIVE' || status === 'SOLD' || status === 'PROCESSING';
+
+        const result = await prisma.product.update({
             where: { id: productId },
             data: {
                 status: status,

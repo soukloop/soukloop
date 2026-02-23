@@ -53,7 +53,7 @@ export default function RefundsClient({
         {
             key: 'status',
             header: 'Status',
-            render: (r) => <StatusBadge status={r.status} type="order" />
+            render: (r) => <StatusBadge status={r.status} type="transaction" />
         },
     ];
 

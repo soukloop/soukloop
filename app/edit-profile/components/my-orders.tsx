@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useSellerAuth } from "@/hooks/useSellerAuth";
 import { useOrders, useVendorOrders, getDeliveryStatusText, getOverallStatus } from "@/hooks/useOrders";
@@ -13,6 +15,7 @@ import type { CustomerOrder, VendorOrder } from "@/types/api";
 import ReturnRefundPopup from "@/components/order/return-refund-popup";
 import { CheckCircle, Store } from "lucide-react";
 import dynamic from 'next/dynamic';
+import { getOrderStatusColor } from "@/lib/utils";
 
 const SellerReviewsSection = dynamic(() => import('./SellerReviewsSection'), {
   loading: () => <div className="h-96 w-full animate-pulse bg-gray-50 rounded-lg" />,
@@ -29,16 +32,24 @@ export interface DisplayOrder {
   productNames: string[];
   productImages: string[];
   deliveryText?: string;  // "1 of 2 Delivered" for customer orders
+  productSlug?: string;   // Added for review navigation
 }
 
 // Convert CustomerOrder to DisplayOrder for buyer view
 function customerOrderToDisplay(order: CustomerOrder): DisplayOrder {
-  // Collect all product names and images from all vendor orders
+  // Collect all productNames and productImages from all vendor orders
   const productNames: string[] = [];
   const productImages: string[] = [];
 
+  // Grab the first available product slug to use for the review link
+  let productSlug: string | undefined;
+
   order.vendorOrders?.forEach(vo => {
     vo.items?.forEach(item => {
+      // Prefer extracting slug if available in the type, else default to processing name
+      const slug = (item.product as any)?.slug || item.product?.name?.toLowerCase().replace(/\s+/g, '-');
+      if (slug && !productSlug) productSlug = slug;
+
       if (item.product?.name || item.product?.title) {
         productNames.push(item.product.name || item.product.title!);
       }
@@ -58,14 +69,22 @@ function customerOrderToDisplay(order: CustomerOrder): DisplayOrder {
     type: "buyer",
     productNames,
     productImages,
-    deliveryText: getDeliveryStatusText(order)
+    deliveryText: getDeliveryStatusText(order),
+    productSlug
   };
 }
 
 // Convert VendorOrder to DisplayOrder for seller view  
 function vendorOrderToDisplay(order: VendorOrder): DisplayOrder {
-  const productNames = order.items?.map(item => item.product?.name || item.product?.title || 'Product') || [];
-  const productImages = order.items?.map(item => item.product?.images?.[0]?.url).filter(Boolean) as string[] || [];
+  const productNames = order.items?.map(item => {
+    const prod = item.product as any;
+    return prod?.name || prod?.title || 'Product'
+  }) || [];
+
+  const productImages = order.items?.map(item => {
+    const prod = item.product as any;
+    return prod?.images?.[0]?.url;
+  }).filter(Boolean) as string[] || [];
 
   return {
     id: order.id,
@@ -91,6 +110,7 @@ export function OrderListTable({
   detailPathPrefix,
   sourceTab,
   viewMode,
+  isAdmin = false,
 }: {
   orders: DisplayOrder[];
   showReviewColumn?: boolean;
@@ -102,11 +122,12 @@ export function OrderListTable({
   detailPathPrefix?: string;
   sourceTab?: string;
   viewMode?: 'buying' | 'selling';
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
 
-  const hasActionColumn = showAcceptColumn || viewMode === 'buying' || (orders && orders.some(o => o.type === "buyer"));
+  const hasActionColumn = true; // Always show the action column (Track, Refund, Approve, etc.)
 
   const handleAcceptOrder = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation(); // Prevent row click
@@ -144,29 +165,6 @@ export function OrderListTable({
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "PENDING":
-        return "bg-amber-500";
-      case "PAID":
-        return "bg-emerald-500";
-      case "PROCESSING":
-        return "bg-[#E87A3F]";
-      case "SHIPPED":
-        return "bg-blue-500";
-      case "DELIVERED":
-        return "bg-green-600";
-      case "PARTIAL":
-        return "bg-sky-500";
-      case "CANCELED":
-        return "bg-red-500";
-      case "REFUNDED":
-        return "bg-gray-500";
-      default:
-        return "bg-gray-400";
-    }
-  };
-
   const getStatusLabel = (order: DisplayOrder) => {
     // For buyer orders, use the computed deliveryText
     if (order.type === "buyer" && order.deliveryText) {
@@ -199,12 +197,16 @@ export function OrderListTable({
       router.push(`${detailPathPrefix}/${orderId}`);
       return;
     }
-    router.push(`/order-details?id=${orderId}${sourceTab ? `&tab=${sourceTab}` : ''}`);
+    router.push(`/order-tracking?order=${orderId}&mode=${viewMode || 'buying'}${sourceTab ? `&tab=${sourceTab}` : ''}`);
   };
 
   const handleTrackOrder = (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
-    router.push(`/trackorders?order=${orderId}`);
+    if (isAdmin) {
+      router.push(`/admin/orders/${orderId}`);
+    } else {
+      router.push(`/track-orders?order=${orderId}`);
+    }
   };
 
   // ... (inside OrderListTable)
@@ -253,7 +255,7 @@ export function OrderListTable({
                   #{order.orderNumber || order.id?.slice(0, 8).toUpperCase()}
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm ${getStatusColor(order.status || '')}`}
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase text-white shadow-sm ${getOrderStatusColor(getStatusLabel(order))}`}
                 >
                   {getStatusLabel(order)}
                 </span>
@@ -265,7 +267,13 @@ export function OrderListTable({
                   {(order.productImages?.length || 0) > 0 ? (
                     order.productImages?.slice(0, 3).map((img, idx) => (
                       <div key={idx} className="h-14 w-14 bg-white rounded-xl overflow-hidden border-2 border-white shadow-sm flex-shrink-0 relative">
-                        <img src={img} className="object-cover w-full h-full" alt="" />
+                        <Image
+                          src={img}
+                          alt=""
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
                       </div>
                     ))
                   ) : (
@@ -288,23 +296,51 @@ export function OrderListTable({
                   ${order.total.toFixed(2)}
                 </span>
                 <div className="flex items-center gap-3">
-                  {order.type === "buyer" && (
+                  {order.type === "buyer" && order.status.toUpperCase() === "DELIVERED" ? (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReturnRefund?.(order.id);
+                        }}
+                        variant="outline"
+                        className="h-8 rounded-full border-gray-200 px-3 text-xs font-bold text-gray-700 hover:bg-gray-50 bg-white"
+                      >
+                        Refund
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (order.productSlug) {
+                            if (isAdmin) {
+                              router.push(`/admin/products/${order.productSlug}`);
+                            } else {
+                              router.push(`/product/${order.productSlug}`);
+                            }
+                          } else {
+                            toast.error("Product link not available");
+                          }
+                        }}
+                        className="h-8 rounded-full bg-[#E87A3F] px-3 text-xs font-bold text-white hover:bg-[#d6692f]"
+                      >
+                        Review
+                      </Button>
+                    </div>
+                  ) : order.type === "buyer" && (
                     <Button
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (order.status.toUpperCase() === "DELIVERED") {
-                          onReturnRefund?.(order.id);
-                        } else {
-                          handleTrackOrder(e, order.orderNumber || order.id);
-                        }
+                        handleTrackOrder(e, order.orderNumber || order.id);
                       }}
                       className="h-8 rounded-full bg-[#E87A3F] px-4 text-xs font-bold text-white hover:bg-[#d6692f]"
                     >
-                      {order.status.toUpperCase() === "DELIVERED" ? "Return / Refund" : "Track"}
+                      Track
                     </Button>
                   )}
-                  {showAcceptColumn && order.status === "PENDING" && (
+                  {(showAcceptColumn || order.type === "seller") && (order.status === "PENDING" || order.status === "PAID") && (
                     <Button
                       size="sm"
                       onClick={(e) => handleAcceptOrder(e, order.id)}
@@ -348,7 +384,7 @@ export function OrderListTable({
               <th className="w-[15%] py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6 md:py-4 md:text-sm">Status</th>
               <th className="w-[10%] py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6 md:py-4 md:text-sm">{showReviewColumn ? "Review" : "Price"}</th>
               {hasActionColumn && (
-                <th className="w-[15%] py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6 md:py-4 md:text-sm">{showAcceptColumn ? "Action" : "Track"}</th>
+                <th className="w-[15%] py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6 md:py-4 md:text-sm">Actions</th>
               )}
             </tr>
           </thead>
@@ -396,7 +432,13 @@ export function OrderListTable({
                         {(order.productImages?.length || 0) > 0 ? (
                           order.productImages?.slice(0, 3).map((img, idx) => (
                             <div key={idx} className="h-12 w-12 bg-white rounded-lg overflow-hidden border-2 border-white shadow-sm flex-shrink-0 relative">
-                              <img src={img} className="object-cover w-full h-full" alt="" />
+                              <Image
+                                src={img}
+                                alt=""
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
                             </div>
                           ))
                         ) : (
@@ -414,7 +456,7 @@ export function OrderListTable({
                     {formatDate(order.createdAt || '')}
                   </td>
                   <td className="w-[15%] whitespace-nowrap py-3 px-4 md:px-6 md:py-4">
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase text-white ${getStatusColor(order.status || '')}`}>
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase text-white ${getOrderStatusColor(getStatusLabel(order))}`}>
                       {getStatusLabel(order)}
                     </span>
                   </td>
@@ -430,35 +472,72 @@ export function OrderListTable({
                       <span className="font-bold text-[#E87A3F]">${order.total.toFixed(2)}</span>
                     )}
                   </td>
-                  {(showAcceptColumn || order.type === "buyer") && (
+                  {hasActionColumn && (
                     <td className="w-[13%] whitespace-nowrap py-3 px-4 text-center md:px-6 md:py-4">
                       {order.type === "seller" ? (
-                        order.status === "PENDING" ? (
+                        order.status === "PENDING" || order.status === "PAID" ? (
                           <StatefulButton
                             onClick={(e) => handleAcceptOrder(e, order.id)}
                             isLoading={acceptingOrderId === order.id}
                             loadingText="Accepting..."
-                            className="bg-[#00B69B] hover:bg-[#00927d] text-white text-xs px-4 py-2 h-9 rounded-full font-bold shadow-sm shadow-emerald-100 border-none transition-all active:scale-95"
+                            className="bg-[#00B69B] hover:bg-[#00927d] text-white text-xs px-4 py-2 h-9 rounded-full font-bold shadow-sm shadow-emerald-100 border-none transition-all active:scale-95 mx-auto"
                           >
                             <Check className="size-4 mr-1.5" /> Approve Order
                           </StatefulButton>
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrackOrder(e, order.orderNumber || order.id);
+                            }}
+                            className="h-8 rounded-full bg-[#E87A3F] px-2 md:px-4 text-[10px] md:text-xs font-bold text-white hover:bg-[#d6692F] mx-auto"
+                          >
+                            Track Order
+                          </Button>
                         )
+                      ) : order.status.toUpperCase() === "DELIVERED" ? (
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReturnRefund?.(order.id);
+                            }}
+                            variant="outline"
+                            className="h-8 rounded-full border-gray-200 px-3 text-[10px] md:text-xs font-bold text-gray-700 hover:bg-gray-50 bg-white"
+                          >
+                            Refund
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (order.productSlug) {
+                                if (isAdmin) {
+                                  router.push(`/admin/products/${order.productSlug}`);
+                                } else {
+                                  router.push(`/product/${order.productSlug}`);
+                                }
+                              } else {
+                                toast.error("Product link not available");
+                              }
+                            }}
+                            className="h-8 rounded-full bg-[#E87A3F] px-3 text-[10px] md:text-xs font-bold text-white hover:bg-[#d6692f]"
+                          >
+                            Review
+                          </Button>
+                        </div>
                       ) : (
                         <Button
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (order.status.toUpperCase() === "DELIVERED") {
-                              onReturnRefund?.(order.id);
-                            } else {
-                              handleTrackOrder(e, order.orderNumber || order.id);
-                            }
+                            handleTrackOrder(e, order.orderNumber || order.id);
                           }}
-                          className="h-8 rounded-full bg-[#E87A3F] px-2 md:px-4 text-[10px] md:text-xs font-bold text-white hover:bg-[#d6692F]"
+                          className="h-8 rounded-full bg-[#E87A3F] px-2 md:px-4 text-[10px] md:text-xs font-bold text-white hover:bg-[#d6692F] mx-auto"
                         >
-                          {order.status.toUpperCase() === "DELIVERED" ? "Return / Refund" : "Track Order"}
+                          Track Order
                         </Button>
                       )}
                     </td>
@@ -468,7 +547,7 @@ export function OrderListTable({
             )}
           </tbody>
         </table>
-      </div>
+      </div >
     </>
   );
 }
@@ -496,14 +575,14 @@ export default function OrdersPage() {
     data: buyerOrders,
     isLoading: isLoadingBuyer,
     mutate: mutateBuyer
-  } = useOrders(viewMode === 'buying'); // Only fetch if in buying mode
+  } = useOrders(viewMode === 'buying', 'lite'); // Use lite mode for faster list view
 
   // Only fetch vendor orders if user IS a seller AND in selling mode
   const {
     data: sellerOrders,
     isLoading: isLoadingSeller,
     mutate: mutateSeller
-  } = useVendorOrders(isSeller && viewMode === 'selling');
+  } = useVendorOrders(isSeller && viewMode === 'selling', 'lite');
 
   // Convert to display format
   const buyerDisplayOrders: DisplayOrder[] = Array.isArray(buyerOrders)
@@ -518,9 +597,15 @@ export default function OrdersPage() {
 
   const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<CustomerOrder | null>(null);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Tabs based on View Mode
-  const buyerTabs = ["All Order", "To Receive", "Delivered", "Reviews"];
+  const buyerTabs = ["All Order", "To Receive", "Delivered"];
   const sellerTabs = ["All Order", "To Ship", "Delivered", "Reviews"]; // Removed "To Receive" from seller tabs as it is confusing
 
   const currentTabs = viewMode === 'buying' ? buyerTabs : sellerTabs;
@@ -669,25 +754,28 @@ export default function OrdersPage() {
       }
 
       {/* Success Popup */}
-      {
-        showSuccessPopup && (
-          <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black bg-opacity-50 px-4">
-            <div className="bg-white p-8 rounded-[32px] text-center max-w-sm w-full animate-in fade-in zoom-in-95 duration-300">
-              <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="h-10 w-10 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-black mb-2">Request Submitted</h3>
-              <p className="text-gray-500 mb-8">We have received your request and will get back to you shortly via email.</p>
-              <Button
-                onClick={() => setShowSuccessPopup(false)}
-                className="w-full rounded-full bg-[#E87A3F] hover:bg-[#d96d34] h-14 font-bold text-white shadow-lg shadow-orange-100"
-              >
-                Close
-              </Button>
+      {mounted && showSuccessPopup && createPortal(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/60 px-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowSuccessPopup(false)}
+          />
+          <div className="bg-white p-8 rounded-[32px] text-center max-w-sm w-full animate-in fade-in zoom-in-95 duration-300 relative z-10 shadow-2xl">
+            <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
+            <h3 className="text-2xl font-black mb-2">Request Submitted</h3>
+            <p className="text-gray-500 mb-8">We have received your request and will get back to you shortly via email.</p>
+            <Button
+              onClick={() => setShowSuccessPopup(false)}
+              className="w-full rounded-full bg-[#E87A3F] hover:bg-[#d96d34] h-14 font-bold text-white shadow-lg shadow-orange-100"
+            >
+              Close
+            </Button>
           </div>
-        )
-      }
-    </div >
+        </div>,
+        document.body
+      )}
+    </div>
   );
 }

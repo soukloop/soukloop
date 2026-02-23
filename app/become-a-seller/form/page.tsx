@@ -345,11 +345,15 @@ function OnboardingFormContent() {
                 body: formData
             })
 
-            if (!res.ok) throw new Error('Upload failed')
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                throw new Error(data?.error || data?.message || `Upload failed (${res.status})`)
+            }
             const data = await res.json()
             setUploadedFiles(prev => ({ ...prev, [fileType]: data.fileUrl }))
-        } catch (err) {
-            setError('Failed to upload file')
+        } catch (err: any) {
+            console.error('[Upload Error]', err)
+            setError(err.message || 'Failed to upload file')
         } finally {
             setUploadingFiles(prev => ({ ...prev, [fileType]: false }))
         }

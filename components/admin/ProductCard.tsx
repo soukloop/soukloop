@@ -54,7 +54,7 @@ export default function ProductCard({ product, isPending }: ProductCardProps) {
                 <Button
                     size="icon"
                     variant="secondary"
-                    className="h-7 w-7 rounded-full bg-white/90 backdrop-blur"
+                    className="h-7 w-7 rounded-full bg-white/90"
                     asChild
                 >
                     <Link href={`/productdetails/${product.id}`} target="_blank">

@@ -111,6 +111,7 @@ export default auth(async (req) => {
   }
 
   // 5. Role-Based Access Control
+  // Use the FIRST matching prefix (most specific wins since they're listed specific-to-broad)
   for (const route of PROTECTED_ROUTES) {
     if (pathname.startsWith(route.prefix)) {
       const hasRequiredRole = hasRole(userRole as Role, route.minRole);
@@ -118,6 +119,7 @@ export default auth(async (req) => {
       if (!hasRequiredRole) {
         return NextResponse.redirect(new URL("/", nextUrl));
       }
+      break; // Stop after first match to prevent broader prefixes from overriding
     }
   }
 

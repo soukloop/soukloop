@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StyledPhoneInput } from '@/components/ui/phone-input'
 import { Switch } from "@/components/ui/switch"
+import { ZipInput } from '@/components/ui/ZipInput'
 
 // Country mapping helper
 const countryNameToCode: Record<string, string> = {
@@ -214,7 +215,13 @@ export default function BillingAddressForm({
     const isAddressValid = excludeFields.includes('address1') || Boolean(currentValues.address1)
     const isCityValid = excludeFields.includes('city') || Boolean(currentValues.city)
     const isStateValid = excludeFields.includes('state') || Boolean(currentValues.state)
-    const isZipValid = excludeFields.includes('postalCode') || Boolean(currentValues.postalCode)
+    const isZipValid = excludeFields.includes('postalCode') || (
+        Boolean(currentValues.postalCode) &&
+        (() => {
+            const clean = currentValues.postalCode.replace(/[^0-9]/g, '');
+            return clean.length === 5 || clean.length === 9;
+        })()
+    )
     const isCountryValid = excludeFields.includes('country') || Boolean(currentValues.country)
 
     const isFormValid = Boolean(
@@ -387,17 +394,14 @@ export default function BillingAddressForm({
                         </div>
                     )}
                     {!excludeFields.includes('postalCode') && (
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-gray-700">Zip Code <span className="text-red-500">*</span></Label>
-                            <Input
-                                placeholder="Zip"
-                                {...register('postalCode')}
-                                disabled={isDisabled}
-                                className="h-11 rounded-xl"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                            />
-                        </div>
+                        <ZipInput
+                            label="Zip Code"
+                            required
+                            placeholder="Zip"
+                            {...register('postalCode')}
+                            disabled={isDisabled}
+                            containerClassName="lg:col-span-1"
+                        />
                     )}
                 </div>
 

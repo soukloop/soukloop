@@ -76,7 +76,7 @@ export function SensitiveDataDisplay({
             </Button>
 
             {isRevealed && allowCopy && (
-                <CopyButton value={displayValue} className="ml-0" hoverOnly />
+                <CopyButton value={displayValue} className="ml-0 w-6 h-6 text-zinc-400 hover:text-zinc-700" iconOnly />
             )}
         </div>
     );

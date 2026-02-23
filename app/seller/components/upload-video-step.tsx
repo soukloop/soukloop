@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 interface UploadVideoStepProps {
     video: string | null;
     onVideoChange: (video: string | null, file?: File | null) => void;
+    isUploading?: boolean;
+    progress?: number;
+    error?: string | null;
 }
 
 // Constants for validation
@@ -22,7 +25,7 @@ const MAX_DURATION_SECONDS = 60;
 const ALLOWED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-m4v'];
 const ALLOWED_EXTENSIONS = ['MP4', 'MOV', 'M4V'];
 
-export default function UploadVideoStep({ video, onVideoChange }: UploadVideoStepProps) {
+export default function UploadVideoStep({ video, onVideoChange, isUploading = false, progress = 0, error: uploadError = null }: UploadVideoStepProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [isValidating, setIsValidating] = useState(false);
@@ -154,16 +157,16 @@ export default function UploadVideoStep({ video, onVideoChange }: UploadVideoSte
             </p>
 
             {/* Error message */}
-            {error && (
+            {(error || uploadError) && (
                 <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 border border-red-100 p-3 text-sm text-red-700">
                     <AlertCircle className="size-4 shrink-0" />
-                    <span>{error}</span>
+                    <span>{error || uploadError}</span>
                 </div>
             )}
 
             {/* Dashed Area */}
             <div
-                className={`flex h-[320px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-colors ${isValidating
+                className={`flex h-[320px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all ${isValidating || isUploading
                     ? "border-orange-300 bg-orange-50/50"
                     : "border-gray-200 bg-white hover:bg-gray-50 hover:border-orange-200"
                     }`}
@@ -175,16 +178,56 @@ export default function UploadVideoStep({ video, onVideoChange }: UploadVideoSte
                         <div className="animate-spin size-12 border-4 border-gray-200 border-t-[#E87A3F] rounded-full mb-4" />
                         <p className="text-sm font-medium text-gray-600">Validating video...</p>
                     </div>
+                ) : isUploading ? (
+                    <div className="flex flex-col items-center justify-center text-center px-10 w-full max-w-md">
+                        <div className="relative size-20 mb-6">
+                            <svg className="size-full" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="16" fill="none" className="stroke-gray-200" strokeWidth="3" />
+                                <circle
+                                    cx="18"
+                                    cy="18"
+                                    r="16"
+                                    fill="none"
+                                    className="stroke-[#E87A3F] transition-all duration-300"
+                                    strokeWidth="3"
+                                    strokeDasharray={`${progress}, 100`}
+                                    strokeDashoffset="0"
+                                    strokeLinecap="round"
+                                    transform="rotate(-90 18 18)"
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-sm font-bold text-[#E87A3F]">{progress}%</span>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Uploading...</h3>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                            <div
+                                className="bg-[#E87A3F] h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-gray-500 animate-pulse">Large videos may take a moment. Don't close the window.</p>
+                    </div>
                 ) : video ? (
                     <div className="relative h-full w-full p-4">
+                        {/* Status Overlay */}
+                        {progress === 100 && !isUploading && (
+                            <div className="absolute top-8 left-8 z-10 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5 border border-green-600">
+                                <div className="size-1.5 bg-white rounded-full animate-pulse" />
+                                VIDEO READY
+                            </div>
+                        )}
                         <video
                             src={video}
                             controls
-                            className="h-full w-full rounded-2xl object-cover"
+                            playsInline
+                            preload="metadata"
+                            className="h-full w-full rounded-2xl object-cover bg-black"
                         />
                         <button
                             onClick={handleRemove}
-                            className="absolute top-6 right-6 flex size-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-md hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="absolute top-6 right-6 flex size-8 items-center justify-center rounded-full bg-white text-gray-500 shadow-md hover:text-red-500 hover:bg-red-50 transition-colors z-20"
                         >
                             <X className="size-5" />
                         </button>

@@ -239,7 +239,7 @@ export function BannerModal({ isOpen, onClose, banner }: BannerModalProps) {
                                         </div>
                                     )}
                                     {isUploading && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/60">
                                             <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
                                         </div>
                                     )}

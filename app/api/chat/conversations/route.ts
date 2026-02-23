@@ -3,11 +3,14 @@ import { prisma } from '@/lib/prisma'
 import { auth } from "@/auth"
 import { z } from 'zod'
 
-// Schema for creating a conversation - requires productId
+// Schema for creating a conversation
 const createConversationSchema = z.object({
-    sellerId: z.string().min(1, 'Seller ID is required'),
+    sellerId: z.string().optional(),
+    buyerId: z.string().optional(),
     productId: z.string().min(1, 'Product ID is required')
-})
+}).refine(data => data.sellerId || data.buyerId, {
+    message: "Either sellerId or buyerId must be provided"
+});
 
 export async function GET(request: NextRequest) {
     try {
@@ -87,7 +90,13 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        let { sellerId, productId } = validationResult.data
+        let { sellerId, buyerId, productId } = validationResult.data
+
+        // Determine Roles based on who is initiating the request
+        // If the initiator passed a buyerId, they act as the seller.
+        // If the initiator passed a sellerId, they act as the buyer.
+        const activeBuyerId = buyerId || session.user.id;
+        const activeSellerId = sellerId || session.user.id;
 
         // Check if product exists (resolve slug if needed)
         const product = await prisma.product.findFirst({
@@ -112,15 +121,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Prevent chatting with yourself
-        if (sellerId === session.user.id) {
+        if (activeSellerId === activeBuyerId) {
             return NextResponse.json({ error: 'Cannot start a conversation with yourself' }, { status: 400 })
         }
 
         // Check if conversation already exists
         const existingConversation = await prisma.chatConversation.findFirst({
             where: {
-                buyerId: session.user.id,
-                sellerId,
+                buyerId: activeBuyerId,
+                sellerId: activeSellerId,
                 productId
             },
             include: {
@@ -160,8 +169,8 @@ export async function POST(request: NextRequest) {
         // Create new conversation
         const conversation = await prisma.chatConversation.create({
             data: {
-                buyerId: session.user.id,
-                sellerId,
+                buyerId: activeBuyerId,
+                sellerId: activeSellerId,
                 productId
             },
             include: {

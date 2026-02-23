@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ProductWithRelations } from "@/types";
@@ -62,17 +63,25 @@ export default function ProductImageGallery({
                         src={product.video}
                         controls
                         autoPlay
+                        muted
+                        playsInline
+                        preload="metadata"
                         className="h-full w-full object-contain bg-gray-900"
+                        poster={productImages[0]}
                     >
                         Your browser does not support the video tag.
                     </video>
                 ) : (
-                    <img
-                        src={productImages[selectedImage]}
-                        alt={product.name}
-                        className="h-full w-full object-contain bg-gray-50 transition-transform duration-200 ease-out"
-                        style={zoomStyle}
-                    />
+                    <div className="relative h-full w-full bg-gray-50 transition-transform duration-200 ease-out" style={zoomStyle}>
+                        <Image
+                            src={productImages[selectedImage]}
+                            alt={product.name}
+                            fill
+                            priority
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            className="object-contain"
+                        />
+                    </div>
                 )}
 
                 {/* Wishlist Button */}
@@ -80,11 +89,12 @@ export default function ProductImageGallery({
                     <WishlistButton
                         isWishlisted={isWishlist}
                         onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             toggleWishlist(product.id);
                         }}
                         size="lg"
-                        className="size-11 bg-white/90 shadow-md backdrop-blur-sm hover:bg-white"
+                        className="size-11 bg-white/90 shadow-md hover:bg-white"
                     />
                 </div>
 
@@ -132,12 +142,15 @@ export default function ProductImageGallery({
                         <X className="size-8" />
                     </Button>
 
-                    <img
-                        src={productImages[selectedImage]}
-                        alt={product.name}
-                        className="max-h-[90vh] max-w-[90vw] object-contain"
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                    <div className="relative h-full w-full">
+                        <Image
+                            src={productImages[selectedImage]}
+                            alt={product.name}
+                            fill
+                            sizes="90vw"
+                            className="object-contain"
+                        />
+                    </div>
                 </div>
             )}
 
@@ -150,7 +163,13 @@ export default function ProductImageGallery({
                         className={`relative size-20 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${!isVideoSelected && index === selectedImage ? "border-[#E87A3F] scale-95 shadow-inner" : "border-transparent hover:border-gray-200"
                             }`}
                     >
-                        <img src={img} alt={`Thumbnail ${index + 1}`} className="h-full w-full object-cover" />
+                        <Image
+                            src={img}
+                            alt={`Thumbnail ${index + 1}`}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                        />
                     </button>
                 ))}
 

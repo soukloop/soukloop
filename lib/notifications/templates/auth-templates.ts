@@ -180,6 +180,17 @@ export async function notifyAccountSuspended(
   userName?: string,
   reason?: string
 ) {
+  const { AccountSuspendedEmail } = await import('@/lib/email-templates/auth/account-suspended');
+  const { render } = await import('@react-email/render');
+
+  const emailHtml = await render(
+    AccountSuspendedEmail({
+      userName,
+      supportUrl: `${baseUrl}/contactus`,
+      reason
+    })
+  );
+
   return createNotification({
     userId,
     type: 'ACCOUNT_SUSPENDED',
@@ -188,11 +199,7 @@ export async function notifyAccountSuspended(
     actionUrl: '/contact-us',
     sendEmail: true,
     emailSubject: 'Important: Your Account Has Been Suspended',
-    emailReact: AccountSuspendedEmail({
-      userName,
-      supportUrl: `${baseUrl}/contactus`,
-      reason
-    })
+    emailHtml
   });
 }
 
@@ -203,6 +210,16 @@ export async function notifyAccountReactivated(
   userId: string,
   userName?: string
 ) {
+  const { AccountReactivatedEmail } = await import('@/lib/email-templates/auth/account-reactivated');
+  const { render } = await import('@react-email/render');
+
+  const emailHtml = await render(
+    AccountReactivatedEmail({
+      userName,
+      loginUrl: `${baseUrl}/auth/signin`
+    })
+  );
+
   return createNotification({
     userId,
     type: 'ACCOUNT_ACTIVATED',
@@ -211,12 +228,8 @@ export async function notifyAccountReactivated(
     actionUrl: '/auth/signin',
     sendEmail: true,
     emailSubject: 'Your Account Has Been Reactivated',
-    emailReact: AccountReactivatedEmail({
-      userName,
-      loginUrl: `${baseUrl}/auth/signin`
-    })
+    emailHtml
   });
-
 }
 
 /**
@@ -226,20 +239,22 @@ export async function notifyAccountDeleted(
   email: string,
   userName?: string
 ) {
-  // Note: User is deleted, so we can't create an in-app notification linked to them.
-  // We strictly send an email here.
+  const { AccountDeletedEmail } = await import('@/lib/email-templates/auth/account-deleted');
+  const { render } = await import('@react-email/render');
   const { sendEmail } = await import('@/lib/mail');
 
-  // We can't use createNotification because it requires a valid userId for DB.
+  const emailHtml = await render(
+    AccountDeletedEmail({
+      userName,
+      supportUrl: `${baseUrl}/contactus`
+    })
+  );
+
   await sendEmail({
     to: email,
     subject: 'Your Account Has Been Deleted - SoukLoop',
-    html: `
-            <h1>Account Deleted</h1>
-            <p>Hi ${userName || 'there'},</p>
-            <p>Your SoukLoop account has been permanently deleted as requested or by administrative action.</p>
-            <p>We're sorry to see you go.</p>
-        `
+    html: emailHtml,
+    from: 'noreply'
   });
 }
 

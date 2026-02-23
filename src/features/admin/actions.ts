@@ -52,12 +52,12 @@ export async function suspendUser(userId: string) {
                 where: { userId: userId },
                 data: { isActive: false }
             }),
-            // Hide all products immediately
+            // Hide all products immediately as BLOCKED (Admin-initiated)
             prisma.product.updateMany({
                 where: { vendor: { userId: userId } },
                 data: {
                     isActive: false,
-                    status: 'INACTIVE'
+                    status: 'BLOCKED'
                 }
             })
         ]);
@@ -99,10 +99,26 @@ export async function activateUser(userId: string) {
     try {
         await checkAdmin();
 
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { isActive: true },
-        });
+        const [user] = await prisma.$transaction([
+            // Unlock User account
+            prisma.user.update({
+                where: { id: userId },
+                data: { isActive: true },
+            }),
+            // Reactivate Vendor profile
+            prisma.vendor.updateMany({
+                where: { userId: userId },
+                data: { isActive: true }
+            }),
+            // Reactivate all products as ACTIVE
+            prisma.product.updateMany({
+                where: { vendor: { userId: userId } },
+                data: {
+                    isActive: true,
+                    status: 'ACTIVE'
+                }
+            })
+        ]);
 
         revalidatePath("/admin/users");
         revalidatePath(`/admin/users/${userId}`);

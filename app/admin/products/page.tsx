@@ -76,8 +76,8 @@ export default async function ProductManagementPage(props: {
                     totalRecords={total}
                     initialPage={currentPage}
                     pageSize={15}
-                    categories={['All', ...categories]}
-                    dressStyles={['All', ...dressStyles]}
+                    categories={categories}
+                    dressStyles={dressStyles}
                 />
             </Suspense>
         </div>

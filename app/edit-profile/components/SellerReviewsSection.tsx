@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Star, CheckCircle2, Package, Loader2 } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
@@ -158,7 +159,15 @@ export default function SellerReviewsSection() {
                             <div className="flex items-center gap-3">
                                 <div className="size-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
                                     {review.user?.image ? (
-                                        <img src={review.user.image} alt={review.user.name || "User"} className="w-full h-full object-cover" />
+                                        <div className="relative w-full h-full">
+                                            <Image
+                                                src={review.user.image}
+                                                alt={review.user.name || "User"}
+                                                fill
+                                                sizes="40px"
+                                                className="object-cover"
+                                            />
+                                        </div>
                                     ) : (
                                         <span className="font-bold text-gray-500 text-sm">
                                             {review.user?.name?.charAt(0) || "A"}
@@ -191,10 +200,16 @@ export default function SellerReviewsSection() {
 
                         {/* Footer: Product Link & Badge */}
                         <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-2">
-                            <div className="flex items-center gap-2 group/product cursor-pointer" onClick={() => window.open(`/productdetails?id=${review.product.id}`, '_blank')}>
+                            <div className="flex items-center gap-2 group/product cursor-pointer" onClick={() => window.open(`/product/${review.product.slug}`, '_blank')}>
                                 <div className="size-8 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
                                     {review.product.images?.[0]?.url && (
-                                        <img src={review.product.images[0].url} className="w-full h-full object-cover" alt="" />
+                                        <Image
+                                            src={review.product.images[0].url}
+                                            alt={review.product.name}
+                                            fill
+                                            sizes="32px"
+                                            className="object-cover"
+                                        />
                                     )}
                                 </div>
                                 <div className="flex flex-col">

@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import EcommerceHeader from "@/components/ecommerce-header";
-import SellerProfile from "../sellerprofile/components/seller-profile";
-import ProductFilters from "../sellerprofile/components/product-filters"; // Keep as client component for now
-import ProductGrid from "../sellerprofile/components/product-grid";
+import SellerProfile from "./components/seller-profile";
+import ProductFilters from "./components/product-filters"; // Keep as client component for now
+import ProductGrid from "./components/product-grid";
 import FooterSection from "@/components/footer-section";
 import { prisma } from "@/lib/prisma";
 import Image from "next/image";
@@ -58,6 +58,8 @@ export default async function SellerPage({
     where: {
       vendorId: vendor.id,
       isActive: true, // Only show active products
+      status: 'ACTIVE',
+      hasPendingStyle: false,
     },
     include: {
       images: true,

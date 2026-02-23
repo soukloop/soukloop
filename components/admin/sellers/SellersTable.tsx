@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column, FilterOption } from '@/components/admin/DataTable';
 import StatusBadge from '@/components/admin/StatusBadge';
+import Image from 'next/image';
 import { Store, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -163,9 +164,15 @@ export default function SellersTable({
             header: 'Seller',
             render: (seller) => (
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200 relative">
                         {seller.avatar ? (
-                            <img src={seller.avatar} alt={seller.name} className="h-full w-full object-cover" />
+                            <Image
+                                src={seller.avatar}
+                                alt={seller.name}
+                                fill
+                                className="object-cover"
+                                sizes="40px"
+                            />
                         ) : (
                             <span className="text-gray-400 font-medium text-xs">
                                 {seller.name.charAt(0)}
@@ -186,18 +193,12 @@ export default function SellersTable({
             ),
         },
         {
-            key: 'storeName',
-            header: 'Store',
+            key: 'productsCount',
+            header: 'Products',
             render: (seller) => (
-                <div>
-                    <div className="flex items-center gap-2">
-                        <Store className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-700 font-medium">{seller.storeName || 'N/A'}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 pl-6">
-                        {seller.productsCount || 0} Products
-                    </div>
-                </div>
+                <span className="text-sm font-medium text-gray-900">
+                    {seller.productsCount || 0}
+                </span>
             ),
         },
         {
@@ -225,7 +226,6 @@ export default function SellersTable({
                 { label: 'Active', value: 'ACTIVE' },
                 { label: 'Pending', value: 'PENDING' },
                 { label: 'Suspended', value: 'SUSPENDED' },
-                { label: 'All Sellers', value: 'ALL' },
             ]
         }
     ];

@@ -60,16 +60,26 @@ export function useWishlist() {
             try {
                 if (currentlyWishlisted) {
                     // REMOVE
-                    await fetch(`/api/favorites?productId=${productId}`, { method: "DELETE" });
-                    toast.success("Removed from wishlist");
+                    const res = await fetch(`/api/favorites?productId=${productId}`, { method: "DELETE" });
+                    if (res.ok) {
+                        toast.success("Removed from wishlist");
+                    } else {
+                        const errData = await res.json();
+                        throw new Error(errData.error || "Failed to remove");
+                    }
                 } else {
                     // ADD
-                    await fetch("/api/favorites", {
+                    const res = await fetch("/api/favorites", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ productId }),
                     });
-                    toast.success("Added to wishlist");
+                    if (res.ok) {
+                        toast.success("Added to wishlist");
+                    } else {
+                        const errData = await res.json();
+                        throw new Error(errData.error || "Failed to add");
+                    }
                 }
                 // 3. Revalidate to ensure sync
                 mutateFavorites();

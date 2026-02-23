@@ -37,7 +37,6 @@ interface Product {
     reviewCount?: number;
     isActive?: boolean;
     status?: string;
-    status?: string;
     quantity?: number;
     slug?: string;
     pendingOrderCount?: number;
@@ -143,7 +142,7 @@ export default function ProductCard({
     const handleCardClick = () => {
         // In manage mode, maybe we don't want to navigate to product details on card click?
         // Or keep behavior consistent. Let's keep it consistent for now.
-        router.push(`/productdetails/${product.id}`);
+        router.push(`/product/${product.slug}`);
     };
 
     const isSold = (product as any).quantity === 0 || (product as any).status === 'SOLD';
@@ -190,28 +189,49 @@ export default function ProductCard({
                             {/* Dropdown Menu */}
                             {activeMenu && (
                                 <div className="absolute right-0 top-full mt-2 w-40 sm:w-44 origin-top-right rounded-xl border border-gray-100 bg-white p-1 shadow-xl ring-1 ring-black/5 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                    <button
-                                        className="flex w-full items-center gap-2 rounded-lg bg-[#FFF5F2] px-3 py-2 text-xs font-semibold text-[#E87A3F] hover:bg-[#ffece6] transition-colors"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onMarkSold?.(product.id);
-                                            setActiveMenu(false);
-                                        }}
-                                    >
-                                        <CheckCircle className="size-3.5" />
-                                        Mark as Sold
-                                    </button>
-                                    <button
-                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDeactivate?.(product.id);
-                                            setActiveMenu(false);
-                                        }}
-                                    >
-                                        <EyeOff className="size-3.5" />
-                                        Deactivate
-                                    </button>
+                                    {/* Mark as Sold - Only for ACTIVE products */}
+                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
+                                        <button
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onMarkSold?.(product.id);
+                                                setActiveMenu(false);
+                                            }}
+                                        >
+                                            <CheckCircle className="size-3.5" />
+                                            Mark as Sold
+                                        </button>
+                                    )}
+                                    {/* Activate - Only for user-deactivated (INACTIVE) products */}
+                                    {(product.status === 'INACTIVE' || (product.isActive === false && product.status !== 'BLOCKED')) && !product.hasPendingStyle && (
+                                        <button
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-50 hover:text-green-900 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeactivate?.(product.id);
+                                                setActiveMenu(false);
+                                            }}
+                                        >
+                                            <CheckCircle className="size-3.5" />
+                                            Activate
+                                        </button>
+                                    )}
+                                    {/* Deactivate - Only for ACTIVE products */}
+                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
+                                        <button
+                                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeactivate?.(product.id);
+                                                setActiveMenu(false);
+                                            }}
+                                        >
+                                            <EyeOff className="size-3.5" />
+                                            Deactivate
+                                        </button>
+                                    )}
+                                    {/* Delete Product - Always visible */}
                                     <button
                                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
                                         onClick={(e) => {
@@ -237,11 +257,20 @@ export default function ProductCard({
                     </div>
                 )}
 
-                {/* Suspended Overlay - Only visible to Owner or Admin */}
-                {(product.isActive === false || product.status === 'INACTIVE') && !product.hasPendingStyle && (isOwner || isAtLeastAdmin(user?.role)) && (
-                    <div className="absolute inset-0 z-20 flex flex-col gap-2 items-center justify-center bg-gray-100/90">
+                {/* Blocked Overlay (Admin-initiated) - Only visible to Owner or Admin */}
+                {product.status === 'BLOCKED' && !product.hasPendingStyle && (isOwner || isAtLeastAdmin(user?.role)) && (
+                    <div className="absolute inset-0 z-20 flex flex-col gap-2 items-center justify-center bg-red-50/90">
                         <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800 shadow-sm border border-red-200">
-                            Suspended
+                            Blocked by Admin
+                        </span>
+                    </div>
+                )}
+
+                {/* Inactive Overlay (User-initiated) - Only visible to Owner or Admin */}
+                {(product.status === 'INACTIVE' || (product.isActive === false && product.status !== 'BLOCKED')) && !product.hasPendingStyle && (isOwner || isAtLeastAdmin(user?.role)) && (
+                    <div className="absolute inset-0 z-20 flex flex-col gap-2 items-center justify-center bg-gray-100/90">
+                        <span className="rounded-full bg-gray-200 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm border border-gray-300">
+                            Inactive
                         </span>
                     </div>
                 )}
@@ -253,12 +282,29 @@ export default function ProductCard({
                     src={allImages[currentImageIndex]}
                     alt={product.title}
                     fill
-                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    priority={priority}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'} ${isOutOfStock ? "grayscale" : ""
+                        }`}
                     onLoad={() => setIsImageLoaded(true)}
                 />
 
-                {/* NEW Badge */}
-                {showNewBadge && (
+                {/* BLOCKED Badge */}
+                {product.status === 'BLOCKED' && !product.hasPendingStyle && (
+                    <div className="absolute top-2 left-2 bg-red-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
+                        BLOCKED
+                    </div>
+                )}
+
+                {/* INACTIVE Badge (User-deactivated) */}
+                {product.status === 'INACTIVE' && !product.hasPendingStyle && (
+                    <div className="absolute top-2 left-2 bg-gray-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
+                        INACTIVE
+                    </div>
+                )}
+
+                {/* NEW Badge - Only for active products */}
+                {showNewBadge && product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && (
                     <div className="absolute top-2 left-2 bg-[#E87A3F] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                         NEW
                     </div>
@@ -324,20 +370,14 @@ export default function ProductCard({
                             </span>
                         )}
                     </div>
-                    {!isManageMode && (
+                    {!isManageMode && !isOwner && (
                         <WishlistButton
                             isWishlisted={product.isWishlist}
                             onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 if (toggleWishlist) {
                                     toggleWishlist(product.id);
-                                } else {
-                                    // Fallback: If no toggleWishlist prop is provided, we should probably warn or handle it.
-                                    // But since we are refactoring, we will update the parents to pass the function or use the hook wrapper.
-                                    // Actually, let's make ProductCard smarter? No, keep it dumb for performance in big grids?
-                                    // Better to keep props for now to avoid refactoring EVERY usage instantaneously if they pass different logic.
-                                    // But wait, the goal is UNIFICATION.
-                                    // Let's stick to the prop for now to avoid breaking changes, but use the new Button component.
                                 }
                             }}
                             className="hover:scale-110"

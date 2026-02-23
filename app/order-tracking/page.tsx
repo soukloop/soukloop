@@ -4,12 +4,18 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
-import { Truck, MessageCircle, Package, Loader2, Check } from "lucide-react";
+import { Loader2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { getMyOrders } from "@/features/orders/actions";
-import { Pagination } from "@/components/ui/pagination";
 import { isAtLeastAdmin } from "@/lib/roles";
+import dynamic from "next/dynamic";
+import { OrderTrackingPagination } from "./components/pagination-client";
+import { OrderCard } from "./components/order-card";
+
+const SellerReviewsSection = dynamic(() => import('@/app/edit-profile/components/SellerReviewsSection'), {
+    loading: () => <div className="h-96 w-full animate-pulse bg-gray-50 rounded-lg" />,
+});
 
 // =============================================================================
 // TYPES
@@ -36,6 +42,7 @@ interface Order {
     items: OrderItem[];
     shippingAddress: any;
     total: number;
+    userId?: string;
     user?: {
         name: string;
         email: string;
@@ -65,109 +72,6 @@ function FilterLink({ name, value, currentParams, children, className }: any) {
         <Link href={`?${params.toString()}`} className={className}>
             {children}
         </Link>
-    );
-}
-
-function OrderCard({ order, isSeller }: { order: Order; isSeller: boolean }) {
-    const formatDate = (date: string | Date) => {
-        return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status?.toUpperCase()) {
-            case "PENDING": return "Pending";
-            case "PROCESSING": return "Processing";
-            case "PAID": return "Paid";
-            case "PARTIAL": return "Shipped";
-            case "SHIPPED": return "Shipped";
-            case "DELIVERED": return "Delivered";
-            case "CANCELED": return "Cancelled";
-            case "REFUNDED": return "Refunded";
-            default: return status;
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status?.toUpperCase()) {
-            case "PENDING": return "bg-amber-100 text-amber-700";
-            case "PROCESSING":
-            case "PAID": return "bg-blue-100 text-blue-700";
-            case "PARTIAL":
-            case "SHIPPED": return "bg-indigo-100 text-indigo-700";
-            case "DELIVERED": return "bg-emerald-100 text-emerald-700";
-            case "CANCELED":
-            case "REFUNDED": return "bg-red-100 text-red-700";
-            default: return "bg-gray-100 text-gray-700";
-        }
-    };
-
-    return (
-        <div className="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow mb-4 last:mb-0">
-            {/* Header */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3 pb-3 border-b border-gray-100">
-                <div className="flex items-center justify-between sm:justify-start gap-4">
-                    <span className="text-sm font-bold text-[#E87A3F]">
-                        #{order.orderNumber}
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${getStatusColor(order.status)}`}>
-                        {getStatusLabel(order.status)}
-                    </span>
-                </div>
-                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
-                    {formatDate(order.createdAt)}
-                </span>
-            </div>
-
-            {/* Items */}
-            <div className="space-y-2">
-                {order.items.slice(0, 3).map((item, idx) => (
-                    <div key={`${item.id}-${idx}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
-                            {item.productImage ? (
-                                <Image
-                                    src={item.productImage}
-                                    alt={item.productName}
-                                    fill
-                                    className="object-cover"
-                                />
-                            ) : (
-                                <div className="flex size-full items-center justify-center bg-gray-100 text-xs text-gray-400">No Img</div>
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {item.productName}
-                            </p>
-                            <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                        </div>
-                        <span className="text-sm font-bold text-gray-900 mb-auto mt-1">
-                            ${Number(item.price).toFixed(2)}
-                        </span>
-                    </div>
-                ))}
-                {order.items.length > 3 && (
-                    <div className="text-center pt-1">
-                        <span className="text-xs text-gray-400 font-medium">+{order.items.length - 3} more items</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                <div className="flex gap-2">
-                    <Link
-                        href={`/trackorders?order=${order.orderNumber}`}
-                        className="flex items-center justify-center h-8 px-3 rounded-lg bg-orange-50 text-[#E87A3F] text-xs font-bold hover:bg-[#E87A3F] hover:text-white transition-colors"
-                    >
-                        Track Order
-                    </Link>
-                </div>
-                <div className="text-right">
-                    <p className="text-xs text-gray-500">Total</p>
-                    <p className="text-lg font-bold text-[#E87A3F]">${order.total.toFixed(2)}</p>
-                </div>
-            </div>
-        </div>
     );
 }
 
@@ -222,28 +126,12 @@ export default async function OrderDetailsPage(props: {
     const statusParam = typeof searchParams.status === 'string' ? searchParams.status : undefined;
     const dateParam = typeof searchParams.date === 'string' ? searchParams.date : undefined;
     const page = typeof searchParams.page === 'string' ? parseInt(searchParams.page) : 1;
+    const viewMode = typeof searchParams.mode === 'string' ? searchParams.mode : 'buying';
 
-    // Determine fetch role
-    const fetchRole = (activeTab === 'to_ship' || (isSeller && activeTab === 'returns')) ? 'seller' : 'buyer';
-
-    // Default to buyer unless strict seller tab specific or they are managing their store
-    // actually mixed tabs might be confusing. 
-    // Let's stick to the previous behavior where tabs defined the view.
-    // However, if I am a seller, I want to see my sales.
-    // If I am a buyer, I want to see my orders.
-    // We might need a toggle "Switch to Selling / Switch to Buying"? 
-    // For now, let's assume if 'to_ship' or 'returns' it's selling. 
-    // If 'processing'/'shipped' it's buying? 
-    // Actually simplicity: if isSeller, we show seller tabs. If not, buyer tabs.
     // The tabs define what is shown.
-
-    const mode = isSeller ? 'seller' : 'buyer'; // Actually we should respect the previous logic: "isSeller" hook checked if user HAS vendor profile.
-
-    // Wait, if I am a seller, I likely ALSO buy things. 
-    // The previous code had `useSellerAuth` which returned `isSeller`. 
-    // If `isSeller` was true, it showed SELLER tabs.
-    // So logic:
-    const effectiveRole = isSeller ? 'seller' : 'buyer';
+    // If user clicked a row while in "Selling" view, it passes &mode=selling
+    // Default to 'buyer' unless `mode` is 'selling' and the user is actually a seller
+    const effectiveRole = (isSeller && viewMode === 'selling') ? 'seller' : 'buyer';
 
     const result = await getMyOrders({
         role: effectiveRole,
@@ -288,7 +176,8 @@ export default async function OrderDetailsPage(props: {
             productId: i.product?.id,
             sellerId: i.product?.vendorId
         })),
-        user: o.user
+        user: o.user,
+        userId: o.userId // Specifically attached to find the buyer for seller chat queries
     }));
 
     return (
@@ -297,8 +186,8 @@ export default async function OrderDetailsPage(props: {
 
             <main className="flex-1 bg-[#F9FAFB]">
                 <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-                    {/* Header */}
-                    <div className="mb-6 flex items-center justify-between">
+                    {/* Header Inline with Toggle */}
+                    <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                                 {effectiveRole === 'seller' ? 'Manage Orders' : 'My Orders'}
@@ -307,6 +196,32 @@ export default async function OrderDetailsPage(props: {
                                 {effectiveRole === 'seller' ? 'View and manage customer orders' : 'Track and manage your purchases'}
                             </p>
                         </div>
+
+                        {/* View Switcher (Visible only to actual Sellers) */}
+                        {isSeller && (
+                            <div className="bg-gray-100 p-1 rounded-full flex relative w-[240px] shrink-0 self-start md:self-auto">
+                                {/* Sliding Background */}
+                                <div
+                                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[#E87A3F] rounded-full shadow-sm transition-all duration-300 ease-in-out ${effectiveRole === 'seller' ? 'translate-x-[116px]' : 'translate-x-[0px]'
+                                        }`}
+                                />
+
+                                <Link
+                                    href="?mode=buying"
+                                    className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors text-center ${effectiveRole === 'buyer' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    Buying
+                                </Link>
+                                <Link
+                                    href="?mode=selling"
+                                    className={`flex-1 relative z-10 text-sm font-bold py-1.5 rounded-full transition-colors text-center ${effectiveRole === 'seller' ? 'text-white' : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    Selling
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-8 lg:flex-row">
@@ -326,7 +241,7 @@ export default async function OrderDetailsPage(props: {
 
                                 <FiltersLinkSection
                                     title="Status"
-                                    options={["All", "Pending", "Processing", "Shipped", "Delivered", "Cancelled"]}
+                                    options={["All", "Pending", "Paid", "Processing", "Shipped", "Delivered", "Canceled", "Refunded"]}
                                     selected={statusParam || 'All'}
                                     paramKey="status"
                                     searchParams={searchParams}
@@ -344,7 +259,7 @@ export default async function OrderDetailsPage(props: {
                                             { name: "All", key: "all" },
                                             { name: "To Ship", key: "to_ship" },
                                             { name: "Delivered", key: "delivered" },
-                                            { name: "Returns", key: "returns" }
+                                            { name: "Reviews", key: "reviews" }
                                         ]
                                         : [
                                             { name: "All", key: "all" },
@@ -373,8 +288,12 @@ export default async function OrderDetailsPage(props: {
                                 </nav>
                             </div>
 
-                            {/* Order List */}
-                            {mappedOrders.length === 0 ? (
+                            {/* Order List / Content */}
+                            {activeTab === 'reviews' && effectiveRole === 'seller' ? (
+                                <div className="p-4 sm:p-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                    <SellerReviewsSection />
+                                </div>
+                            ) : mappedOrders.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-24 rounded-xl border border-gray-100 bg-white text-center">
                                     <Package className="size-16 text-gray-200 mb-4" />
                                     <h3 className="text-lg font-bold text-gray-900">No orders found</h3>
@@ -394,9 +313,9 @@ export default async function OrderDetailsPage(props: {
                             )}
 
                             {/* Pagination */}
-                            {totalPageCount > 1 && (
+                            {totalPageCount && totalPageCount > 1 && (
                                 <div className="mt-8">
-                                    <Pagination totalPages={totalPageCount} />
+                                    <OrderTrackingPagination totalPages={totalPageCount || 1} currentPage={page} />
                                 </div>
                             )}
                         </div>

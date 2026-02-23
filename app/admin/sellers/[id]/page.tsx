@@ -1,11 +1,7 @@
-"use client";
+import { redirect } from 'next/navigation';
 
-import { useParams } from 'next/navigation';
-import AdminUserDetails from '@/components/admin/AdminUserDetails';
-
-export default function AdminSellerPage() {
-    const params = useParams();
-    const id = params?.id as string;
-
-    return <AdminUserDetails userId={id} />;
+export default async function AdminSellerPage(props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
+    // Sellers are just users with the SELLER role. The universal user page handles seller profiles.
+    redirect(`/admin/users/${params.id}`);
 }

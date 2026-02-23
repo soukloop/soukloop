@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +25,12 @@ export default function RequestDressStyleModal({
     const [name, setName] = useState(initialName);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -32,7 +39,7 @@ export default function RequestDressStyleModal({
         }
     }, [isOpen, initialName]);
 
-    if (!isOpen) return null;
+    if (!mounted || !isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,8 +106,8 @@ export default function RequestDressStyleModal({
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    return createPortal(
+        <div className="fixed inset-0 z-[500] flex items-center justify-center">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50"
@@ -195,6 +202,7 @@ export default function RequestDressStyleModal({
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

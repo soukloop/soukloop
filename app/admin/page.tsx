@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getDashboardStats } from '@/lib/admin/dashboard-service';
+import { getMetricCards, getCachedDashboardBaseStats, getPaginatedTopStyles } from '@/lib/admin/dashboard-service';
 import AdminStatsCards from '@/components/admin/AdminStatsCards';
 import PendingActions from '@/components/admin/PendingActions';
 import TopDressStyles from '@/components/admin/TopDressStyles';
@@ -33,8 +33,6 @@ export default async function AdminDashboard({
 }) {
     // 1. Parse Search Params
     const resolvedParams = await searchParams;
-    const periodParam = resolvedParams?.period as string;
-    const period = (periodParam === 'daily' || periodParam === 'weekly') ? periodParam : 'daily';
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -46,47 +44,49 @@ export default async function AdminDashboard({
     const selectedMonth = monthParam ? parseInt(monthParam) : currentMonth;
     const selectedYear = yearParam ? parseInt(yearParam) : currentYear;
 
-    // 2. Fetch Data (Server-Side)
-    // unstable_cache in getDashboardStats handles deduplication & caching
-    const stats = await getDashboardStats(period, selectedMonth, selectedYear);
+    // 2. Fetch Granular Data
+    const [baseStats, initialMetrics, initialSellingStyles, initialListedStyles] = await Promise.all([
+        getCachedDashboardBaseStats(selectedMonth, selectedYear),
+        getMetricCards('daily'),
+        getPaginatedTopStyles('selling', 1, 10),
+        getPaginatedTopStyles('listed', 1, 10)
+    ]);
 
     return (
         <div className="space-y-6">
             {/* Header with Filters (Client Component) */}
             <DashboardHeader
-                period={period}
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
             />
 
-            {/* Stats Cards */}
+            {/* Stats Cards with own period state */}
             <Suspense fallback={<div className="h-32 bg-gray-100 rounded-xl animate-pulse" />}>
                 <AdminStatsCards
-                    stats={stats}
-                    period={period}
+                    initialMetrics={initialMetrics}
                 />
             </Suspense>
 
             {/* Charts (Client Component Wrapper) */}
             <DashboardChartSection
-                salesChart={stats.salesChart}
-                ordersChart={stats.ordersChart}
+                salesChart={baseStats.chartData.salesChart}
+                ordersChart={baseStats.chartData.ordersChart}
             />
 
             {/* Bottom Section */}
             <div className="grid gap-6 lg:grid-cols-1">
                 {/* Pending Actions */}
                 <PendingActions
-                    pendingVendors={stats.pendingVendors}
-                    pendingReports={stats.pendingReports}
-                    pendingPayouts={stats.pendingPayouts}
-                    pendingRefunds={stats.pendingRefunds}
+                    pendingVendors={baseStats.pendingActions.pendingVendors}
+                    pendingReports={baseStats.pendingActions.pendingReports}
+                    pendingPayouts={baseStats.pendingActions.pendingPayouts}
+                    pendingRefunds={baseStats.pendingActions.pendingRefunds}
                 />
 
-                {/* Top Styles */}
+                {/* Top Styles (Paginated) */}
                 <TopDressStyles
-                    topSelling={stats.topSellingStyles}
-                    topListed={stats.topListedStyles}
+                    initialSelling={initialSellingStyles}
+                    initialListed={initialListedStyles}
                 />
             </div>
         </div>

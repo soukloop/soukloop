@@ -159,15 +159,22 @@ export default function UploadPhotosStep({ photos, onPhotosChange }: UploadPhoto
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {photos.slice(0, MAX_PHOTOS).map((photo, index) => (
                     <div key={photo.id} className="group relative aspect-[4/3] w-full">
+                        <input
+                            type="file"
+                            id={`photo-upload-${photo.id}`}
+                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                            className="hidden"
+                            onChange={(e) => handleFileChange(photo.id, e)}
+                        />
                         <label
                             htmlFor={`photo-upload-${photo.id}`}
-                            className="flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-xl bg-white transition-all hover:bg-gray-50 hover:shadow-md border border-dashed border-gray-200 hover:border-orange-200"
+                            className="flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-xl bg-white transition-all hover:bg-gray-50 hover:shadow-md border border-dashed border-gray-200 hover:border-orange-200 overflow-hidden"
                             style={{
                                 boxShadow: "0px 2px 4px rgba(0,0,0,0.02)",
                             }}
                         >
                             {photo.image ? (
-                                <div className="relative h-full w-full overflow-hidden rounded-xl">
+                                <div className="relative h-full w-full">
                                     <Image
                                         src={photo.image}
                                         alt={photo.label}
@@ -195,15 +202,8 @@ export default function UploadPhotosStep({ photos, onPhotosChange }: UploadPhoto
                                             COVER
                                         </div>
                                     )}
-                                    {/* Remove button */}
-                                    <button
-                                        onClick={(e) => handleRemovePhoto(photo.id, e)}
-                                        className="absolute top-2 right-2 flex size-6 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 hover:bg-white"
-                                    >
-                                        <X className="size-4" />
-                                    </button>
                                     <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-                                        <span className="text-white text-xs font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">Change</span>
+                                        <span className="text-white text-xs font-medium bg-black/50 px-3 py-1 rounded-full">Change</span>
                                     </div>
                                 </div>
                             ) : (
@@ -217,13 +217,17 @@ export default function UploadPhotosStep({ photos, onPhotosChange }: UploadPhoto
                                 </div>
                             )}
                         </label>
-                        <input
-                            type="file"
-                            id={`photo-upload-${photo.id}`}
-                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                            className="hidden"
-                            onChange={(e) => handleFileChange(photo.id, e)}
-                        />
+                        {/* Remove button moved outside label but inside relative container */}
+                        {photo.image && (
+                            <button
+                                onClick={(e) => handleRemovePhoto(photo.id, e)}
+                                type="button"
+                                className="absolute top-2 right-2 z-10 flex size-6 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 hover:bg-white"
+                                title="Remove photo"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>

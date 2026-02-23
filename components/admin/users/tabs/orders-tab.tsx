@@ -1,23 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import OrdersClient, { DisplayOrder } from "./orders-client";
 
-// Helper to calculate overall status for Customer Order (Buyer View)
-function getOverallStatus(order: any): string {
-    if (order.status) return order.status; // Fallback
-    // If we had computed status logic based on vendor orders, it would go here.
-    // For now, assuming direct status or defaulting to PENDING if not present.
-    // In real app, CustomerOrder might not have status, it's derived.
-    // Checking api.ts: CustomerOrder has no status. VendorOrders have status.
-    // Logic from hooks/useOrders.ts service: getOverallStatus
-    // We'll simplify: If all vendor orders delivered -> DELIVERED. Else PENDING/PROCESSING.
-    const statuses = order.vendorOrders?.map((vo: any) => vo.status) || [];
-    if (statuses.length === 0) return 'PENDING';
-    if (statuses.every((s: string) => s === 'DELIVERED')) return 'DELIVERED';
-    if (statuses.every((s: string) => s === 'CANCELED')) return 'CANCELED';
-    if (statuses.some((s: string) => s === 'SHIPPED')) return 'SHIPPED';
-    return 'PROCESSING';
-}
-
+import { getOverallStatus, getDeliveryStatusText } from "@/services/orders.service";
 function customerOrderToDisplay(order: any): DisplayOrder {
     const productNames: string[] = [];
     const productImages: string[] = [];
@@ -34,12 +18,12 @@ function customerOrderToDisplay(order: any): DisplayOrder {
         id: order.id,
         orderNumber: order.orderNumber,
         createdAt: order.createdAt.toString(),
-        status: getOverallStatus(order),
+        status: getOverallStatus(order as any),
         total: Number(order.totalAmount),
         type: "buyer",
         productNames,
         productImages,
-        deliveryText: "" // Simplify for admin
+        deliveryText: getDeliveryStatusText(order as any)
     };
 }
 

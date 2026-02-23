@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Centrifuge, Subscription, PublicationContext } from "centrifuge";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -247,8 +247,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [isConnected, session?.user?.id, centrifuge]);
 
+    const contextValue = useMemo(() => ({ centrifuge, isConnected, subscribe }), [centrifuge, isConnected, subscribe]);
+
     return (
-        <CentrifugeContext.Provider value={{ centrifuge, isConnected, subscribe }}>
+        <CentrifugeContext.Provider value={contextValue}>
             {children}
         </CentrifugeContext.Provider>
     );

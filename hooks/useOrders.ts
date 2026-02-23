@@ -41,18 +41,20 @@ export function useOrder(orderId?: string) {
 }
 
 // ===== USER ORDERS HOOK =====
-export function useOrders(enabled: boolean = true) {
+export function useOrders(enabled: boolean = true, mode: 'lite' | 'full' = 'full') {
   const { status } = useSession()
   const isAuthenticated = status === 'authenticated'
 
   const { data, error, isLoading, mutate } = useSWR(
-    isAuthenticated && enabled ? '/api/orders' : null,
+    isAuthenticated && enabled ? `/api/orders?mode=${mode}` : null,
     async () => {
-      const { data, error } = await listOrders()
-      if (error) {
-        throw new Error(error.message)
+      // Pass the mode to the API call directly
+      const res = await fetch(`/api/orders?mode=${mode}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to fetch orders');
       }
-      return data
+      return json.items; // Backend returns { items: [...] }
     }
   )
 
@@ -65,18 +67,23 @@ export function useOrders(enabled: boolean = true) {
 }
 
 // ===== VENDOR ORDERS HOOK =====
-export function useVendorOrders(enabled: boolean = true) {
+export function useVendorOrders(enabled: boolean = true, mode: 'lite' | 'full' = 'full') {
   const { status } = useSession()
   const isAuthenticated = status === 'authenticated'
 
   const { data, error, isLoading, mutate } = useSWR(
-    isAuthenticated && enabled ? '/api/vendor/orders' : null,
-    async () => {
-      const { data, error } = await listVendorOrders()
-      if (error) {
-        throw new Error(error.message)
+    isAuthenticated && enabled ? `/api/vendor/orders?mode=${mode}` : null,
+    async (url) => {
+      // If url is null (not enabled), SWR won't even call this fetcher
+      // It's a double safeguard just in case
+      if (!url) return [];
+
+      const res = await fetch(url);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to fetch vendor orders');
       }
-      return data
+      return json.items;
     })
 
   return {

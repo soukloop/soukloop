@@ -22,8 +22,8 @@ const variantClasses = {
   muted: 'text-gray-400'
 }
 
-export function LoadingSpinner({ 
-  size = 'md', 
+export function LoadingSpinner({
+  size = 'md',
   className,
   text,
   variant = 'default'
@@ -54,7 +54,7 @@ export function LoadingSpinner({
 // Full page loading spinner
 export function FullPageSpinner({ text = 'Loading...' }: { text?: string }) {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-white/80 z-50">
       <LoadingSpinner size="xl" text={text} />
     </div>
   )
@@ -63,9 +63,9 @@ export function FullPageSpinner({ text = 'Loading...' }: { text?: string }) {
 // Inline loading spinner
 export function InlineSpinner({ size = 'sm', className }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
   return (
-    <LoadingSpinner 
-      size={size} 
-      className={cn('inline-flex', className)} 
+    <LoadingSpinner
+      size={size}
+      className={cn('inline-flex', className)}
     />
   )
 }
@@ -73,21 +73,21 @@ export function InlineSpinner({ size = 'sm', className }: { size?: 'sm' | 'md' |
 // Button loading spinner
 export function ButtonSpinner({ size = 'sm' }: { size?: 'sm' | 'md' }) {
   return (
-    <LoadingSpinner 
-      size={size} 
-      className="mr-2" 
+    <LoadingSpinner
+      size={size}
+      className="mr-2"
       variant="muted"
     />
   )
 }
 
 // Card loading skeleton
-export function LoadingSkeleton({ 
+export function LoadingSkeleton({
   className,
-  lines = 3 
-}: { 
+  lines = 3
+}: {
   className?: string
-  lines?: number 
+  lines?: number
 }) {
   return (
     <div className={cn('animate-pulse', className)}>
@@ -107,12 +107,12 @@ export function LoadingSkeleton({
 }
 
 // Table loading skeleton
-export function TableSkeleton({ 
-  rows = 5, 
-  columns = 4 
-}: { 
+export function TableSkeleton({
+  rows = 5,
+  columns = 4
+}: {
   rows?: number
-  columns?: number 
+  columns?: number
 }) {
   return (
     <div className="animate-pulse">
@@ -151,12 +151,12 @@ export function CardSkeleton({ className }: { className?: string }) {
 }
 
 // List loading skeleton
-export function ListSkeleton({ 
+export function ListSkeleton({
   items = 5,
-  className 
-}: { 
+  className
+}: {
   items?: number
-  className?: string 
+  className?: string
 }) {
   return (
     <div className={cn('animate-pulse space-y-3', className)}>

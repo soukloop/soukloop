@@ -10,11 +10,18 @@ import {
 import { EmailWrapper } from '../components/email-wrapper';
 import * as React from 'react';
 
+interface RefundItem {
+    id: string;
+    product?: {
+        name: string;
+        images?: { url: string }[];
+    } | null;
+}
+
 interface RefundRequestedEmailProps {
     msg?: string; // Optional custom message
     orderNumber: string;
-    productName: string;
-    productImage?: string;
+    items: RefundItem[];
     refundAmount: number;
     reason?: string;
     actionUrl?: string; // Link to support or order detail
@@ -22,12 +29,15 @@ interface RefundRequestedEmailProps {
 
 export const RefundRequestedEmail = ({
     orderNumber = '12345',
-    productName = 'Product',
-    productImage,
+    items = [],
     refundAmount = 0.00,
     reason = 'Changed mind',
     actionUrl = process.env.NEXTAUTH_URL
 }: RefundRequestedEmailProps) => {
+    const firstItem = items[0]?.product;
+    const productName = firstItem?.name || 'Product';
+    const productImage = firstItem?.images?.[0]?.url;
+
     return (
         <EmailWrapper preview={`Refund Requested for Order #${orderNumber}`}>
             <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">

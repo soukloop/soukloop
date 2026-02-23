@@ -15,6 +15,7 @@ export type NotificationType =
     | 'PAYMENT_FAILED'
     | 'REFUND_REQUESTED'
     | 'REFUND_PROCESSED'
+    | 'REFUND_DEDUCTED'
     // Seller KYC
     | 'KYC_SUBMITTED'
     | 'KYC_APPROVED'
@@ -122,6 +123,7 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     PAYMENT_FAILED: 'orders',
     REFUND_REQUESTED: 'orders',
     REFUND_PROCESSED: 'orders',
+    REFUND_DEDUCTED: 'orders',
 
     // KYC → system
     KYC_SUBMITTED: 'system',
@@ -189,6 +191,7 @@ export const NOTIFICATION_ICONS: Record<NotificationType, string> = {
     PAYMENT_FAILED: '⚠️',
     REFUND_REQUESTED: '🔄',
     REFUND_PROCESSED: '💰',
+    REFUND_DEDUCTED: '💸',
     KYC_SUBMITTED: '📋',
     KYC_APPROVED: '🎉',
     KYC_REJECTED: '❌',

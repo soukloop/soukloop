@@ -28,6 +28,13 @@ function CustomFilterDropdown({
     activeValue: string,
     onChange: (val: string) => void
 }) {
+    const getPlural = (label: string) => {
+        const l = label.toLowerCase();
+        if (l === 'status') return 'Statuses';
+        if (l.endsWith('y')) return label.slice(0, -1) + 'ies';
+        return label + 's';
+    };
+
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +56,7 @@ function CustomFilterDropdown({
                     }`}
             >
                 <span className={activeValue !== "All" ? "text-gray-900 font-medium" : "text-gray-500"}>
-                    {activeValue === "All" ? `All ${label}s` : activeValue}
+                    {activeValue === "All" ? `All ${getPlural(label)}` : activeValue}
                 </span>
                 <ChevronDown className={`ml-2 h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
@@ -60,19 +67,19 @@ function CustomFilterDropdown({
                         <button
                             onClick={() => { onChange("All"); setIsOpen(false); }}
                             className={`block w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${activeValue === "All"
-                                    ? "bg-[#FFF5F2] text-[#E87A3F] font-medium"
-                                    : "text-gray-600 hover:bg-gray-50"
+                                ? "bg-[#FFF5F2] text-[#E87A3F] font-medium"
+                                : "text-gray-600 hover:bg-gray-50"
                                 }`}
                         >
-                            All {label}s
+                            All {getPlural(label)}
                         </button>
                         {options.map((opt) => (
                             <button
                                 key={opt}
                                 onClick={() => { onChange(opt); setIsOpen(false); }}
                                 className={`block w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${activeValue === opt
-                                        ? "bg-[#FFF5F2] text-[#E87A3F] font-medium"
-                                        : "text-gray-600 hover:bg-gray-50"
+                                    ? "bg-[#FFF5F2] text-[#E87A3F] font-medium"
+                                    : "text-gray-600 hover:bg-gray-50"
                                     }`}
                             >
                                 {opt}

@@ -93,7 +93,7 @@ export default function BestsellingCategories({ initialStyles = [] }: { initialS
 
                             {/* Rank Number (Top Left) */}
                             <div className="absolute top-3 left-3 z-10">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold text-white shadow-sm">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20 border border-white/30 text-xs font-bold text-white shadow-sm">
                                     {idx + 1}
                                 </span>
                             </div>

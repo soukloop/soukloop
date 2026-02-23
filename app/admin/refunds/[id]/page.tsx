@@ -91,7 +91,7 @@ export default function RefundDetailsPage() {
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20">
             {/* Header */}
-            <div className="sticky top-0 z-10 border-b bg-white/80 px-6 py-4 backdrop-blur-md">
+            <div className="sticky top-0 z-10 border-b bg-white/80 px-6 py-4">
                 <div className="mx-auto flex max-w-7xl items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-gray-100">

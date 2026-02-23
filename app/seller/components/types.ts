@@ -50,6 +50,7 @@ export interface ProductData {
     videoIsUploading?: boolean;
     videoUploadUrl?: string | null;
     videoUploadError?: string | null;
+    videoUploadProgress?: number;
 }
 
 export const initialProductData: ProductData = {
@@ -82,4 +83,9 @@ export const initialProductData: ProductData = {
     dress: "",
     occasion: "",
     video: null,
+    videoFile: null,
+    videoIsUploading: false,
+    videoUploadUrl: null,
+    videoUploadError: null,
+    videoUploadProgress: 0,
 };

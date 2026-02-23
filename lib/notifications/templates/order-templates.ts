@@ -46,7 +46,6 @@ export async function notifyOrderPlaced(buyerId: string, data: OrderData) {
         OrderPlacedEmail({
             orderNumber: data.orderNumber,
             buyerName: data.buyerName || 'Customer',
-            orderDate: new Date().toLocaleDateString(),
             items: items as any,
             total: data.total || 0,
             itemCount: items.length || data.itemCount || 0,
@@ -199,6 +198,44 @@ export async function notifyOrderStatusChange(
 
     // Determine if we should send email for this status
     const emailStatuses = ['SHIPPED', 'FULFILLED', 'CANCELED', 'REFUNDED']
+    const shouldSendEmail = emailStatuses.includes(newStatus)
+
+    let emailHtml = undefined
+    if (shouldSendEmail) {
+        try {
+            const items = await prisma.orderItem.findMany({
+                where: {
+                    OR: [
+                        { orderId: orderId },
+                        { order: { customerOrderId: orderId } }
+                    ]
+                },
+                include: {
+                    product: {
+                        select: {
+                            name: true,
+                            images: { take: 1, select: { url: true } }
+                        }
+                    }
+                }
+            })
+
+            const { render } = await import('@react-email/render');
+            const { OrderStatusUpdateEmail } = await import('@/lib/email-templates/orders/order-status-update');
+
+            emailHtml = await render(
+                OrderStatusUpdateEmail({
+                    orderNumber,
+                    statusTitle: config.title,
+                    statusMessage: config.message,
+                    items: items as any,
+                    actionUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${orderId}`
+                })
+            )
+        } catch (err) {
+            console.error('Failed to render order status email:', err)
+        }
+    }
 
     return createNotification({
         userId: buyerId,
@@ -210,8 +247,9 @@ export async function notifyOrderStatusChange(
         message: config.message,
         data: { orderId, orderNumber, status: newStatus },
         actionUrl: `/trackorders?order=${orderId}`,
-        sendEmail: emailStatuses.includes(newStatus),
-        emailSubject: `Order Update - #${orderNumber}`
+        sendEmail: shouldSendEmail,
+        emailSubject: `Order Update - #${orderNumber}`,
+        emailHtml
     })
 }
 
@@ -226,6 +264,36 @@ export async function notifyOrderShipped(
         ? ` Tracking #: ${data.trackingNumber}${data.carrier ? ` via ${data.carrier}` : ''}`
         : ''
 
+    const { render } = await import('@react-email/render');
+    const { OrderStatusUpdateEmail } = await import('@/lib/email-templates/orders/order-status-update');
+
+    const items = await prisma.orderItem.findMany({
+        where: {
+            OR: [
+                { orderId: data.orderId },
+                { order: { customerOrderId: data.orderId } }
+            ]
+        },
+        include: {
+            product: {
+                select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                }
+            }
+        }
+    });
+
+    const emailHtml = await render(
+        OrderStatusUpdateEmail({
+            orderNumber: data.orderNumber,
+            statusTitle: 'Your Order is On Its Way! 🚚',
+            statusMessage: `Order #${data.orderNumber} has been shipped.${trackingInfo}`,
+            items: items as any,
+            actionUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`
+        })
+    );
+
     return createNotification({
         userId: buyerId,
         type: 'ORDER_SHIPPED',
@@ -234,7 +302,8 @@ export async function notifyOrderShipped(
         data,
         actionUrl: `/trackorders?order=${data.orderId}`,
         sendEmail: true,
-        emailSubject: `Order Shipped - #${data.orderNumber}`
+        emailSubject: `Order Shipped - #${data.orderNumber}`,
+        emailHtml
     })
 }
 
@@ -242,6 +311,36 @@ export async function notifyOrderShipped(
  * Notify buyer that order was delivered
  */
 export async function notifyOrderDelivered(buyerId: string, data: OrderData) {
+    const { render } = await import('@react-email/render');
+    const { OrderStatusUpdateEmail } = await import('@/lib/email-templates/orders/order-status-update');
+
+    const items = await prisma.orderItem.findMany({
+        where: {
+            OR: [
+                { orderId: data.orderId },
+                { order: { customerOrderId: data.orderId } }
+            ]
+        },
+        include: {
+            product: {
+                select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                }
+            }
+        }
+    });
+
+    const emailHtml = await render(
+        OrderStatusUpdateEmail({
+            orderNumber: data.orderNumber,
+            statusTitle: 'Order Delivered! 📦✅',
+            statusMessage: `Order #${data.orderNumber} has been delivered. We hope you love your purchase!`,
+            items: items as any,
+            actionUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`
+        })
+    );
+
     return createNotification({
         userId: buyerId,
         type: 'ORDER_DELIVERED',
@@ -250,7 +349,8 @@ export async function notifyOrderDelivered(buyerId: string, data: OrderData) {
         data,
         actionUrl: `/trackorders?order=${data.orderId}`,
         sendEmail: true,
-        emailSubject: `Order Delivered - #${data.orderNumber}`
+        emailSubject: `Order Delivered - #${data.orderNumber}`,
+        emailHtml
     })
 }
 
@@ -261,6 +361,36 @@ export async function notifyOrderCancelled(
     buyerId: string,
     data: OrderData & { reason?: string }
 ) {
+    const { render } = await import('@react-email/render');
+    const { OrderStatusUpdateEmail } = await import('@/lib/email-templates/orders/order-status-update');
+
+    const items = await prisma.orderItem.findMany({
+        where: {
+            OR: [
+                { orderId: data.orderId },
+                { order: { customerOrderId: data.orderId } }
+            ]
+        },
+        include: {
+            product: {
+                select: {
+                    name: true,
+                    images: { take: 1, select: { url: true } }
+                }
+            }
+        }
+    });
+
+    const emailHtml = await render(
+        OrderStatusUpdateEmail({
+            orderNumber: data.orderNumber,
+            statusTitle: 'Order Cancelled ❌',
+            statusMessage: `Order #${data.orderNumber} has been cancelled.${data.reason ? ` Reason: ${data.reason}` : ''}`,
+            items: items as any,
+            actionUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`
+        })
+    );
+
     return createNotification({
         userId: buyerId,
         type: 'ORDER_CANCELLED',
@@ -269,6 +399,7 @@ export async function notifyOrderCancelled(
         data,
         actionUrl: `/trackorders?order=${data.orderId}`,
         sendEmail: true,
-        emailSubject: `Order Cancelled - #${data.orderNumber}`
+        emailSubject: `Order Cancelled - #${data.orderNumber}`,
+        emailHtml
     })
 }

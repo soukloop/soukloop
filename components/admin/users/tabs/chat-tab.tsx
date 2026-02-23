@@ -66,6 +66,7 @@ export default async function ChatTab({ userId }: { userId: string }) {
             <MessagingInterface
                 impersonatedUserId={userId}
                 readOnly={true}
+                isAdmin={true}
                 initialConversations={initialConversations}
             />
         </div>

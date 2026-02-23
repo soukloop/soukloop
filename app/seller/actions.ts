@@ -7,14 +7,14 @@ export async function getDressStylesByCategory(categoryId: string) {
         if (!categoryId) return [];
 
         // Fetch styles linked to this category
-        // And ensure they are approved!
+        // Include both approved and pending styles
         const styles = await prisma.dressStyle.findMany({
             where: {
                 categoryId: categoryId,
-                status: 'approved'
+                status: { in: ['approved', 'pending'] }
             },
             orderBy: { name: 'asc' },
-            select: { id: true, name: true }
+            select: { id: true, name: true, status: true }
         });
 
 

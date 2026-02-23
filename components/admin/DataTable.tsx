@@ -52,6 +52,13 @@ function FilterDropdown<T>({
     activeValue: string | number | boolean | undefined;
     onChange: (value: string) => void;
 }) {
+    const getPlural = (label: string) => {
+        const l = label.toLowerCase();
+        if (l === 'status') return 'Statuses';
+        if (l.endsWith('y')) return label.slice(0, -1) + 'ies';
+        return label + 's';
+    };
+
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +72,7 @@ function FilterDropdown<T>({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const selectedLabel = option.options.find(o => String(o.value) === String(activeValue))?.label || `All ${option.label}s`;
+    const selectedLabel = option.options.find(o => String(o.value) === String(activeValue))?.label || `All ${getPlural(option.label as string)}`;
 
     return (
         <div ref={dropdownRef} className="relative min-w-[200px]">
@@ -95,7 +102,7 @@ function FilterDropdown<T>({
                                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
                                     }`}
                             >
-                                All {option.label}s
+                                All {getPlural(option.label as string)}
                             </button>
                             {option.options.map((opt) => (
                                 <button

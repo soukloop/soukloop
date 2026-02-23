@@ -56,7 +56,10 @@ export async function getPaginatedProducts({
             // But if hasPendingStyle is true, it might be hidden? 
             // Let's assume standard Active means isActive=true.
         } else if (status === 'Blocked') {
-            where.isActive = false;
+            where.OR = [
+                { isActive: false },
+                { status: 'BLOCKED' }
+            ];
         } else if (status === 'Pending Style') {
             where.OR = [
                 { hasPendingStyle: true },

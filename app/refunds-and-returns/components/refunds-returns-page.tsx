@@ -1,4 +1,5 @@
 "use client";
+import { getOverallStatus, getDeliveryStatusText } from "@/services/orders.service";
 
 import { useState, useEffect, useRef, useMemo } from "react"; // Added useRef
 import { useSession } from "next-auth/react";
@@ -24,6 +25,7 @@ import { useSellerAuth } from "@/hooks/useSellerAuth";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWRInfinite from "swr/infinite";
+import { getOrderStatusColor } from "@/lib/utils";
 
 // --- Types ---
 interface DisplayOrder {
@@ -179,18 +181,9 @@ export default function RefundsReturnsPage() {
     }
   };
 
-  const getStatusColorClass = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "APPROVED": return "text-green-600 bg-green-50 border-green-100";
-      case "PENDING": return "text-amber-600 bg-amber-50 border-amber-100";
-      case "REJECTED": return "text-red-600 bg-red-50 border-red-100";
-      case "PROCESSED": return "text-blue-600 bg-blue-50 border-blue-100";
-      default: return "text-gray-600 bg-gray-50 border-gray-100";
-    }
-  };
-
   // Helper to process Order -> Display
   // Doing it inline during map or as helper
+
   const processOrder = (order: any): DisplayOrder => {
     // Simplified Logic from previous component
     const productNames: string[] = [];
@@ -205,15 +198,17 @@ export default function RefundsReturnsPage() {
       });
     });
 
+    const overall = getOverallStatus(order as any);
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
       createdAt: order.createdAt,
-      status: order.overallStatus || order.status || 'Processing',
+      status: overall,
       total: order.totalAmount || order.total,
       productNames,
       productImages,
-      deliveryText: 'Delivered', // Simplified for list
+      deliveryText: getDeliveryStatusText(order as any),
       rawOrder: order
     };
   };
@@ -326,7 +321,7 @@ export default function RefundsReturnsPage() {
                               </div>
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${getStatusColorClass(item.status)}`}>
+                                  <span className={`text-[10px] text-white font-bold px-2 py-0.5 rounded-full uppercase border ${getOrderStatusColor(item.status)}`}>
                                     {item.status}
                                   </span>
                                   <CopyButton
@@ -421,8 +416,8 @@ export default function RefundsReturnsPage() {
                         </h4>
                         <div className="flex items-center gap-2">
                           <span className="font-black text-gray-900">${refundStatus.amount.toFixed(2)}</span>
-                          <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${getStatusColorClass(refundStatus.status)}`}>
-                            {refundStatus.status === 'PENDING' && <Loader2 className="animate-spin h-3 w-3" />}
+                          <div className={`px-2 py-0.5 rounded-full text-white text-[10px] font-bold uppercase border flex items-center gap-1 ${getOrderStatusColor(refundStatus.status)}`}>
+                            {refundStatus.status === 'PENDING' && <Loader2 className="animate-spin h-3 w-3 text-white" />}
                             {refundStatus.status}
                           </div>
                         </div>

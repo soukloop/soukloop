@@ -20,6 +20,9 @@ export async function GET(
         const products = await prisma.product.findMany({
             where: {
                 category: { equals: category.name, mode: 'insensitive' },
+                isActive: true,
+                status: 'ACTIVE',
+                hasPendingStyle: false,
             },
             include: {
                 images: true,
