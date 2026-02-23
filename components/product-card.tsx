@@ -284,7 +284,7 @@ export default function ProductCard({
                     fill
                     priority={priority}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'} ${isOutOfStock ? "grayscale" : ""
+                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'} ${isSold ? "grayscale" : ""
                         }`}
                     onLoad={() => setIsImageLoaded(true)}
                 />

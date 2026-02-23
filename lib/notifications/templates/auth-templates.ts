@@ -5,6 +5,8 @@ import { PasswordResetEmail } from '@/lib/email-templates/auth/password-reset';
 import { PasswordChangedEmail } from '@/lib/email-templates/auth/password-changed';
 import { AccountSuspendedEmail } from '@/lib/email-templates/auth/account-suspended';
 import { AccountReactivatedEmail } from '@/lib/email-templates/auth/account-reactivated';
+import { WelcomeEmail } from '@/lib/email-templates/auth/welcome';
+
 
 const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
@@ -274,6 +276,28 @@ export async function notifySellerWelcome(
     sendEmail: true,
     emailSubject: 'Welcome to SoukLoop Seller Program!',
     // We can add a SellerWelcomeEmail template later, using default for now
+  });
+}
+
+
+/**
+ * Send welcome email to new users
+ */
+export async function notifyWelcome(
+  userId: string,
+  userName?: string
+) {
+  return createNotification({
+    userId,
+    type: 'ACCOUNT_CREATED',
+    title: 'Welcome to SoukLoop! 🚀',
+    message: `Hi ${userName || 'there'}, welcome to SoukLoop! We're glad to have you with us.`,
+    actionUrl: '/',
+    sendEmail: true,
+    emailSubject: 'Welcome to SoukLoop! 🚀',
+    emailReact: WelcomeEmail({
+      userName
+    })
   });
 }
 

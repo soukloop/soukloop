@@ -8,7 +8,8 @@ import Apple from "next-auth/providers/apple"
 import Credentials from "next-auth/providers/credentials"
 import { compare } from "bcryptjs"
 import { Role } from "@prisma/client"
-import { notifyLogin, notifyLogout } from "@/lib/notifications/templates/auth-templates"
+import { notifyLogin, notifyLogout, notifyWelcome } from "@/lib/notifications/templates/auth-templates"
+
 
 
 // Auth updated to resolve production build issues
@@ -249,7 +250,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                     data: { emailVerified: new Date() }
                 });
             }
+
+            // 3. Send Welcome Email
+            notifyWelcome(user.id, user.name || undefined).catch(err =>
+                console.error('[Auth] Failed to send welcome notification:', err)
+            );
         },
+
         async linkAccount({ user }) {
             // Ensure email is verified when an account is linked
             if (!user.emailVerified) {

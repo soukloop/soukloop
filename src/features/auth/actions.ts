@@ -11,7 +11,9 @@ import {
     notifyPasswordChanged,
     notifyEmailVerified,
     notifyWaitlistAdded,
+    notifyWelcome,
 } from "@/lib/notifications/templates/auth-templates";
+
 import { RewardService } from "@/features/rewards/service";
 import {
     ACTION_TYPES,
@@ -414,6 +416,8 @@ export async function verifyEmailAction(
         });
 
         await notifyEmailVerified(user.id, user.name || undefined);
+        await notifyWelcome(user.id, user.name || undefined);
+
 
         await prisma.verificationToken.delete({
             where: {
