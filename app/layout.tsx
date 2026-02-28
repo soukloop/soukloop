@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "SoukLoop",
   description: "Created with v0",
   generator: "v0.app",
+  icons: {
+    icon: "/images/favicon-soukloop.png",
+  },
 };
 
 export default async function RootLayout({

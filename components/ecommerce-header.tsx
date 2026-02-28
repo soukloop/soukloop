@@ -264,11 +264,11 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
             <Link href="/">
               <div className="text-2xl font-bold sm:text-3xl">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/soukloop.png"
                   alt="SoukLoop"
                   width={160}
                   height={40}
-                  className="h-10 w-auto"
+                  className="h-11 ml-[-8px] w-auto"
                   priority
                 />
               </div>
