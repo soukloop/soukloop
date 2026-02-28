@@ -54,7 +54,13 @@ export async function notifyOrderPlaced(buyerId: string, data: OrderData) {
             // New Data Pass-through
             shippingAddress: data.shippingAddress,
             paymentMethod: data.paymentMethod,
-            estimatedDelivery: data.estimatedDelivery
+            estimatedDelivery: data.estimatedDelivery,
+            pointsUsed: data.pointsUsed,
+            pointsGained: data.pointsGained,
+            couponCode: data.couponCode,
+            couponDiscount: data.couponDiscount,
+            subtotal: data.subtotal || 0,
+            shipping: data.shipping || 0
         })
     );
 
@@ -130,7 +136,9 @@ export async function notifySellersNewOrder(
                     orderUrl: `${process.env.NEXTAUTH_URL}/seller/dashboard?tab=orders`,
                     // New Data
                     shippingAddress,
-                    customerNotes
+                    customerNotes,
+                    couponCode: data.couponCode,
+                    couponDiscount: data.couponDiscount
                 })
             );
 

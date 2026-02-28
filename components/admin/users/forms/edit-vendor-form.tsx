@@ -246,7 +246,7 @@ export function EditVendorForm({ userId, initialData, onSuccess, hideSlug = fals
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.govIdFrontUrl ? "Change" : "Upload")}
-                                    <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                                    <input type="file" className="hidden" accept="image/jpeg, image/png, image/webp" onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) await handleImageUpload(file, "govIdFrontUrl");
                                     }} />
@@ -265,7 +265,7 @@ export function EditVendorForm({ userId, initialData, onSuccess, hideSlug = fals
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.govIdBackUrl ? "Change" : "Upload")}
-                                    <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                                    <input type="file" className="hidden" accept="image/jpeg, image/png, image/webp" onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) await handleImageUpload(file, "govIdBackUrl");
                                     }} />
@@ -284,7 +284,7 @@ export function EditVendorForm({ userId, initialData, onSuccess, hideSlug = fals
                                 )}
                                 <label className="flex cursor-pointer items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (uploadedUrls.selfieUrl ? "Change" : "Upload")}
-                                    <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                                    <input type="file" className="hidden" accept="image/jpeg, image/png, image/webp" onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) await handleImageUpload(file, "selfieUrl");
                                     }} />

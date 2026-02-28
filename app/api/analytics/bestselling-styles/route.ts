@@ -23,18 +23,18 @@ export async function GET(request: NextRequest) {
             where: {
                 status: 'approved'
             },
+            orderBy: {
+                totalSold: 'desc'
+            },
+            take: 6,
             include: {
                 products: {
+                    where: { isActive: true },
+                    take: 1,
                     select: {
-                        id: true,
                         images: {
                             take: 1,
                             select: { url: true }
-                        },
-                        orderItems: {
-                            select: {
-                                quantity: true
-                            }
                         }
                     }
                 }
@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
         });
 
         // specific static images map for fallback (from categories-section.tsx context)
-        // User mentioned re-using them.
         const staticImages: Record<string, string> = {
             "Men's Style": "/categories_images/men's_Style.png",
             "Women's Style": "/categories_images/women's_Style.png",
@@ -52,26 +51,12 @@ export async function GET(request: NextRequest) {
             "Event Styles": "/categories_images/event_styles.png",
         };
 
-        const aggregated = styles.map(style => {
-            let totalSold = 0;
+        const result = styles.map(style => {
             let coverImage = null;
 
-            // Calculate total sold and find a cover image
-            for (const product of style.products) {
-                // Sum quantities
-                const productSold = product.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-                totalSold += productSold;
-
-                // Pick image from the first product that has one (or the one with most sales ideally)
-                // For simplicity, just grab the first available one found.
-                if (!coverImage && product.images && product.images.length > 0) {
-                    coverImage = product.images[0].url;
-                }
-            }
-
-            // Fallback image if no product image found
-            if (!coverImage) {
-                // Try to match name to static images or use placeholder
+            if (style.products.length > 0 && style.products[0].images.length > 0) {
+                coverImage = style.products[0].images[0].url;
+            } else {
                 coverImage = staticImages[style.name] || "/placeholder.svg";
             }
 
@@ -79,18 +64,12 @@ export async function GET(request: NextRequest) {
                 id: style.id,
                 name: style.name,
                 slug: style.slug,
-                totalSold,
+                totalSold: style.totalSold || 0,
                 image: coverImage
             };
         });
 
-        // Sort by sales descending
-        aggregated.sort((a, b) => b.totalSold - a.totalSold);
-
-        // Take top 6
-        const top6 = aggregated.slice(0, 6);
-
-        return NextResponse.json(top6);
+        return NextResponse.json(result);
 
     } catch (error: any) {
         console.error('Error fetching bestselling styles:', error);

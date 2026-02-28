@@ -67,7 +67,7 @@ export default function ProductHeaderActions({ product }: ProductHeaderActionsPr
                 variant="outline"
                 size="sm"
                 className="hidden sm:flex border-gray-200 text-gray-600"
-                onClick={() => window.open(`/product/${product.slug}`, '_blank')}
+                onClick={() => window.open(`/product/${product.slug || product.id}`, '_blank')}
             >
                 <Globe className="mr-2 h-4 w-4" /> Live Page
             </Button>

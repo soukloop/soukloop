@@ -21,6 +21,8 @@ interface NewSaleEmailProps {
     currency?: string;
     orderUrl: string;
     items?: OrderItem[];
+    couponCode?: string;
+    couponDiscount?: number;
     // New Fields
     shippingAddress?: {
         fullName: string;
@@ -47,12 +49,17 @@ export const NewSaleEmail = ({
     orderUrl,
     items = [],
     shippingAddress,
-    customerNotes
+    customerNotes,
+    couponCode,
+    couponDiscount = 0
 }: NewSaleEmailProps) => {
     const formattedTotal = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency
     }).format(total);
+
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 
     return (
         <EmailLayout>
@@ -105,13 +112,38 @@ export const NewSaleEmail = ({
             {items.length > 0 && (
                 <Section style={itemsSection}>
                     <Text style={itemsHeading}>Products to Ship:</Text>
-                    {items.map((item) => (
-                        <div key={item.id} style={itemRow}>
-                            <Text style={itemText}>
-                                <strong>{item.quantity}x</strong> {item.product?.name || 'Product'}
-                            </Text>
-                        </div>
-                    ))}
+                    <div style={itemsGrid}>
+                        {items.map((item) => (
+                            <div key={item.id} style={itemCard}>
+                                {item.product?.images?.[0]?.url && (
+                                    <img
+                                        src={item.product.images[0].url}
+                                        alt={item.product.name}
+                                        width="64"
+                                        height="64"
+                                        style={itemImage}
+                                    />
+                                )}
+                                <div style={itemContent}>
+                                    <Text style={itemName}>{item.product?.name || 'Product'}</Text>
+                                    <Text style={itemMeta}>
+                                        Qty: {item.quantity} • {formatCurrency(item.price)}
+                                    </Text>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {couponCode && (
+                <Section style={promoAlert}>
+                    <Text style={promoText}>
+                        🏷️ <strong>Promo Applied:</strong> {couponCode} (-{formatCurrency(couponDiscount)})
+                    </Text>
+                    <Text style={promoSubtext}>
+                        This discount has been deducted from your payout as the issuer of the code.
+                    </Text>
                 </Section>
             )}
 
@@ -140,32 +172,79 @@ const heading = {
     margin: '0 0 16px 0'
 };
 
+const itemCard = {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '12px',
+    backgroundColor: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #eee',
+    marginBottom: '10px'
+};
+
+const itemImage = {
+    borderRadius: '6px',
+    objectFit: 'cover' as const,
+    marginRight: '12px'
+};
+
+const itemContent = {
+    flex: 1
+};
+
+const itemName = {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1a1a1a',
+    margin: '0 0 2px 0'
+};
+
+const itemMeta = {
+    fontSize: '12px',
+    color: '#666',
+    margin: 0
+};
+
 const itemsSection = {
-    margin: '24px 0',
-    padding: '20px',
+    margin: '32px 0',
+    padding: '24px',
     backgroundColor: '#ffffff',
-    border: '1px solid #eeeeee',
-    borderRadius: '8px'
+    border: '1px solid #e5e7eb',
+    borderRadius: '16px'
 };
 
 const itemsHeading = {
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#999999',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.05em',
-    margin: '0 0 12px 0'
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#111827',
+    margin: '0 0 16px 0',
+    borderBottom: '2px solid #f3f4f6',
+    paddingBottom: '12px'
 };
 
-const itemRow = {
-    padding: '8px 0',
-    borderBottom: '1px solid #f9f9f9'
+const itemsGrid = {
+    marginTop: '8px'
 };
 
-const itemText = {
+const promoAlert = {
+    margin: '16px 0',
+    padding: '12px 16px',
+    backgroundColor: '#fff7ed',
+    border: '1px solid #fdba74',
+    borderRadius: '8px'
+};
+
+const promoText = {
     fontSize: '14px',
-    color: '#333333',
-    margin: 0
+    color: '#9a3412',
+    margin: '0 0 4px 0'
+};
+
+const promoSubtext = {
+    fontSize: '12px',
+    color: '#c2410c',
+    margin: 0,
+    fontStyle: 'italic'
 };
 
 const paragraph = {

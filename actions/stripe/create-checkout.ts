@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 // import { redirect } from 'next/navigation'; // Removing redirect
 
-export async function createCheckoutSession(customerOrderId: string) {
+export async function createCheckoutSession(customerOrderId: string, pointsToDeduct: number = 0) {
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -119,12 +119,38 @@ export async function createCheckoutSession(customerOrderId: string) {
     let url: string | null = null;
 
     try {
+        // Calculate the raw total of all items, tax, and shipping passed to Stripe
+        const rawTotalCents = line_items.reduce((sum, item) => {
+            return sum + (item.price_data.unit_amount * item.quantity);
+        }, 0);
+
+        // Calculate the true grand total saved in the database
+        const trueTotalCents = Math.round(customerOrder.totalAmount * 100);
+
+        // The discrepancy is the combined discount (Promo + Points)
+        const discountCents = Math.max(0, rawTotalCents - trueTotalCents);
+
+        let discounts: { coupon: string }[] = [];
+        let createdCouponId: string | null = null;
+        if (discountCents > 0) {
+            // Create a transient, one-time-use Stripe Coupon for this exact discount amount
+            const stripeCoupon = await stripe.coupons.create({
+                amount_off: discountCents,
+                currency: 'usd',
+                duration: 'once',
+                name: 'Order Discount (Promo/Points)',
+            });
+            createdCouponId = stripeCoupon.id;
+            discounts = [{ coupon: stripeCoupon.id }];
+        }
+
         // Using Dynamic Payment Methods (Stripe Best Practice)
         // Stripe automatically shows payment methods enabled in Dashboard
         // This includes: Card, Apple Pay, Google Pay, Amazon Pay, Link, etc.
         const sessionPayload: any = {
             mode: 'payment',
             line_items,
+            discounts: discounts.length > 0 ? discounts : undefined,
             success_url: `${origin}/order-confirmation/${customerOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/cart?canceled=true`,
             customer_email: session.user.email || undefined,
@@ -132,6 +158,7 @@ export async function createCheckoutSession(customerOrderId: string) {
             metadata: {
                 customerOrderId: customerOrder.id, // Track Parent ID
                 userId: session.user.id,
+                pointsToDeduct: pointsToDeduct.toString(),
             },
         };
 

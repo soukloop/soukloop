@@ -346,7 +346,19 @@ export default function DataTable<T extends Record<string, any>>({
                                     <tr
                                         key={rowIndex}
                                         className={`group hover:bg-gray-50/50 transition-colors duration-150 ${onRowClick ? 'cursor-pointer' : ''}`}
-                                        onClick={() => onRowClick?.(item)}
+                                        onClick={(e) => {
+                                            // Don't trigger row click if we clicked a button, anchor, or something inside them
+                                            const target = e.target as HTMLElement;
+                                            if (
+                                                target.closest('button') ||
+                                                target.closest('a') ||
+                                                target.closest('[role="menuitem"]') ||
+                                                target.closest('.action-trigger')
+                                            ) {
+                                                return;
+                                            }
+                                            onRowClick?.(item);
+                                        }}
                                     >
                                         {columns.map((column, colIndex) => (
                                             <td
@@ -360,7 +372,9 @@ export default function DataTable<T extends Record<string, any>>({
                                         ))}
                                         {actions && (
                                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                                <ActionDropdown actions={actions(item)} />
+                                                <div className="action-trigger" onClick={(e) => e.stopPropagation()}>
+                                                    <ActionDropdown actions={actions(item)} />
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

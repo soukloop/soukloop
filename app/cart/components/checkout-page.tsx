@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { StatefulButton } from "@/components/ui/StatefulButton"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Minus, X, Check, MapPin, Loader2, ArrowLeft, Phone, Gift, Info } from "lucide-react"
+import { Plus, Minus, X, Check, MapPin, Loader2, ArrowLeft, Phone, Gift, Info, Tag, Trash2 } from "lucide-react"
 import { useProfile } from "@/hooks/useProfile"
 import { useCart } from "@/hooks/useCart"
 import { useEffect, useState, useRef } from "react"
@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { createCheckoutSession } from "@/actions/stripe/create-checkout"
 import { StyledPhoneInput } from "@/components/ui/phone-input"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
 
 interface CheckoutPageProps {
   onNext: () => void
@@ -23,6 +24,17 @@ interface CheckoutPageProps {
   shippingCost: number
   shippingMethodId: string
   savedAddresses?: any[] // Accepting Address[]
+  appliedPromo?: {
+    code: string;
+    couponId: string;
+    vendorId: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue: number | null;
+  } | null;
+  setAppliedPromo?: (promo: any) => void;
+  isRedeemingPoints?: boolean;
+  setIsRedeemingPoints?: (redeeming: boolean) => void;
 }
 
 interface SavedAddress {
@@ -39,7 +51,18 @@ interface SavedAddress {
   isDefault?: boolean
 }
 
-export default function CheckoutPage({ onNext, onBack, onOrderComplete, shippingCost, shippingMethodId, savedAddresses = [] }: CheckoutPageProps) {
+export default function CheckoutPage({
+  onNext,
+  onBack,
+  onOrderComplete,
+  shippingCost,
+  shippingMethodId,
+  savedAddresses = [],
+  appliedPromo,
+  setAppliedPromo,
+  isRedeemingPoints = false,
+  setIsRedeemingPoints
+}: CheckoutPageProps) {
   const { profile, addresses, createAddress, isLoading: isProfileLoading, userName, userEmail, updateProfile } = useProfile();
   const { cart, getTotalPrice, removeItem, updateItem, clearCart, selectedItems, stockUpdates, removeItems } = useCart();
   const searchParams = useSearchParams();
@@ -97,10 +120,62 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
   const [showAddAddress, setShowAddAddress] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderNotes, setOrderNotes] = useState("");
-  const [isRedeemingPoints, setIsRedeemingPoints] = useState(false);
   const pointValue = 0.01; // $0.01 per point
   const userPoints = profile?.user?.rewardBalance?.currentBalance || 0;
   const discountAmount = isRedeemingPoints ? userPoints * pointValue : 0;
+
+  // Promo Code State
+  const [promoInput, setPromoInput] = useState("");
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setIsApplyingPromo(true);
+    setPromoError("");
+
+    try {
+      const vendorTotals = checkoutItems.reduce((acc: Record<string, number>, item: any) => {
+        const vid = item.product?.vendor?.id || item.vendorId || item.product?.vendorId;
+        if (vid) {
+          const priceCents = item.priceCents || item.price || Math.round((item.product?.price || 0) * 100);
+          acc[vid] = (acc[vid] || 0) + priceCents / 100;
+        }
+        return acc;
+      }, {});
+
+      if (Object.keys(vendorTotals).length === 0) throw new Error("No eligible items for promo.");
+
+      const res = await fetch("/api/checkout/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: promoInput.trim(),
+          vendorTotals
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (setAppliedPromo) {
+        setAppliedPromo({
+          code: data.code,
+          couponId: data.couponId,
+          vendorId: data.vendorId,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          minOrderValue: data.minOrderValue,
+        });
+      }
+      setPromoInput("");
+      toast.success("Promo code applied!");
+    } catch (error: any) {
+      setPromoError(error.message);
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
 
   // Auto-select default address
   useEffect(() => {
@@ -157,7 +232,9 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
           shippingMethodId, // Send ID for server validation
           tax: 0,
           redeemedPoints: isRedeemingPoints ? userPoints : 0,
-          paymentMethod: 'card' // Force card payment method
+          paymentMethod: 'card', // Force card payment method
+          couponId: appliedPromo?.couponId || undefined,
+          discountAmount: promoDiscountDollars // Inform the server of the intended discount for tracking
         })
       });
 
@@ -173,7 +250,7 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
 
       toast.loading("Initiating payment...");
       try {
-        const { url } = await createCheckoutSession(orderId);
+        const { url } = await createCheckoutSession(orderId, data.redeemedPoints || 0);
         if (url) {
           window.location.href = url;
           return; // Exit here for card redirect
@@ -219,11 +296,49 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
   // That implies the result is CENTS.
   // But line 18 in ProductDetails interface says `price: number`. Usually dollars.
   // I will check usage visually. Assuming CENTS for calculation.
+  // Dynamic Promo Calculation
+  const calculateDynamicDiscount = () => {
+    if (!appliedPromo || !checkoutItems.length) return 0;
 
+    // Filter items specifically for the vendor who issued the promo
+    const vendorItems = checkoutItems.filter((item: any) =>
+      item.product?.vendorId === appliedPromo.vendorId ||
+      item.vendorId === appliedPromo.vendorId ||
+      item.product?.vendor?.id === appliedPromo.vendorId
+    );
+
+    if (vendorItems.length === 0) return 0;
+
+    const vendorSubtotalCents = vendorItems.reduce((sum: number, item: any) => {
+      // Use priceCents if available (from CartContext), fallback to item.price (from checkout mapping if different)
+      const priceCents = item.priceCents || item.price || Math.round((item.product?.price || 0) * 100);
+      return sum + priceCents * (item.quantity || 1);
+    }, 0);
+
+    const vendorSubtotalDollars = vendorSubtotalCents / 100;
+
+    // Check Minimum Order Value
+    if (appliedPromo.minOrderValue !== null && vendorSubtotalDollars < appliedPromo.minOrderValue) {
+      return 0;
+    }
+
+    let discountDollars = 0;
+    if (appliedPromo.discountType === "PERCENTAGE") {
+      discountDollars = vendorSubtotalDollars * (appliedPromo.discountValue / 100);
+    } else if (appliedPromo.discountType === "FIXED") {
+      discountDollars = appliedPromo.discountValue;
+      if (discountDollars > vendorSubtotalDollars) discountDollars = vendorSubtotalDollars;
+    }
+
+    return discountDollars;
+  };
+
+  const promoDiscountDollars = calculateDynamicDiscount();
   const totalPriceDollars = totalPrice / 100;
   const shippingDollars = shippingCost / 100;
-  const rawTotal = totalPriceDollars + shippingDollars;
-  const grandTotal = Math.max(0, rawTotal - discountAmount);
+
+  const rawTotal = totalPriceDollars + shippingDollars - promoDiscountDollars;
+  const grandTotal = Math.max(0, rawTotal - discountAmount); // discountAmount here is from points
 
   if (isProfileLoading) {
     return (
@@ -245,7 +360,7 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
         {checkoutItems.map((item: any) => (
           <a
             key={item.id}
-            href={`/product/${item.product.id}`}
+            href={`/product/${item.product.slug || item.product.id}`}
             target="_blank"
             className="flex items-start space-x-3 py-3 border-b border-gray-50 last:border-0 group hover:bg-gray-50 transition-colors rounded-lg px-2"
           >
@@ -298,7 +413,7 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
                   toast.error("Minimum 100 points required to redeem");
                   return;
                 }
-                setIsRedeemingPoints(checked);
+                setIsRedeemingPoints?.(checked);
                 if (checked) toast.success(`Applied $${(userPoints * pointValue).toFixed(2)} discount!`);
               }}
               disabled={userPoints < 100}
@@ -337,6 +452,42 @@ export default function CheckoutPage({ onNext, onBack, onOrderComplete, shipping
             {shippingCost === 0 ? 'Free' : `$${(shippingCost / 100).toFixed(2)}`}
           </span>
         </div>
+
+        {appliedPromo ? (
+          <div className="flex justify-between items-center bg-green-50 border border-green-100 rounded-lg p-3 mt-2">
+            <div className="flex items-center gap-2 text-green-700 text-sm font-bold">
+              <Tag className="size-4" />
+              {appliedPromo.code}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-green-700 font-black">-${promoDiscountDollars.toFixed(2)}</span>
+              <button onClick={() => setAppliedPromo?.(null)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2 mt-2">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-gray-400">Promo Code</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter code"
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                className="uppercase font-medium"
+                onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+              />
+              <Button
+                variant="secondary"
+                onClick={handleApplyPromo}
+                disabled={isApplyingPromo || !promoInput.trim()}
+              >
+                {isApplyingPromo ? <Loader2 className="size-4 animate-spin" /> : 'Apply'}
+              </Button>
+            </div>
+            {promoError && <p className="text-xs text-red-500 font-medium">{promoError}</p>}
+          </div>
+        )}
 
         {isRedeemingPoints && (
           <div className="flex justify-between text-sm text-[#E87A3F]">

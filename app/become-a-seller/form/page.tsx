@@ -1068,7 +1068,7 @@ function FileUpload({ label, uploaded, onChange, loading }: any) {
         <div className="flex-1">
             <label className="mb-2 block text-xs font-bold text-gray-400 uppercase tracking-wider">{label}</label>
             <div className="relative">
-                <input type="file" onChange={onChange} disabled={loading} className="hidden" id={label} />
+                <input type="file" accept=".pdf, .jpg, .jpeg, .png, application/pdf, image/jpeg, image/png" onChange={onChange} disabled={loading} className="hidden" id={label} />
                 <label
                     htmlFor={label}
                     className={`flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all ${uploaded ? 'border-green-500 bg-green-50 shadow-inner' : 'border-gray-200 hover:border-[#E87A3F] hover:bg-orange-50/50'

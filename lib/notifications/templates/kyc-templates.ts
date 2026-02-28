@@ -1,4 +1,7 @@
 import { createNotification, notifyAllAdmins } from '../create-notification'
+import * as React from 'react'
+import { SellerApprovedEmail } from '@/lib/email-templates/account/seller-approved'
+import { SellerRejectedEmail } from '@/lib/email-templates/account/seller-rejected'
 
 interface KycData {
     verificationId: string
@@ -11,15 +14,20 @@ interface KycData {
  * Sends both in-app and email notification
  */
 export async function notifyKycApproved(userId: string, data: KycData) {
+    const actionUrl = '/seller/dashboard'
     return createNotification({
         userId,
         type: 'KYC_APPROVED',
         title: 'Seller Application Approved! 🎉',
         message: 'Congratulations! Your seller application has been approved. You can now start listing products and reach customers worldwide.',
         data,
-        actionUrl: '/seller/dashboard',
+        actionUrl,
         sendEmail: true,
-        emailSubject: 'Your Seller Application Has Been Approved! 🎉'
+        emailSubject: 'Your Seller Application Has Been Approved! 🎉',
+        emailReact: React.createElement(SellerApprovedEmail, {
+            userName: data.userName,
+            actionUrl: process.env.NEXTAUTH_URL ? process.env.NEXTAUTH_URL + actionUrl : undefined
+        }) as React.ReactElement
     })
 }
 
@@ -31,6 +39,7 @@ export async function notifyKycRejected(userId: string, data: KycData) {
     const reasonText = data.reason
         ? `Reason: ${data.reason}`
         : 'Please contact support for more details.'
+    const actionUrl = '/seller/status'
 
     return createNotification({
         userId,
@@ -38,9 +47,14 @@ export async function notifyKycRejected(userId: string, data: KycData) {
         title: 'Seller Application Update',
         message: `Unfortunately, your seller application was not approved. ${reasonText}`,
         data,
-        actionUrl: '/seller/status',
+        actionUrl,
         sendEmail: true,
-        emailSubject: 'Update on Your Seller Application'
+        emailSubject: 'Update on Your Seller Application',
+        emailReact: React.createElement(SellerRejectedEmail, {
+            userName: data.userName,
+            rejectionReason: data.reason,
+            actionUrl: process.env.NEXTAUTH_URL ? process.env.NEXTAUTH_URL + actionUrl : undefined
+        }) as React.ReactElement
     })
 }
 

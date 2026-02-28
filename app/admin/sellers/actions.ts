@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notifications/create-notification';
 import { outbox } from '@/lib/outbox';
+import { generateUniqueSlug } from '@/lib/slug';
 
 // Helper for permissions (simplified for Actions)
 // In a real app, use the same verifyAdminAuth or checkPermission helpers
@@ -88,10 +89,13 @@ export async function approveSeller(sellerId: string) { // sellerId here is User
 
             // Approve Applicant:
             // 1. Create Vendor Profile
+            const slug = await generateUniqueSlug(verification.user.name || 'Store', prisma.vendor);
+
             await prisma.vendor.create({
                 data: {
                     userId: verification.userId,
                     kycStatus: 'APPROVED',
+                    slug,
                     // other defaults
                 }
             });
@@ -109,16 +113,24 @@ export async function approveSeller(sellerId: string) { // sellerId here is User
             });
         }
 
-        // ➤ EMAIL NOTIFICATION
-        const { notifyKycApproved } = await import('@/lib/notifications/templates/kyc-templates');
-        const userId = vendor ? vendor.userId : (await prisma.userVerification.findUnique({ where: { id: sellerId } }))?.userId;
+        // ➤ NOTIFICATIONS & SESSION REFRESH
+        const userVerification = await prisma.userVerification.findUnique({ where: { id: sellerId }, select: { userId: true } });
+        const userId = vendor?.userId || userVerification?.userId;
+        const finalUserId: string | undefined = userId || undefined;
 
-        if (userId) {
-            const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-            await notifyKycApproved(userId, {
+        if (finalUserId) {
+            // 1. Send Email/System Notification
+            const user = await prisma.user.findUnique({ where: { id: finalUserId }, select: { name: true } });
+            await notifyKycApproved(finalUserId, {
                 verificationId: sellerId,
                 userName: user?.name // fallback
             }).catch(console.error);
+
+            // 2. Trigger Real-time Session Refresh
+            await outbox.sendToUser(finalUserId, {
+                type: 'SESSION_REFRESH',
+                timestamp: Date.now()
+            });
         }
 
         revalidatePath('/admin/sellers');

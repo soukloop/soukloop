@@ -37,6 +37,7 @@ interface DisplayProduct {
   price: string;
   originalPrice: string;
   isWishlist: boolean;
+  slug?: string;
   createdAt: string;
   quantity: number;
   isActive: boolean;
@@ -93,6 +94,7 @@ export default function BestSellersSection() {
             price: `$${p.price.toFixed(2)}`,
             originalPrice: p.comparePrice ? `$${p.comparePrice.toFixed(2)}` : "",
             isWishlist: favoriteIds.has(p.id),
+            slug: (p as any).slug,
             createdAt: p.createdAt,
             quantity: p.quantity,
             isActive: p.isActive,

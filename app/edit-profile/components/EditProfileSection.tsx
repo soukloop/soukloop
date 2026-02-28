@@ -5,6 +5,7 @@ import { Edit, Loader2, AlertCircle } from 'lucide-react'
 import ProfileForm, { ProfileFormData } from '@/components/forms/ProfileForm'
 import { useProfile } from '@/hooks/useProfile'
 import SellerApplicationSection from './SellerApplicationSection'
+import { toast } from 'sonner'
 
 export default function EditProfileSection({ userId, hideSections }: { userId?: string, hideSections?: boolean }) {
     const {
@@ -87,7 +88,7 @@ export default function EditProfileSection({ userId, hideSections }: { userId?: 
         } catch (err) {
             console.error('Upload error:', err)
             setIsUploading(false)
-            alert(err instanceof Error ? err.message : 'Failed to upload image')
+            toast.error(err instanceof Error ? err.message : 'Failed to upload image')
         }
     }
 
@@ -156,7 +157,7 @@ export default function EditProfileSection({ userId, hideSections }: { userId?: 
                         type="file"
                         ref={fileInputRef}
                         onChange={handleImageChange}
-                        accept="image/*"
+                        accept="image/jpeg, image/png, image/webp"
                         className="hidden"
                     />
                     <div className="md:w-30 md:h-30 size-24 overflow-hidden rounded-full border-4 border-white shadow-sm ring-2 ring-[#F5F1ED] bg-gray-50 flex items-center justify-center">

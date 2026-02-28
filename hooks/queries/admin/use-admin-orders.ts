@@ -12,7 +12,6 @@ export function useAdminOrders() {
     return useQuery({
         queryKey: adminOrdersKeys.all,
         queryFn: () => fetcher('/api/admin/orders?limit=50'),
-        refetchInterval: 45000, // More frequent for critical data
     })
 }
 

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         const ids = searchParams.get('ids')?.split(',').filter(Boolean)
         const includeInactive = searchParams.get('includeInactive') === 'true';
         const includePending = searchParams.get('includePending') === 'true';
-        const sold = searchParams.get('sold');
+        const sold = searchParams.get('sold') || 'false';
         const dressStyleId = searchParams.get('dressStyleId');
         const minRating = searchParams.get('minRating');
 
@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
                 {
                     vendor: {
                         userId: currentUserId
-                    }
+                    },
+                    status: { not: 'DRAFT' } // Prevent drafts from bleeding into public views
                 }
             ];
         } else {
@@ -316,19 +317,42 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
 
-        // Zod Validation
-        const validation = ProductSchema.safeParse(body);
-        if (!validation.success) {
-            return NextResponse.json(
-                { error: "Validation Failed", details: validation.error.format() },
-                { status: 400 }
-            );
-        }
-        const {
-            name, description, price, category, categoryId, images,
+        const isDraft = body.isDraft === true;
+
+        // Validation Setup
+        let name, description, price, category, categoryId, images,
             gender, fabric, materialId, dress, dressStyleId, occasion, occasionId, video,
-            condition, size, tags, brand, brandId, color, colorId, location, state, city, cityId
-        } = validation.data;
+            condition, size, tags, brand, brandId, color, colorId, location, state, city, cityId;
+
+        if (isDraft) {
+            // For drafts, we only strictly require the name
+            if (!body.name) {
+                return NextResponse.json(
+                    { error: "Validation Failed", details: { name: { _errors: ["Name is required even for drafts"] } } },
+                    { status: 400 }
+                );
+            }
+            // Manually map fields since we bypass Zod
+            ({
+                name, description, price, category, categoryId, images,
+                gender, fabric, materialId, dress, dressStyleId, occasion, occasionId, video,
+                condition, size, tags, brand, brandId, color, colorId, location, state, city, cityId
+            } = body);
+        } else {
+            // Zod Validation for Published Products
+            const validation = ProductSchema.safeParse(body);
+            if (!validation.success) {
+                return NextResponse.json(
+                    { error: "Validation Failed", details: validation.error.format() },
+                    { status: 400 }
+                );
+            }
+            ({
+                name, description, price, category, categoryId, images,
+                gender, fabric, materialId, dress, dressStyleId, occasion, occasionId, video,
+                condition, size, tags, brand, brandId, color, colorId, location, state, city, cityId
+            } = validation.data);
+        }
 
         const session = await auth();
         if (!session?.user) {
@@ -396,7 +420,9 @@ export async function POST(request: NextRequest) {
                 color,
                 colorId: colorId || undefined,
                 size,
-                tags: Array.isArray(tags) ? tags.join(',') : tags,
+                tags: Array.isArray(tags) ? tags.join(',') : (tags || ''),
+                status: isDraft ? 'DRAFT' : 'ACTIVE',
+                isActive: !isDraft,
                 // Relations are temporarily disabled due to Prisma client sync issue (EPERM during generate)
                 // They will be restored once the environment allows for client regeneration.
 
@@ -420,33 +446,35 @@ export async function POST(request: NextRequest) {
         })
 
         // ===== SEND NOTIFICATIONS (fire-and-forget) =====
-        const sellerId = vendor.userId
-        const productNotifData = {
-            productId: product.id,
-            productName: product.name,
-            productSlug: product.slug,
-            price: product.price ? Number(product.price) : undefined,
-            imageUrl: product.images?.[0]?.url
-        }
+        if (!isDraft) {
+            const sellerId = vendor.userId
+            const productNotifData = {
+                productId: product.id,
+                productName: product.name,
+                productSlug: product.slug,
+                price: product.price ? Number(product.price) : undefined,
+                imageUrl: product.images?.[0]?.url
+            }
 
-        if (hasPendingStyle) {
-            // 1. Notify seller about PENDING listing (waiting for approval)
-            // We pass the dress style name if available, or just 'Pending Style'
-            // We can fetch it or just use "New Style" text logic in template
-            const styleName = dressStyleId ? (await prisma.dressStyle.findUnique({ where: { id: dressStyleId }, select: { name: true } }))?.name : 'New Style';
+            if (hasPendingStyle) {
+                // 1. Notify seller about PENDING listing (waiting for approval)
+                // We pass the dress style name if available, or just 'Pending Style'
+                // We can fetch it or just use "New Style" text logic in template
+                const styleName = dressStyleId ? (await prisma.dressStyle.findUnique({ where: { id: dressStyleId }, select: { name: true } }))?.name : 'New Style';
 
-            notifySellerProductPending(sellerId, productNotifData, styleName)
-                .catch(err => console.error('[Product] Seller pending notification failed:', err))
+                notifySellerProductPending(sellerId, productNotifData, styleName)
+                    .catch(err => console.error('[Product] Seller pending notification failed:', err))
 
-            // 2. DO NOT notify followers yet.
-        } else {
-            // 1. Notify seller about successful listing (LIVE)
-            notifySellerProductListed(sellerId, productNotifData)
-                .catch(err => console.error('[Product] Seller listing notification failed:', err))
+                // 2. DO NOT notify followers yet.
+            } else {
+                // 1. Notify seller about successful listing (LIVE)
+                notifySellerProductListed(sellerId, productNotifData)
+                    .catch(err => console.error('[Product] Seller listing notification failed:', err))
 
-            // 2. Notify all followers of the seller
-            notifyFollowersNewProduct(sellerId, productNotifData)
-                .catch(err => console.error('[Product] Follower notifications failed:', err))
+                // 2. Notify all followers of the seller
+                notifyFollowersNewProduct(sellerId, productNotifData)
+                    .catch(err => console.error('[Product] Follower notifications failed:', err))
+            }
         }
 
         return NextResponse.json(product, { status: 201 })

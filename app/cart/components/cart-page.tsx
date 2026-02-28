@@ -2,29 +2,50 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, AlertCircle, ShoppingBag, Trash2 } from "lucide-react";
+import { Loader2, AlertCircle, ShoppingBag, Trash2, Tag, Gift, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import AuthPopup from "@/components/auth/auth-popup";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useProfile } from "@/hooks/useProfile";
 import { CartItemSkeleton } from "./skeletons";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 interface CartPageProps {
   onNext: () => void;
   shippingMethodId: string;
   setShippingMethodId: (id: string) => void;
   shippingCost: number;
-  initialCartData?: any; // Add this prop
+  initialCartData?: any;
+  appliedPromo?: {
+    code: string;
+    couponId: string;
+    vendorId: string;
+    discountType: string;
+    discountValue: number;
+    minOrderValue: number | null;
+  } | null;
+  setAppliedPromo?: (promo: any) => void;
+  isRedeemingPoints?: boolean;
+  setIsRedeemingPoints?: (redeeming: boolean) => void;
 }
 
-export default function CartPage({ onNext, shippingMethodId, setShippingMethodId, shippingCost, initialCartData }: CartPageProps) {
-  // ... (rest of imports/setup)
-
-  // ... inside main return ...
-
+export default function CartPage({
+  onNext,
+  shippingMethodId,
+  setShippingMethodId,
+  shippingCost,
+  initialCartData,
+  appliedPromo,
+  setAppliedPromo,
+  isRedeemingPoints = false,
+  setIsRedeemingPoints
+}: CartPageProps) {
   // ✅ Auth state
   const { user } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
@@ -53,6 +74,12 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
     isAllSelected
   } = useCart();
 
+  const { profile } = useProfile();
+  const userPoints = profile?.user?.rewardBalance?.currentBalance || 0;
+  const pointValue = 0.01; // $0.01 per point
+  const pointsDiscountDollars = isRedeemingPoints ? userPoints * pointValue : 0;
+  const pointsDiscountCents = Math.round(pointsDiscountDollars * 100);
+
   // Prefer hook data (client fresh), fallback to initial (server snapshot)
   const cart = hookCart || initialCartData;
 
@@ -63,7 +90,98 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
   // Shipping state lifted to parent
 
   const subtotal = getTotalPrice();
-  const total = subtotal + shippingCost;
+
+  // Promo Code State
+  const [promoInput, setPromoInput] = useState("");
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setIsApplyingPromo(true);
+    setPromoError("");
+
+    try {
+      // Calculate subtotals for all vendors in the selected items
+      const vendorTotals = sortedItems.reduce((acc: Record<string, number>, item: any) => {
+        if (selectedItems.has(item.id) && item.product?.status !== 'SOLD') {
+          const vid = item.product?.vendor?.id;
+          if (vid) {
+            acc[vid] = (acc[vid] || 0) + item.priceCents / 100;
+          }
+        }
+        return acc;
+      }, {});
+
+      if (Object.keys(vendorTotals).length === 0) throw new Error("Please select an item first.");
+
+      const res = await fetch("/api/checkout/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: promoInput.trim(),
+          vendorTotals
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (setAppliedPromo) {
+        setAppliedPromo({
+          code: data.code,
+          couponId: data.couponId,
+          vendorId: data.vendorId,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          minOrderValue: data.minOrderValue,
+        });
+      }
+      setPromoInput("");
+      toast.success("Promo code applied!");
+    } catch (error: any) {
+      setPromoError(error.message);
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  };
+
+  // Dynamic Discount Calculation
+  const calculateDynamicDiscount = () => {
+    if (!appliedPromo || !sortedItems.length) return 0;
+
+    // 1. Filter items specifically for the vendor who issued the promo
+    const vendorItems = sortedItems.filter(item =>
+      selectedItems.has(item.id) &&
+      item.product?.vendor?.id === appliedPromo.vendorId &&
+      item.product?.status !== 'SOLD'
+    );
+
+    if (vendorItems.length === 0) return 0;
+
+    // 2. Calculate Vendor Subtotal
+    const vendorSubtotalCents = vendorItems.reduce((sum, item) => sum + item.priceCents, 0);
+    const vendorSubtotalDollars = vendorSubtotalCents / 100;
+
+    // 3. Check Minimum Order Value (if user removed items, they might fall below)
+    if (appliedPromo.minOrderValue !== null && vendorSubtotalDollars < appliedPromo.minOrderValue) {
+      return 0; // Discount doesn't apply
+    }
+
+    // 4. Calculate Discount
+    let discountDollars = 0;
+    if (appliedPromo.discountType === "PERCENTAGE") {
+      discountDollars = vendorSubtotalDollars * (appliedPromo.discountValue / 100);
+    } else if (appliedPromo.discountType === "FIXED") {
+      discountDollars = appliedPromo.discountValue;
+      if (discountDollars > vendorSubtotalDollars) discountDollars = vendorSubtotalDollars;
+    }
+
+    return Math.round(discountDollars * 100); // Return in cents
+  };
+
+  const appliedDiscount = calculateDynamicDiscount();
+  const total = Math.max(0, subtotal + shippingCost - appliedDiscount - pointsDiscountCents);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,7 +304,7 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
                           </div>
 
                           {/* Product Image */}
-                          <a href={`/product/${item.product?.slug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50 shadow-sm">
+                          <a href={`/product/${item.product?.slug || item.product?.id}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-50 shadow-sm">
                             <Image
                               src={item.product?.images?.[0]?.url || "/premium-brown-leather-bag.png"}
                               alt={item.product?.name || "Product"}
@@ -205,7 +323,7 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
                           {/* Info & Actions */}
                           <div className="flex flex-1 flex-col justify-between min-w-0">
                             <div className="flex justify-between items-start gap-4">
-                              <a href={`/product/${item.product?.slug}`}>
+                              <a href={`/product/${item.product?.slug || item.product?.id}`}>
                                 <h3 className={`block font-bold text-base md:text-lg transition-colors truncate ${isOutOfStock ? "text-gray-500 line-through" : "text-gray-900 group-hover:text-[#E87A3F]"}`}>
                                   {item.product?.name || "Product"}
                                 </h3>
@@ -304,6 +422,97 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
                     {(shippingCost / 100).toFixed(2)}
                   </span>
                 </div>
+
+                {/* Promo Code Input */}
+                <div className="pt-4 pb-2">
+                  {appliedPromo ? (
+                    <div className="bg-green-50 border border-green-100 rounded-lg p-3 flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-green-700 text-sm font-bold">
+                        <Tag className="size-4" />
+                        {appliedPromo.code}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-green-700 font-black">-${(appliedDiscount / 100).toFixed(2)}</span>
+                        <button onClick={() => setAppliedPromo?.(null)} className="text-gray-400 hover:text-red-500 transition-colors">
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[13px] font-bold uppercase tracking-wider text-gray-400">Promo Code</p>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter code"
+                          value={promoInput}
+                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                          className="uppercase font-medium"
+                          onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                        />
+                        <Button
+                          variant="secondary"
+                          onClick={handleApplyPromo}
+                          disabled={isApplyingPromo || !promoInput.trim()}
+                        >
+                          {isApplyingPromo ? <Loader2 className="size-4 animate-spin" /> : 'Apply'}
+                        </Button>
+                      </div>
+                      {promoError && <p className="text-xs text-red-500 font-medium">{promoError}</p>}
+                    </div>
+                  )}
+                </div>
+
+
+                {/* Reward Points Redemption */}
+                {user && (
+                  <div className="pt-2 pb-4">
+                    <div className={`p-4 rounded-xl border-2 transition-all ${isRedeemingPoints ? 'border-[#E87A3F] bg-orange-50/10' : 'border-gray-100 bg-white'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${isRedeemingPoints ? 'bg-[#E87A3F] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                            <Gift className="size-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">Redeem Points</h4>
+                            <p className="text-xs text-gray-500">Available: {userPoints} pts</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={isRedeemingPoints}
+                          onCheckedChange={(checked) => {
+                            if (checked && userPoints < 100) {
+                              toast.error("Minimum 100 points required to redeem");
+                              return;
+                            }
+                            setIsRedeemingPoints?.(checked);
+                            if (checked) toast.success(`Applied $${(userPoints * pointValue).toFixed(2)} discount!`);
+                          }}
+                          disabled={userPoints < 100}
+                        />
+                      </div>
+
+                      <div className="space-y-2 border-t border-gray-100/50 pt-3 mt-3">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Redemption Rate</span>
+                          <span className="text-gray-900 font-medium">100 pts = $1.00</span>
+                        </div>
+                        {isRedeemingPoints ? (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">You're saving</span>
+                            <span className="text-[#E87A3F] font-bold">-${(userPoints * pointValue).toFixed(2)}</span>
+                          </div>
+                        ) : userPoints < 100 && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-orange-600 bg-orange-50 p-2 rounded-md">
+                            <Info className="size-3" />
+                            <span>You need 100 points to start redeeming.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+
                 <div className="my-2 h-px bg-gray-100" />
                 <div className="flex justify-between items-center text-xl font-black">
                   <span className="text-gray-900">Total</span>
@@ -332,10 +541,12 @@ export default function CartPage({ onNext, shippingMethodId, setShippingMethodId
       </div>
 
       {/* Auth Popup */}
-      {showAuth && (
-        <AuthPopup isOpen={showAuth} onClose={() => setShowAuth(false)} />
-      )}
-    </div>
+      {
+        showAuth && (
+          <AuthPopup isOpen={showAuth} onClose={() => setShowAuth(false)} />
+        )
+      }
+    </div >
   );
 }
 

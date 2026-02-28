@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Check } from "lucide-react";
+import { toast } from "sonner";
 
 // =============================================================================
 // TYPES
@@ -124,8 +125,8 @@ export default function UpgradeAdModal({ isOpen, onClose }: UpgradeAdModalProps)
                         <label
                             key={option.id}
                             className={`flex cursor-pointer items-center justify-between rounded-xl border-2 p-4 transition-colors ${selectedOption === option.id
-                                    ? "border-[#E87A3F] bg-orange-50"
-                                    : "border-gray-200 hover:border-gray-300"
+                                ? "border-[#E87A3F] bg-orange-50"
+                                : "border-gray-200 hover:border-gray-300"
                                 }`}
                         >
                             <div className="flex items-start gap-3">
@@ -133,8 +134,8 @@ export default function UpgradeAdModal({ isOpen, onClose }: UpgradeAdModalProps)
                                 <div className="mt-1 flex items-center justify-center">
                                     <div
                                         className={`size-5 rounded-full border-2 ${selectedOption === option.id
-                                                ? "border-[#E87A3F]"
-                                                : "border-gray-300"
+                                            ? "border-[#E87A3F]"
+                                            : "border-gray-300"
                                             }`}
                                     >
                                         {selectedOption === option.id && (
@@ -178,7 +179,7 @@ export default function UpgradeAdModal({ isOpen, onClose }: UpgradeAdModalProps)
                 {/* CTA Button */}
                 <button
                     onClick={() => {
-                        alert(`Selected: ${pricingOptions.find(o => o.id === selectedOption)?.title}`);
+                        toast.info(`Selected: ${pricingOptions.find(o => o.id === selectedOption)?.title}`);
                         onClose();
                     }}
                     className="w-full rounded-full bg-[#E87A3F] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#d6692f]"

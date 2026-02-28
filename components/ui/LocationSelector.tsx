@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { MapPin, ChevronDown, Loader2 } from 'lucide-react'
-
+import { toast } from 'sonner'
 interface LocationSelectorProps {
     type: 'state' | 'city' // Removed 'country'
     value: string
@@ -112,7 +112,7 @@ function LocationSelector({
 
     const handleUseCurrentLocation = async () => {
         if (!('geolocation' in navigator)) {
-            alert('Geolocation is not supported')
+            toast.error('Geolocation is not supported')
             return
         }
         setIsLoadingLocation(true)
@@ -127,18 +127,18 @@ function LocationSelector({
                     if (data?.address?.state) {
                         handleSelect(data.address.state)
                     } else {
-                        alert('Could not detect state')
+                        toast.error('Could not detect state')
                     }
                 } catch (error) {
                     console.error('Geocoding error:', error)
-                    alert('Failed to get location')
+                    toast.error('Failed to get location')
                 } finally {
                     setIsLoadingLocation(false)
                 }
             },
             () => {
                 setIsLoadingLocation(false)
-                alert('Location access denied')
+                toast.error('Location access denied')
             }
         )
     }

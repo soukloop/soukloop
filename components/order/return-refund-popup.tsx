@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 import { X, Check, Camera, ChevronDown, ShieldCheck, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
@@ -47,7 +48,7 @@ export default function ReturnRefundPopup({ order, onClose, onSuccess }: ReturnR
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length + reportImages.length > 5) {
-            alert("You can only upload up to 5 images.");
+            toast.error("You can only upload up to 5 images.");
             return;
         }
 
@@ -64,7 +65,7 @@ export default function ReturnRefundPopup({ order, onClose, onSuccess }: ReturnR
     const handleReportSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedItemIds.length === 0 || !reportReason) {
-            alert("Please select products and a reason.");
+            toast.error("Please select products and a reason.");
             return;
         }
 
@@ -128,7 +129,7 @@ export default function ReturnRefundPopup({ order, onClose, onSuccess }: ReturnR
 
             onSuccess();
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setIsSubmittingReport(false);
         }
@@ -310,7 +311,7 @@ export default function ReturnRefundPopup({ order, onClose, onSuccess }: ReturnR
                                     type="file"
                                     ref={fileInputRef}
                                     className="hidden"
-                                    accept="image/*"
+                                    accept="image/jpeg, image/png, image/webp"
                                     multiple
                                     onChange={handleImageUpload}
                                 />

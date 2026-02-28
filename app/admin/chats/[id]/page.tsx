@@ -10,6 +10,7 @@ import { MessageBubble } from "@/components/chat/MessageBubble"
 import { ConversationSkeleton } from "@/components/chat/ChatSkeletons"
 import { useSocket } from "@/components/providers/socket-provider"
 import { toast } from "sonner"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 
 const fetcher = (url: string) => fetch(url).then((res) => {
     if (!res.ok) throw new Error('Failed to fetch data');
@@ -26,6 +27,7 @@ export default function AdminChatPage() {
     const [isSellerTyping, setIsSellerTyping] = useState(false)
     const { socket, isConnected } = useSocket()
     const previousConversationRef = useRef<string | null>(null)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
     const { data: conversation, error, isLoading, mutate } = useSWR(id ? `/api/admin/chats/${id}` : null, fetcher)
 
@@ -78,11 +80,14 @@ export default function AdminChatPage() {
         }
     }, [conversation?.messages?.length])
 
-    const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this conversation? This action cannot be undone.")) return
+    const handleDelete = () => {
+        setIsDeleteDialogOpen(true)
+    }
 
+    const confirmDelete = async () => {
         try {
             setIsDeleting(true)
+            setIsDeleteDialogOpen(false)
             const res = await fetch(`/api/admin/chats/${id}`, {
                 method: 'DELETE'
             })
@@ -303,6 +308,17 @@ export default function AdminChatPage() {
                     </form>
                 </div>
             </footer >
+
+            <ConfirmDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Conversation"
+                message="Are you sure you want to delete this conversation? This action cannot be undone and all message history will be lost."
+                type="danger"
+                confirmText="Delete"
+                isLoading={isDeleting}
+            />
         </div >
     )
 }

@@ -152,6 +152,8 @@ export async function getOrderDetails(orderId: string) {
                         }
                     }
                 },
+                // @ts-ignore
+                coupon: true,
                 paymentTransactions: true,
                 history: {
                     orderBy: { createdAt: 'desc' }
@@ -203,6 +205,8 @@ export async function getOrderDetails(orderId: string) {
                                     }
                                 }
                             },
+                            // @ts-ignore
+                            coupon: true,
                             history: true
                         }
                     }
@@ -211,18 +215,18 @@ export async function getOrderDetails(orderId: string) {
 
             if (customerOrder) {
                 // Synthesize the data to be compatible with the existing detail page UI
-                const vendorOrders = customerOrder.vendorOrders || [];
+                const vendorOrders = (customerOrder as any).vendorOrders || [];
 
                 // Calculate totals from sub-orders
-                const subtotal = vendorOrders.reduce((sum, vo) => sum + Number(vo.subtotal || 0), 0);
-                const tax = vendorOrders.reduce((sum, vo) => sum + Number(vo.tax || 0), 0);
-                const shipping = vendorOrders.reduce((sum, vo) => sum + Number(vo.shipping || 0), 0);
-                const total = vendorOrders.reduce((sum, vo) => sum + Number(vo.total || 0), 0);
+                const subtotal = vendorOrders.reduce((sum: number, vo: any) => sum + Number(vo.subtotal || 0), 0);
+                const tax = vendorOrders.reduce((sum: number, vo: any) => sum + Number(vo.tax || 0), 0);
+                const shipping = vendorOrders.reduce((sum: number, vo: any) => sum + Number(vo.shipping || 0), 0);
+                const total = vendorOrders.reduce((sum: number, vo: any) => sum + Number(vo.total || 0), 0);
 
                 // Flatten items and history
-                const allItems = vendorOrders.flatMap(vo => vo.items || []);
-                const allHistory = vendorOrders.flatMap(vo => vo.history || [])
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                const allItems = vendorOrders.flatMap((vo: any) => vo.items || []);
+                const allHistory = vendorOrders.flatMap((vo: any) => vo.history || [])
+                    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
                 // Return a combined object
                 return {
@@ -237,7 +241,7 @@ export async function getOrderDetails(orderId: string) {
                     total: customerOrder.totalAmount || total,
                     items: allItems,
                     history: allHistory,
-                    user: customerOrder.user,
+                    user: (customerOrder as any).user,
                     shippingAddress: customerOrder.shippingAddress,
                     billingAddress: customerOrder.billingAddress,
                     notes: customerOrder.notes,
@@ -250,7 +254,32 @@ export async function getOrderDetails(orderId: string) {
 
         if (!order) throw new Error("Order not found");
 
-        return order;
+        // 3. Fetch Points Redemption (if any) for the specific order
+        // We look for points with actionType: "REDEEMED" tied to the order number
+        const pointsRedemption = await prisma.rewardPoint.findFirst({
+            where: {
+                userId: order.userId,
+                actionType: 'REDEEMED',
+                referenceId: order.orderNumber
+            }
+        });
+
+        const pointsDiscount = pointsRedemption ? Math.abs(Number(pointsRedemption.points)) * 0.01 : 0;
+
+        // 4. Extract Coupon details from synthesized or direct order
+        const coupon = (order as any).coupon || null;
+        const couponCode = coupon?.code || null;
+
+        // If it's a vendor order, we might need to calculate its share of the points discount?
+        // Usually, points are applied to the parent.
+        // For now, we return these as top-level fields for the UI summary.
+
+        return {
+            ...order,
+            couponCode,
+            pointsDiscount,
+            pointsRedeemed: pointsRedemption ? Math.abs(Number(pointsRedemption.points)) : 0
+        };
     } catch (error: any) {
         console.error("Failed to fetch order details:", error);
         throw new Error(error.message || "Failed to fetch order details");

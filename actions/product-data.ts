@@ -3,8 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import type { GroupedDressStyles, MegaMenuProduct } from "@/types/product";
 
-export type { GroupedDressStyles, MegaMenuProduct }; // Re-export for compatibility if needed, but better to import from types directly
-
 /**
  * Fetches all approved dress styles and groups them by category (men, women, kids).
  * Used for the Mega Menu navigation.

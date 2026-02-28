@@ -45,6 +45,7 @@ interface DisplayProduct {
   originalPrice?: string;
   daysAgo?: string;
   isWishlist: boolean;
+  slug?: string;
   createdAt?: string;
   quantity?: number;
   isActive?: boolean;
@@ -151,6 +152,7 @@ export default function ProductGridSection({ title = "Featured Products", catego
             originalPrice: p.comparePrice ? `$${p.comparePrice.toFixed(2)}` : "",
             daysAgo: formatDaysAgo(p.createdAt),
             isWishlist: favoriteIds.has(p.id),
+            slug: p.slug,
             createdAt: p.createdAt,
             quantity: p.quantity,
             isActive: p.isActive,

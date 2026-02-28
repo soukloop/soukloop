@@ -44,8 +44,11 @@ interface FullMessage extends ChatMessage {
 interface FullConversation extends ChatConversation {
     buyer: PublicUser
     seller: PublicUser
-    product: PrismaProduct & { images: { url: string }[] }
+    product: PrismaProduct & { images: { url: string }[], slug: string }
     messages: FullMessage[]
+    _count?: {
+        messages: number
+    }
 }
 
 interface Attachment {
@@ -243,17 +246,23 @@ export default function MessagingInterface({
                     if (!oldConvs) return oldConvs
                     const updated = oldConvs.map(c => {
                         if (c.id === message.conversationId) {
+                            const isCurrentlySelected = selectedConversation?.id === message.conversationId;
+                            const newUnreadCount = (!isCurrentlySelected && !isOwnMessage)
+                                ? (c._count?.messages || 0) + 1
+                                : (c._count?.messages || 0);
+
                             return {
                                 ...c,
-                                messages: [{ ...message, createdAt: new Date().toISOString() } as unknown as FullMessage]
+                                messages: [{ ...message, createdAt: new Date().toISOString() } as unknown as FullMessage],
+                                _count: { ...c._count, messages: newUnreadCount }
                             }
                         }
                         return c
                     })
                     return updated.sort((a, b) => {
-                        if (a.id === message.conversationId) return -1
-                        if (b.id === message.conversationId) return 1
-                        return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
+                        const dateA = new Date(a.messages?.[0]?.createdAt || a.createdAt).getTime()
+                        const dateB = new Date(b.messages?.[0]?.createdAt || b.createdAt).getTime()
+                        return dateB - dateA
                     })
                 }
             )
@@ -397,9 +406,9 @@ export default function MessagingInterface({
                 return c
             })
             return updated.sort((a, b) => {
-                if (a.id === selectedConversation.id) return -1
-                if (b.id === selectedConversation.id) return 1
-                return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
+                const dateA = new Date(a.messages?.[0]?.createdAt || a.createdAt).getTime()
+                const dateB = new Date(b.messages?.[0]?.createdAt || b.createdAt).getTime()
+                return dateB - dateA
             })
         })
         setNewMessage("")
@@ -457,9 +466,9 @@ export default function MessagingInterface({
                         return c
                     })
                     return updated.sort((a, b) => {
-                        if (a.id === selectedConversation.id) return -1
-                        if (b.id === selectedConversation.id) return 1
-                        return new Date(b.messages[0]?.createdAt || b.createdAt).getTime() - new Date(a.messages[0]?.createdAt || a.createdAt).getTime()
+                        const dateA = new Date(a.messages?.[0]?.createdAt || a.createdAt).getTime()
+                        const dateB = new Date(b.messages?.[0]?.createdAt || b.createdAt).getTime()
+                        return dateB - dateA
                     })
                 })
             } else {
@@ -658,7 +667,7 @@ export default function MessagingInterface({
     const handleSendLocation = async () => {
         if (readOnly) return;
         if (!navigator.geolocation) {
-            alert('Geolocation is not supported by your browser')
+            toast.error('Geolocation is not supported by your browser')
             return
         }
 
@@ -672,7 +681,7 @@ export default function MessagingInterface({
             },
             (error) => {
                 console.error('Geolocation error:', error)
-                alert('Unable to get your location')
+                toast.error('Unable to get your location')
             }
         )
     }
@@ -711,6 +720,24 @@ export default function MessagingInterface({
         setShowMobileChat(true)
         shouldScrollRef.current = true
         fetchSellerInfo(conv)
+
+        if (conv._count?.messages && conv._count.messages > 0) {
+            queryClient.setQueryData(
+                ['chat', 'conversations'],
+                (oldConvs: FullConversation[] | undefined) => {
+                    if (!oldConvs) return oldConvs
+                    return oldConvs.map(c => {
+                        if (c.id === conv.id) {
+                            return {
+                                ...c,
+                                _count: { ...c._count, messages: 0 }
+                            }
+                        }
+                        return c
+                    })
+                }
+            )
+        }
     }
 
     const getOtherParticipant = (conv: FullConversation) => {
@@ -776,9 +803,9 @@ export default function MessagingInterface({
     return (
         <div className="flex h-[calc(100vh-180px)] min-h-[600px] overflow-hidden rounded-xl border bg-white shadow-sm" style={{ overflowX: 'hidden' }}>
             {/* Hidden file inputs */}
-            <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'image')} />
-            <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'video')} />
-            <input ref={fileInputRef} type="file" accept="*/*" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'file')} />
+            <input ref={imageInputRef} type="file" accept="image/jpeg, image/png, image/webp" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'image')} />
+            <input ref={videoInputRef} type="file" accept="video/mp4, video/quicktime" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'video')} />
+            <input ref={fileInputRef} type="file" accept=".pdf, .doc, .docx, .txt, application/pdf" multiple className="hidden" onChange={(e) => handleFileSelect(e, 'file')} />
 
             {/* ========== COLUMN 1: Conversations List ========== */}
             <div className={`flex w-full flex-col border-r lg:w-[280px] ${showMobileChat ? "hidden lg:flex" : "flex"}`}>
@@ -835,7 +862,22 @@ export default function MessagingInterface({
                                             </span>
                                         </div>
                                         {lastMessage && (
-                                            <p className="truncate text-xs text-gray-400 mt-1">{lastMessage.message}</p>
+                                            <div className="flex items-center justify-between mt-1">
+                                                <p className="truncate text-xs text-gray-400">
+                                                    {lastMessage.message || (
+                                                        lastMessage.messageType === 'voice' ? '🎤 Voice message' :
+                                                            lastMessage.messageType === 'image' ? '📷 Image' :
+                                                                lastMessage.messageType === 'video' ? '🎥 Video' :
+                                                                    lastMessage.messageType === 'location' ? '📍 Location' :
+                                                                        '📎 Attachment'
+                                                    )}
+                                                </p>
+                                                {!isAdmin && conv._count?.messages ? (
+                                                    <span className="ml-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E87A3F] text-[10px] font-bold text-white">
+                                                        {conv._count.messages > 99 ? '99+' : conv._count.messages}
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -856,7 +898,7 @@ export default function MessagingInterface({
                             </Button>
                             {/* Product Image - Click to open product page */}
                             {selectedConversation.product ? (
-                                <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.productId}`} className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:ring-2 hover:ring-[#E87A3F]">
+                                <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.product.slug || selectedConversation.productId}`} className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-gray-100 cursor-pointer hover:ring-2 hover:ring-[#E87A3F]">
                                     {selectedConversation.product.images?.[0]?.url ? (
                                         <Image src={selectedConversation.product.images[0].url} alt={selectedConversation.product.name} fill className="object-cover" />
                                     ) : (
@@ -878,7 +920,7 @@ export default function MessagingInterface({
                                 onClick={() => setShowMobileAbout(true)}
                             >
                                 {selectedConversation.product ? (
-                                    <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.productId}`} className="block">
+                                    <Link href={isAdmin ? `/admin/products/${selectedConversation.productId}` : `/product/${selectedConversation.product.slug || selectedConversation.productId}`} className="block">
                                         <p className="truncate font-semibold hover:text-[#E87A3F] transition-colors">{selectedConversation.product.name}</p>
                                     </Link>
                                 ) : (

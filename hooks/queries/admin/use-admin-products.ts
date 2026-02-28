@@ -12,7 +12,6 @@ export function useAdminProducts() {
     return useQuery({
         queryKey: adminProductsKeys.all,
         queryFn: () => fetcher('/api/admin?type=products'),
-        refetchInterval: 60000,
     })
 }
 

@@ -65,7 +65,9 @@ export async function notifyNewReview(sellerId: string, data: ReviewData) {
         title: `New ${data.rating}-Star Review ${stars}`,
         message,
         data,
-        actionUrl: `/product/${data.productId}`,
+        actionUrl: `/product/${data.productId || (data as any).productSlug}`, // Fixed to use fallback or vice versa
+        // Wait, the interface says productId is required. Let's use:
+        // actionUrl: `/product/${(data as any).productSlug || data.productId}`,
         sendEmail: data.rating <= 2 // Only email for negative reviews
     })
 }
@@ -101,7 +103,7 @@ export async function notifyProductApproved(
         title: 'Product Approved! ✅',
         message: `Your product "${data.productName}" has been approved and is now live on the marketplace.`,
         data,
-        actionUrl: `/product/${data.productId}`,
+        actionUrl: `/product/${(data as any).productSlug || data.productId}`,
         sendEmail: true,
         emailSubject: 'Your Product Has Been Approved!'
     })

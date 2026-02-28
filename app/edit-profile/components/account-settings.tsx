@@ -42,6 +42,8 @@ import BankAccountsSection from './BankAccountsSection';
 import SellerApplicationSection from './SellerApplicationSection';
 import { useSellerAuth } from "@/hooks/useSellerAuth";
 import WishlistSection from './WishlistSection';
+import PromoCodesSection from './PromoCodesSection';
+import { Tag } from "lucide-react";
 
 export default function AccountSettings() {
   const searchParams = useSearchParams();
@@ -76,6 +78,7 @@ export default function AccountSettings() {
     { id: 'wishlist', label: 'Wishlist', icon: Heart },
     { id: 'address', label: 'Address Book', icon: MapPin },
     ...(isSeller ? [{ id: 'payment', label: 'Bank Accounts', icon: Building2 }] : []),
+    ...(isSeller ? [{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }] : []),
   ];
 
   return (
@@ -100,8 +103,8 @@ export default function AccountSettings() {
                     onClick={() => handleSectionChange(item.id)}
                     className={`
                       flex flex-col md:flex-row items-center justify-center 
-                      rounded-2xl px-2 py-2 md:px-6 md:py-3 
-                      w-[60px] md:w-auto md:min-w-[200px] h-auto flex-shrink-0 
+                      rounded-2xl px-2 py-2 md:px-4 md:py-2 
+                      w-[60px] md:w-auto md:min-w-[140px] h-auto flex-shrink-0 
                       snap-start cursor-pointer transition-all duration-300
                       ${isActive
                         ? "md:bg-[#FEF3EC] md:border md:border-[#E87A3F]"
@@ -179,6 +182,20 @@ export default function AccountSettings() {
 
         {/* Wishlist */}
         {activeSection === 'wishlist' && <WishlistSection />}
+
+        {/* Promo Codes */}
+        {activeSection === 'promo-codes' && isSeller && (
+          <div className="flex justify-center px-4 sm:px-6">
+            <div className="w-full max-w-6xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h2 className="text-xl md:text-2xl font-black text-gray-900">Promo Codes</h2>
+                <p className="text-sm text-gray-500 mt-1">Manage discount codes for your customers to use at checkout.</p>
+              </div>
+              <div className="h-px bg-gray-100" />
+              <PromoCodesSection />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="h-16 md:h-[100px]"></div>

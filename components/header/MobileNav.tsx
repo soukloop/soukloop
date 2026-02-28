@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getGroupedDressStyles, type GroupedDressStyles } from "@/actions/product-data";
+import { getGroupedDressStyles } from "@/actions/product-data";
+import type { GroupedDressStyles } from "@/types/product";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function MobileNav() {

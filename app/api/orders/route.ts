@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { items, shippingAddress, notes, shippingMethodId, tax: taxTotalInCents, redeemedPoints, paymentMethod } = await request.json()
+    const { items, shippingAddress, notes, shippingMethodId, tax: taxTotalInCents, redeemedPoints, paymentMethod, couponId } = await request.json()
 
     // Server-side Shipping Validation
     const getShippingCost = (methodId: string) => {
@@ -275,7 +275,14 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((i: any) => i.productId)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, price: true, vendorId: true, name: true, status: true }
+      select: {
+        id: true,
+        price: true,
+        vendorId: true,
+        name: true,
+        status: true,
+        vendor: { select: { planTier: true } }
+      }
     })
 
     const productMap = new Map(products.map(p => [p.id, p]))
@@ -291,7 +298,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const vendorGroups: Record<string, typeof items> = {}
+    const vendorGroups: Record<string, { items: typeof items, planTier: string }> = {}
 
     for (const item of items) {
       const product = productMap.get(item.productId) as any
@@ -299,13 +306,13 @@ export async function POST(request: NextRequest) {
 
       const vendorId = product.vendorId
       if (!vendorGroups[vendorId]) {
-        vendorGroups[vendorId] = []
+        vendorGroups[vendorId] = { items: [], planTier: product.vendor.planTier }
       }
-      vendorGroups[vendorId].push({ ...item, actualPrice: product.price })
+      vendorGroups[vendorId].items.push({ ...item, actualPrice: product.price })
     }
 
     // Calculate grand total
-    const grandSubtotal = Object.values(vendorGroups).flat().reduce((sum: number, item: any) =>
+    const grandSubtotal = Object.values(vendorGroups).flatMap(group => group.items).reduce((sum: number, item: any) =>
       sum + (Number(item.actualPrice) * item.quantity), 0
     )
     const grandShipping = Number(shippingTotal) / 100 || 0
@@ -315,10 +322,47 @@ export async function POST(request: NextRequest) {
     const grandTax = Number(taxTotalInCents) / 100 || 0;
     // END: Dynamic Tax Logic
 
+    // Coupon Calculation
+    let couponDiscount = 0;
+    let validCoupon: any = null;
+
+    if (couponId) {
+      // @ts-ignore
+      validCoupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+      if (validCoupon && validCoupon.isActive) {
+        const now = new Date();
+        const isValidDate = now >= new Date(validCoupon.startDate) && (!validCoupon.endDate || now <= new Date(validCoupon.endDate));
+        const isValidUses = validCoupon.maxUses === null || validCoupon.currentUses < validCoupon.maxUses;
+
+        // Find the valid vendor subtotal for this coupon
+        const couponVendorGroup = vendorGroups[validCoupon.vendorId];
+        if (isValidDate && isValidUses && couponVendorGroup) {
+          const couponVendorSubtotal = couponVendorGroup.items.reduce((sum: number, item: any) =>
+            sum + (Number(item.actualPrice) * item.quantity), 0
+          );
+
+          if (validCoupon.minOrderValue === null || couponVendorSubtotal >= validCoupon.minOrderValue) {
+            if (validCoupon.discountType === "PERCENTAGE") {
+              couponDiscount = couponVendorSubtotal * (validCoupon.discountValue / 100);
+            } else if (validCoupon.discountType === "FIXED") {
+              couponDiscount = validCoupon.discountValue;
+              if (couponDiscount > couponVendorSubtotal) couponDiscount = couponVendorSubtotal;
+            }
+          } else {
+            validCoupon = null; // Minimum order value not met, ignore coupon
+          }
+        } else {
+          validCoupon = null; // Invalid date/uses or no items for this vendor, ignore
+        }
+      } else {
+        validCoupon = null;
+      }
+    }
+
     // Reward Calculation
     const POINT_VALUE = 0.01
-    const discountAmount = redeemedPoints ? (redeemedPoints * POINT_VALUE) : 0
-    const grandTotal = Math.max(0, grandSubtotal + grandShipping + grandTax - discountAmount)
+    const rewardDiscountAmount = redeemedPoints ? (redeemedPoints * POINT_VALUE) : 0
+    const grandTotal = Math.max(0, grandSubtotal + grandShipping + grandTax - rewardDiscountAmount - couponDiscount)
 
     // Generate parent order number
     const parentOrderNumber = `ORD-${Date.now()}`
@@ -327,37 +371,18 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
 
       // Handle Redemption (Deduct Points)
+      // POINTS ARE NO LONGER DEDUCTED HERE to prevent loss on Stripe cancellation.
+      // We only verify they have enough points. The Stripe webhook handles deduction.
       if (redeemedPoints && redeemedPoints > 0) {
         const balance = await tx.rewardBalance.findUnique({ where: { userId: session.user.id } })
         if (!balance || balance.currentBalance < redeemedPoints) {
           throw new Error("Insufficient reward points")
         }
-
-        // Deduct
-        await tx.user.update({
-          where: { id: session.user.id },
-          data: {
-            rewardBalance: {
-              update: {
-                totalRedeemed: { increment: redeemedPoints },
-                currentBalance: { decrement: redeemedPoints }
-              }
-            }
-          }
-        })
-
-        // Log Redemption
-        await tx.rewardPoint.create({
-          data: {
-            userId: session.user.id,
-            points: -redeemedPoints,
-            actionType: ACTION_TYPES.REDEEMED,
-            referenceId: parentOrderNumber, // Using number as temporary ref until parentOrder is created
-            referenceType: REFERENCE_TYPES.REDEMPTION,
-            note: `Redeemed ${redeemedPoints} points for discount`
-          }
-        })
       }
+
+      // Record Coupon Usage
+      // COUPON USAGE IS NO LONGER LOGGED HERE to prevent loss on Stripe cancellation.
+      // We only verify they have a valid coupon. The Stripe webhook handles the increment.
 
       // Create parent CustomerOrder
       const parentOrder = await tx.customerOrder.create({
@@ -375,7 +400,9 @@ export async function POST(request: NextRequest) {
       const vendorEntries = Object.entries(vendorGroups)
 
       for (let i = 0; i < vendorEntries.length; i++) {
-        const [vendorId, vendorItems] = vendorEntries[i]
+        const [vendorId, groupData] = vendorEntries[i]
+        const vendorItems = groupData.items
+        const vendorPlanTier = groupData.planTier
 
         const subtotal = vendorItems.reduce((sum: number, item: any) =>
           sum + (Number(item.actualPrice) * item.quantity), 0
@@ -387,13 +414,16 @@ export async function POST(request: NextRequest) {
 
         const total = subtotal + shipping + tax
 
-        // Calculate 12% commission on subtotal (not on tax/shipping)
-        const COMMISSION_RATE = 0.12
+        // Calculate dynamic commission based on vendor's plan tier
+        // 8% for PREMIUM sellers, 12% for BASIC sellers
+        const COMMISSION_RATE = vendorPlanTier === 'PREMIUM' ? 0.08 : 0.12;
         const platformFee = subtotal * COMMISSION_RATE
 
         // Net payout = (subtotal after commission) + shipping reimbursement
         // TAX IS RETAINED BY PLATFORM to pay government
-        const netPayout = (subtotal * (1 - COMMISSION_RATE)) + shipping
+        // Subtract coupon discount from net payout if they are the one who issued it
+        const thisVendorCouponDiscount = (validCoupon && validCoupon.vendorId === vendorId) ? couponDiscount : 0;
+        const netPayout = (subtotal * (1 - COMMISSION_RATE)) + shipping - thisVendorCouponDiscount;
 
         const vendorOrderNumber = `${parentOrderNumber}-V${i + 1}`
 
@@ -415,6 +445,7 @@ export async function POST(request: NextRequest) {
             shippingAddress: shippingAddress || {},
             billingAddress: shippingAddress || {},
             notes: notes || '',
+            couponId: validCoupon && validCoupon.vendorId === vendorId ? validCoupon.id : null, // Record if coupon was used
             items: {
               create: vendorItems.map((item: any) => ({
                 productId: item.productId,
@@ -509,6 +540,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       customerOrder: result.customerOrder,
+      redeemedPoints: redeemedPoints || 0,
       message: `Created order with ${Object.keys(result.vendorGroups).length} shipments`
     })
 

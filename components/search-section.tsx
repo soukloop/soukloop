@@ -1,5 +1,6 @@
 "use client";
 import { MapPin, ChevronDown, Search, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -360,25 +361,25 @@ export default function SearchSection({
             const detectedState = data.address.state;
             handleStateChange(detectedState);
           } else {
-            alert("Could not detect state from your location.");
+            toast.error("Could not detect state from your location.");
           }
         } catch (error) {
           console.error("Geocoding error:", error);
-          alert("Failed to get location details.");
+          toast.error("Failed to get location details.");
         } finally {
           setIsLoadingLocation(false);
         }
       }, (error) => {
         console.error("Geolocation error:", error);
         setIsLoadingLocation(false);
-        alert("Location access denied or unavailable.");
+        toast.error("Location access denied or unavailable.");
       }, {
         enableHighAccuracy: true,
         timeout: 10000,
         maximumAge: 0
       });
     } else {
-      alert("Geolocation is not supported by your browser");
+      toast.error("Geolocation is not supported by your browser");
     }
   };
 

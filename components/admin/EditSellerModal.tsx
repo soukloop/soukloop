@@ -117,7 +117,7 @@ export function EditSellerModal({ isOpen, onClose, verificationId, initialData, 
                     type="file"
                     ref={fileInputRefs[key]}
                     onChange={(e) => handleFileChange(key, e)}
-                    accept="image/*"
+                    accept="image/jpeg, image/png, image/webp"
                     className="hidden"
                 />
             </div>

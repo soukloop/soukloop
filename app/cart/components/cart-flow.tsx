@@ -22,7 +22,17 @@ export default function CartFlow({ savedAddresses = [], initialCartData }: CartF
     const initialOrderId = searchParams?.get("orderId");
     const isCanceled = searchParams?.get("canceled") === "true";
 
-    const [currentStep, setCurrentStep] = useState(initialOrderId ? 3 : (isCanceled ? 2 : 1));
+    const [currentStep, setCurrentStep] = useState(initialOrderId ? 3 : isCanceled ? 2 : 1);
+    const [appliedPromo, setAppliedPromo] = useState<{
+        code: string;
+        couponId: string;
+        vendorId: string;
+        discountType: string;
+        discountValue: number;
+        minOrderValue: number | null;
+    } | null>(null);
+    const [isRedeemingPoints, setIsRedeemingPoints] = useState(false);
+
 
     // Scroll to top when step changes
     useEffect(() => {
@@ -54,7 +64,12 @@ export default function CartFlow({ savedAddresses = [], initialCartData }: CartF
                         setShippingMethodId={setShippingMethodId}
                         shippingCost={shippingCost}
                         initialCartData={initialCartData}
+                        appliedPromo={appliedPromo}
+                        setAppliedPromo={setAppliedPromo}
+                        isRedeemingPoints={isRedeemingPoints}
+                        setIsRedeemingPoints={setIsRedeemingPoints}
                     />
+
                 );
             case 2:
                 return (
@@ -64,7 +79,12 @@ export default function CartFlow({ savedAddresses = [], initialCartData }: CartF
                         shippingCost={shippingCost}
                         shippingMethodId={shippingMethodId}
                         savedAddresses={savedAddresses}
+                        appliedPromo={appliedPromo}
+                        setAppliedPromo={setAppliedPromo}
+                        isRedeemingPoints={isRedeemingPoints}
+                        setIsRedeemingPoints={setIsRedeemingPoints}
                     />
+
                 );
             case 3:
                 return <OrderCompletePage />;

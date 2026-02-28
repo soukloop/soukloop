@@ -36,7 +36,6 @@ export function useConversations() {
       return data
     },
     {
-      refreshInterval: 30000, // Refresh every 30 seconds
       revalidateOnFocus: true
     }
   )
@@ -64,7 +63,6 @@ export function useMessages(conversationId: string | null) {
       return data || []
     },
     {
-      refreshInterval: 5000, // Refresh every 5 seconds for real-time feel
       revalidateOnFocus: true
     }
   )

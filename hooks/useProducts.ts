@@ -26,9 +26,12 @@ export function useProducts({ params }: UseProductsParams = {}) {
   const queryString = new URLSearchParams(queryParams).toString()
 
   // Dynamic cache key based on params to ensure SWR refetches when params change
-  const cacheKey = queryString
-    ? `/api/products?${queryString}`
-    : '/api/products'
+  // If params is explicitly undefined, we don't fetch (useful for dependent fetching)
+  const cacheKey = params === undefined
+    ? null
+    : queryString
+      ? `/api/products?${queryString}`
+      : '/api/products'
 
   const { data, error, isLoading, mutate } = useSWR(cacheKey, async () => {
     const { data, error } = await list(params)

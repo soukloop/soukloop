@@ -54,7 +54,17 @@ export function useNotifications() {
 
   // 3. Derived State
   const notifications = useMemo(() => {
-    return data ? data.flatMap(page => page.items) : [];
+    if (!data) return [];
+    const allItems = data.flatMap(page => page.items);
+
+    // De-duplicate by ID to prevent React key warnings if socket 
+    // updates overlap with API pagination/background revalidations
+    const seen = new Set();
+    return allItems.filter(item => {
+      if (!item.id || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
   }, [data]);
 
   const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === 'undefined');

@@ -90,37 +90,58 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                             </h2>
                             <span className="text-sm font-medium text-gray-400">{order.items.length} items</span>
                         </div>
-                        <div className="divide-y divide-gray-50">
-                            {order.items.map((item) => (
-                                <div key={item.id} className="p-6 flex gap-6 hover:bg-gray-50/50 transition-colors">
-                                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 shadow-sm">
-                                        <Image
-                                            src={item.product?.images?.[0]?.url || "/placeholder.svg"}
-                                            alt={item.product?.name || "Product"}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="text-base font-bold text-gray-900 hover:text-orange-600 transition-colors cursor-pointer truncate">
-                                                    {item.product?.name || "Product Deleted"}
-                                                </h3>
-                                                {item.product?.sku && (
-                                                    <p className="text-sm text-gray-400 mt-1">
-                                                        SKU: {item.product.sku}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-base font-bold text-orange-600">${item.price.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+
+                        {/* Order Items Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider font-bold">
+                                        <th className="py-4 font-semibold px-4">Item details</th>
+                                        <th className="py-4 font-semibold text-center px-4">Price</th>
+                                        <th className="py-4 font-semibold text-center px-4">Quantity</th>
+                                        <th className="py-4 font-semibold text-right px-4">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {order.items.map((item: any) => (
+                                        <tr key={item.id} className="group hover:bg-orange-50/10 transition-colors">
+                                            <td className="py-4 px-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-50 border border-gray-100 shadow-sm">
+                                                        <Image
+                                                            src={item.product?.images?.[0]?.url || "/placeholder.svg"}
+                                                            alt={item.product?.name || "Product"}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-sm font-bold text-gray-900 group-hover:text-orange-600 transition-colors cursor-pointer truncate">
+                                                            {item.product?.name || "Product Deleted"}
+                                                        </h3>
+                                                        {item.product?.sku && (
+                                                            <p className="text-xs text-gray-400 mt-0.5">
+                                                                SKU: {item.product.sku}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4 text-center text-sm font-medium text-gray-700">
+                                                ${item.price.toFixed(2)}
+                                            </td>
+                                            <td className="py-4 px-4 text-center text-sm font-medium text-gray-700">
+                                                {item.quantity}
+                                            </td>
+                                            <td className="py-4 px-4 text-right text-sm font-bold text-orange-600">
+                                                ${(item.price * item.quantity).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
+
                         <div className="bg-orange-50/30 p-8 flex flex-col items-end gap-3">
                             <div className="flex justify-between w-full max-w-xs text-sm">
                                 <span className="text-gray-500">Subtotal:</span>
@@ -134,6 +155,33 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                                 <span className="text-gray-500">Tax:</span>
                                 <span className="text-gray-900 font-medium">${order.tax.toFixed(2)}</span>
                             </div>
+
+                            {/* Discounts Section */}
+                            {(order.couponCode || order.pointsDiscount > 0) && (
+                                <div className="space-y-2 mt-2 pt-2 border-t border-orange-100/50 w-full max-w-xs">
+                                    {order.couponCode && (
+                                        <div className="flex justify-between w-full text-sm">
+                                            <span className="text-orange-600 flex items-center gap-1">
+                                                <Tag className="h-3 w-3" />
+                                                Promo ({order.couponCode}):
+                                            </span>
+                                            <span className="text-orange-600 font-medium">
+                                                -${(order.subtotal + order.shipping + order.tax - order.total - (order.pointsDiscount || 0)).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {order.pointsDiscount > 0 && (
+                                        <div className="flex justify-between w-full text-sm">
+                                            <span className="text-orange-600 flex items-center gap-1">
+                                                <CalendarHeart className="h-3 w-3" />
+                                                Points Used ({order.pointsRedeemed}):
+                                            </span>
+                                            <span className="text-orange-600 font-medium">-${order.pointsDiscount.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="h-px w-full max-w-xs bg-orange-100 my-1" />
                             <div className="flex justify-between w-full max-w-xs text-lg font-bold">
                                 <span className="text-gray-900">Grand Total:</span>
@@ -143,32 +191,31 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                     </div>
 
                     {/* Order History */}
-                    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                        <div className="px-6 py-5 border-b border-gray-50 bg-gray-50/50">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-orange-500" />
-                                Activity Log
-                            </h2>
-                        </div>
-                        <div className="p-6">
-                            <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-gray-100 before:content-['']">
-                                {order.history.length > 0 ? order.history.map((log) => (
-                                    <div key={log.id} className="relative flex items-center gap-10">
-                                        <div className="absolute left-0 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-gray-200 text-orange-600 shadow-sm transition-transform hover:scale-110 z-10">
-                                            <div className="h-2 w-2 rounded-full bg-orange-600" />
-                                        </div>
-                                        <div className="flex flex-col ml-12">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-bold text-gray-900">{log.status}</span>
-                                                <span className="text-xs text-gray-400">{formatDate(log.createdAt)}</span>
-                                            </div>
-                                            <p className="text-sm text-gray-500 mt-0.5">{log.reason || 'No details provided'}</p>
-                                        </div>
+                    <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                        <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-orange-500" />
+                            Order History
+                        </h2>
+                        <div className="space-y-6 relative">
+                            {/* Timeline line */}
+                            <div className="absolute left-[11px] top-2 bottom-0 w-0.5 bg-gray-50" />
+
+                            {order.history.length > 0 ? order.history.map((log: any, idx: number) => (
+                                <div key={log.id} className="relative pl-10">
+                                    <div className="absolute left-0 flex h-6 w-6 items-center justify-center rounded-full bg-white border border-gray-200 text-orange-600 shadow-sm z-10">
+                                        <div className="h-2 w-2 rounded-full bg-orange-600" />
                                     </div>
-                                )) : (
-                                    <p className="text-sm text-gray-400 italic">No activity logs found for this order.</p>
-                                )}
-                            </div>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-gray-900">{log.status}</span>
+                                            <span className="text-xs text-gray-400">{formatDate(log.createdAt)}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 mt-0.5">{log.reason || 'No details provided'}</p>
+                                    </div>
+                                </div>
+                            )) : (
+                                <p className="text-sm text-gray-400 italic pl-10">No activity logs found for this order.</p>
+                            )}
                         </div>
                     </div>
                 </div>

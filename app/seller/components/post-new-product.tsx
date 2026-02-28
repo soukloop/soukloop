@@ -8,6 +8,7 @@ import AboutProductStep from "./about-product-step";
 import ProductDetailsStep from "./product-details-step";
 import UploadVideoStep from "./upload-video-step";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { ProductData, initialProductData } from "./types";
 
 interface PostNewProductProps {
@@ -117,7 +118,7 @@ export default function PostNewProduct({ onShowPaymentModal }: PostNewProductPro
 
             } catch (error) {
                 console.error("Submission error:", error);
-                alert("Failed to create product. Please try again.");
+                toast.error("Failed to create product. Please try again.");
             } finally {
                 setIsSubmitting(false);
             }

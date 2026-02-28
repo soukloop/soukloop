@@ -264,7 +264,7 @@ export default function ReportIssueModal({ order, isOpen, onClose, onSuccess }: 
                                         type="file"
                                         ref={fileInputRef}
                                         className="hidden"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png, image/webp"
                                         multiple
                                         onChange={handleImageUpload}
                                     />

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import StatusBadge from "@/components/admin/StatusBadge";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface DressStyle {
     id: string;
@@ -29,6 +30,8 @@ export default function DressStyleHeader({ style }: DressStyleHeaderProps) {
     const [editName, setEditName] = useState(style.name);
     const [editCategory, setEditCategory] = useState(style.categoryType);
     const [saving, setSaving] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleSave = async () => {
         setSaving(true);
@@ -72,9 +75,13 @@ export default function DressStyleHeader({ style }: DressStyleHeaderProps) {
         }
     };
 
-    const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this style? Products using it will need to be reassigned.')) return;
+    const handleDelete = () => {
+        setIsDeleteDialogOpen(true);
+    };
 
+    const confirmDelete = async () => {
+        setIsDeleting(true);
+        setIsDeleteDialogOpen(false);
         try {
             const res = await fetch(`/api/admin/dress-styles/${style.id}`, {
                 method: 'DELETE'
@@ -89,6 +96,8 @@ export default function DressStyleHeader({ style }: DressStyleHeaderProps) {
             }
         } catch (error) {
             toast.error("Failed to delete style");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -172,6 +181,17 @@ export default function DressStyleHeader({ style }: DressStyleHeaderProps) {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Dress Style"
+                message="Are you sure you want to delete this style? Products using it will need to be reassigned."
+                type="danger"
+                confirmText="Delete"
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

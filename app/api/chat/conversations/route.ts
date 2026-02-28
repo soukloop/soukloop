@@ -60,6 +60,16 @@ export async function GET(request: NextRequest) {
                     include: {
                         sender: { select: { id: true, name: true, image: true } }
                     }
+                },
+                _count: {
+                    select: {
+                        messages: {
+                            where: {
+                                isRead: false,
+                                senderId: { not: session.user.id }
+                            }
+                        }
+                    }
                 }
             },
             orderBy: { createdAt: 'desc' }

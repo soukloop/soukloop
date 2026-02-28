@@ -128,8 +128,16 @@ export async function POST(request: NextRequest) {
                   data: {
                     status: 'SOLD'
                   },
-                  select: { id: true, status: true }
+                  select: { id: true, status: true, dressStyleId: true }
                 });
+
+                // Increment the dress style's totalSold
+                if (product.dressStyleId) {
+                  await tx.dressStyle.update({
+                    where: { id: product.dressStyleId },
+                    data: { totalSold: { increment: item.quantity || 1 } }
+                  });
+                }
 
                 // Socket update if possible
                 if ((global as any).io) {
@@ -141,21 +149,69 @@ export async function POST(request: NextRequest) {
               }
             }
           }
+          // 4. Increment Coupon Usage
+          for (const order of customerOrder.vendorOrders) {
+            if ((order as any).couponId) {
+              await tx.coupon.update({
+                where: { id: (order as any).couponId },
+                data: { currentUses: { increment: 1 } }
+              });
+            }
+          }
+        });
 
+        // 2. Process Reward Points (Logic from previous steps)
+        let pointsEarned = 0;
+        session.line_items?.data.forEach((item: any) => {
+          const rewardPoints = item.price?.product?.metadata?.reward_points;
+          if (rewardPoints) {
+            pointsEarned += (parseInt(rewardPoints) * (item.quantity || 1));
+          }
+        });
 
-          // 4. Award Reward Points (Standardized via RewardService)
-          const pointsEarned = Math.floor(Number(customerOrder.totalAmount) * REWARD_RULES.POINTS_PER_DOLLAR);
-          if (pointsEarned > 0) {
-            await RewardService.awardPoints(tx, {
+        if (pointsEarned > 0) {
+          await prisma.rewardPoint.create({
+            data: {
               userId: customerOrder.userId,
               points: pointsEarned,
               actionType: ACTION_TYPES.PURCHASE,
               referenceId: customerOrder.id,
               referenceType: REFERENCE_TYPES.ORDER,
               note: `Earned ${pointsEarned} points for Order #${customerOrder.orderNumber}`
-            });
-          }
-        });
+            }
+          });
+        }
+
+        // Deduct Redeemed Points (Passed via Metadata to ensure they aren't lost on cancellation)
+        const pointsToDeductRaw = session.metadata?.pointsToDeduct;
+        const pointsToDeduct = pointsToDeductRaw ? parseInt(pointsToDeductRaw, 10) : 0;
+
+        if (pointsToDeduct > 0) {
+          // Deduct from Balance
+          await prisma.user.update({
+            where: { id: customerOrder.userId },
+            data: {
+              rewardBalance: {
+                update: {
+                  totalRedeemed: { increment: pointsToDeduct },
+                  currentBalance: { decrement: pointsToDeduct }
+                }
+              }
+            }
+          });
+
+          // Log Redemption
+          await prisma.rewardPoint.create({
+            data: {
+              userId: customerOrder.userId,
+              points: -pointsToDeduct,
+              actionType: ACTION_TYPES.REDEEMED,
+              referenceId: customerOrder.orderNumber,
+              referenceType: REFERENCE_TYPES.REDEMPTION,
+              note: `Redeemed ${pointsToDeduct} points for discount on Order #${customerOrder.orderNumber}`
+            }
+          });
+        }
 
         // 3. Send Notifications
         try {
@@ -167,16 +223,60 @@ export async function POST(request: NextRequest) {
             currency: session.currency || 'usd'
           });
 
+          // PREPARE ENHANCED DATA
+          const shippingTotal = customerOrder.vendorOrders.reduce((sum, vo) => sum + (vo.shipping || 0), 0);
+          const subtotalTotal = customerOrder.vendorOrders.reduce((sum, vo) => sum + (vo.subtotal || 0), 0);
+
+          // Get Points Used
+          const pointsRedemption = await prisma.rewardPoint.findFirst({
+            where: {
+              userId: customerOrder.userId,
+              actionType: ACTION_TYPES.REDEEMED,
+              referenceId: customerOrder.orderNumber
+            }
+          });
+          const pointsUsedNum = pointsRedemption ? Math.abs(Number(pointsRedemption.points)) : 0;
+
+          // Get Coupon Info (if any)
+          const firstVendorOrderWithCoupon = customerOrder.vendorOrders.find(vo => (vo as any).couponId);
+          let couponCode = undefined;
+          let couponDiscountTotal = 0;
+
+          if ((firstVendorOrderWithCoupon as any)?.couponId) {
+            const coupon = await prisma.coupon.findUnique({
+              where: { id: (firstVendorOrderWithCoupon as any).couponId }
+            });
+            if (coupon) {
+              couponCode = coupon.code;
+            }
+          }
+
+          // In our Orders API, we subtract the coupon from the net payout, but the buyer pays:
+          // grandTotal = totalPriceDollars + shippingDollars - (pointsDiscount) - (promoDiscount)
+          // So the CustomerOrder.totalAmount ALREADY has promoDiscount subtracted.
+          // To show it in the email summary as "Subtotal - Promo", we need to know what that Promo amount was.
+          // We can calculate it by comparing (Subtotal + Shipping + Tax) vs (TotalAmount + PointsDiscount)
+          const grandTax = customerOrder.vendorOrders.reduce((sum, vo) => sum + (vo.tax || 0), 0);
+          const pointsDiscountDollars = pointsUsedNum * 0.01;
+          const expectedTotalWithoutPromo = subtotalTotal + shippingTotal + grandTax;
+          couponDiscountTotal = Math.max(0, expectedTotalWithoutPromo - (Number(customerOrder.totalAmount) + pointsDiscountDollars));
+
           // B. Notify Buyer: Order Confirmed
           await notifyOrderPlaced(customerOrder.userId, {
             orderId: customerOrder.id,
             orderNumber: customerOrder.orderNumber,
-            total: customerOrder.totalAmount,
+            total: Number(customerOrder.totalAmount),
             itemCount: customerOrder.vendorOrders.reduce((acc, vo: any) => acc + (vo.items?.length || 0), 0),
-            // New Data - Assuming these are stored on CustomerOrder as JSON/Fields
+            // New Data
             shippingAddress: (customerOrder as any).shippingAddress,
             paymentMethod: 'Credit Card (Stripe)',
-            estimatedDelivery: '3-5 Business Days'
+            estimatedDelivery: '3-5 Business Days',
+            subtotal: subtotalTotal,
+            shipping: shippingTotal,
+            pointsUsed: pointsUsedNum,
+            pointsGained: pointsEarned,
+            couponCode: couponCode,
+            couponDiscount: couponDiscountTotal
           });
 
           // C. Notify Sellers: New Order
@@ -201,7 +301,9 @@ export async function POST(request: NextRequest) {
                 buyerName: user?.name || 'A Customer',
                 // New Data
                 shippingAddress: (vo as any).shippingAddress || (customerOrder as any).shippingAddress,
-                notes: (vo as any).notes || (customerOrder as any).notes
+                notes: (vo as any).notes || (customerOrder as any).notes,
+                couponCode: (vo as any).couponId === (firstVendorOrderWithCoupon as any)?.couponId ? couponCode : undefined,
+                couponDiscount: (vo as any).couponId === (firstVendorOrderWithCoupon as any)?.couponId ? couponDiscountTotal : 0
               });
             }
           }

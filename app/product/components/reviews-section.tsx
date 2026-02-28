@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useReviews, useReviewStatus } from "@/hooks/useReviews";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 interface ReviewsSectionProps {
     productId: string;
@@ -42,7 +43,7 @@ export default function ReviewsSection({ productId }: ReviewsSectionProps) {
             });
             setComment("");
         } catch (err: any) {
-            alert(err.message || "Failed to submit review");
+            toast.error(err.message || "Failed to submit review");
         } finally {
             setIsSubmitting(false);
         }

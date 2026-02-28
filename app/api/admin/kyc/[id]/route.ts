@@ -7,6 +7,7 @@ import { Role } from '@prisma/client'
 import { decrypt, encrypt } from '@/lib/encryption'
 import { notifyKycApproved, notifyKycRejected, notifyKycInfoNeeded } from '@/lib/notifications/index'
 import { outbox } from '@/lib/outbox'
+import { generateUniqueSlug } from '@/lib/slug'
 
 const actionSchema = z.object({
     action: z.enum(['approve', 'reject', 'update_details']),
@@ -179,7 +180,7 @@ export async function PATCH(
             const updateData: any = {}
             if (details.govIdType) updateData.govIdType = details.govIdType
             if (details.taxIdType) updateData.taxIdType = details.taxIdType
-            if (details.sellerAddressId) updateData.sellerAddressId = details.sellerAddressId
+            if (details.businessAddressId) updateData.businessAddressId = details.businessAddressId
             if (details.govIdFrontUrl) updateData.govIdFrontUrl = details.govIdFrontUrl
             if (details.govIdBackUrl) updateData.govIdBackUrl = details.govIdBackUrl
 
@@ -206,7 +207,7 @@ export async function PATCH(
 
         const verification = await prisma.userVerification.findUnique({
             where: { id },
-            select: { userId: true, status: true }
+            select: { userId: true, status: true, user: { select: { name: true } } }
         })
 
         if (!verification) {
@@ -246,10 +247,11 @@ export async function PATCH(
                         data: { kycStatus: 'APPROVED', isActive: true }
                     })
                 } else {
+                    const slug = await generateUniqueSlug(verification.user.name || 'Store', tx.vendor);
                     await tx.vendor.create({
                         data: {
                             userId: verification.userId,
-                            slug: `seller-${verification.userId.slice(0, 8)}-${Date.now()}`,
+                            slug,
                             kycStatus: 'APPROVED',
                             isActive: true
                         }

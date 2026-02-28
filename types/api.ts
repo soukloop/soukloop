@@ -80,6 +80,7 @@ export interface Product {
   vendorId: string
   title: string
   name: string
+  slug: string
   description?: string
   priceCents: number
   stock: number

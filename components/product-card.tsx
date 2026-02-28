@@ -142,15 +142,16 @@ export default function ProductCard({
     const handleCardClick = () => {
         // In manage mode, maybe we don't want to navigate to product details on card click?
         // Or keep behavior consistent. Let's keep it consistent for now.
-        router.push(`/product/${product.slug}`);
+        router.push(`/product/${product.slug || product.id}`);
     };
 
     const isSold = (product as any).quantity === 0 || (product as any).status === 'SOLD';
     const isProcessing = (product as any).status === 'PROCESSING';
     const isOutOfStock = !isSold && !isProcessing && (product.quantity ?? 0) <= 0;
+    const isDraft = (product as any).status === 'DRAFT';
     // Helper helper to check if product is new (within 48 hours)
-    // Only show NEW if NOT sold
-    const showNewBadge = isNew && !isManageMode && !isSold;
+    // Only show NEW if NOT sold and NOT draft
+    const showNewBadge = isNew && !isManageMode && !isSold && !isDraft;
 
     return (
         <div
@@ -191,7 +192,7 @@ export default function ProductCard({
                             {activeMenu && (
                                 <div className="absolute right-0 top-full mt-2 w-40 sm:w-44 origin-top-right rounded-xl border border-gray-100 bg-white p-1 shadow-xl ring-1 ring-black/5 z-50 animate-in fade-in zoom-in-95 duration-200">
                                     {/* Mark as Sold - Only for ACTIVE products */}
-                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
+                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.status !== 'DRAFT' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
                                         <button
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                                             onClick={(e) => {
@@ -205,7 +206,7 @@ export default function ProductCard({
                                         </button>
                                     )}
                                     {/* Activate - Only for user-deactivated (INACTIVE) products */}
-                                    {(product.status === 'INACTIVE' || (product.isActive === false && product.status !== 'BLOCKED')) && !product.hasPendingStyle && (
+                                    {(product.status === 'INACTIVE' || (product.isActive === false && product.status !== 'BLOCKED' && product.status !== 'DRAFT')) && !product.hasPendingStyle && (
                                         <button
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-green-700 hover:bg-green-50 hover:text-green-900 transition-colors"
                                             onClick={(e) => {
@@ -219,7 +220,7 @@ export default function ProductCard({
                                         </button>
                                     )}
                                     {/* Deactivate - Only for ACTIVE products */}
-                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
+                                    {product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && product.status !== 'DRAFT' && product.isActive !== false && !product.hasPendingStyle && product.status !== 'SOLD' && (
                                         <button
                                             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                                             onClick={(e) => {
@@ -285,7 +286,7 @@ export default function ProductCard({
                     fill
                     priority={priority}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'} ${isSold ? "grayscale" : ""
+                    className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'} ${isSold || isDraft ? "grayscale" : ""
                         }`}
                     onLoad={() => setIsImageLoaded(true)}
                 />
@@ -322,6 +323,13 @@ export default function ProductCard({
                 {isProcessing && !product.hasPendingStyle && (
                     <div className="absolute top-2 left-2 bg-blue-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                         PROCESSING
+                    </div>
+                )}
+
+                {/* DRAFT Badge */}
+                {isDraft && !product.hasPendingStyle && (
+                    <div className="absolute top-2 left-2 bg-gray-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
+                        DRAFT
                     </div>
                 )}
 
@@ -420,6 +428,17 @@ export default function ProductCard({
                             >
                                 Manage
                             </Button>
+                        </div>
+                    ) : isDraft ? (
+                        // Draft Box (Clickable via card wrapper)
+                        <div
+                            className={`flex w-full items-center justify-center rounded-lg border border-gray-500 bg-white font-bold text-gray-500 uppercase tracking-wide cursor-pointer hover:bg-gray-50 transition-colors ${compact ? "py-1.5 text-[10px] sm:text-xs" : "py-2 sm:py-3 text-xs sm:text-sm"}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onEdit) onEdit(product);
+                            }}
+                        >
+                            Publish Draft
                         </div>
                     ) : isSold ? (
                         // Sold Box (Non-clickable, Orange Border)

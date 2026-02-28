@@ -9,9 +9,8 @@ import { useRouter } from "next/navigation";
 import {
     getGroupedDressStyles,
     getLatestProductsByDressStyle,
-    type GroupedDressStyles,
-    type MegaMenuProduct
 } from "@/actions/product-data";
+import type { GroupedDressStyles, MegaMenuProduct } from "@/types/product";
 import ProductCard from "@/components/product-card";
 import { CardSkeleton } from "@/components/ui/skeletons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

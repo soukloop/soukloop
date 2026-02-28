@@ -6,6 +6,7 @@ const nextConfig = {
 
   // Image optimization
   images: {
+    minimumCacheTTL: 604800, // 7 days: Prevents image cache disk explosion from bots
     remotePatterns: [
       {
         protocol: 'https',
@@ -30,6 +31,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'graph.facebook.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       },
     ],
     formats: ['image/webp', 'image/avif'],

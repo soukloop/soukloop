@@ -36,7 +36,6 @@ export function useDashboardStats(period: 'daily' | 'weekly' = 'daily') {
         `/api/seller/dashboard-stats?period=${period}`,
         fetcher,
         {
-            refreshInterval: 60000, // Refresh every minute
             revalidateOnFocus: true,
             dedupingInterval: 5000, // Dedupe requests within 5 seconds
         }

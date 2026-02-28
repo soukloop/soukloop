@@ -321,6 +321,64 @@ export default function PostNewProductPage() {
         }
     };
 
+    const handleSaveDraft = async () => {
+        if (isSubmittingRef.current) return;
+
+        // We still need at least a name
+        if (!productData.title && !productData.name) {
+            toast.error("Please provide at least a Product Name to save a draft.");
+            return;
+        }
+
+        if (productData.photos.some(p => p.isUploading)) {
+            toast.info("Uploads in progress. Please wait before saving.");
+            return;
+        }
+
+        isSubmittingRef.current = true;
+        setIsSubmitting(true);
+        try {
+            const validPhotos = productData.photos.filter(p => !p.uploadError && (p.uploadUrl || p.image));
+            const finalImages = validPhotos.map((p, index) => ({
+                url: p.uploadUrl || p.image!,
+                alt: p.label,
+                order: index,
+                isPrimary: index === 0
+            }));
+
+            let videoUrl = productData.videoUploadUrl || productData.video;
+            if (videoUrl?.startsWith('blob:')) videoUrl = null;
+
+            const { photos, videoFile, ...cleanProductData } = productData;
+            const payload = {
+                ...cleanProductData,
+                price: cleanProductData.price ? parseFloat(String(cleanProductData.price)) : undefined,
+                comparePrice: cleanProductData.comparePrice ? parseFloat(String(cleanProductData.comparePrice)) : undefined,
+                images: finalImages,
+                video: videoUrl,
+                dressStyleId: cleanProductData.dressStyleId || undefined,
+                isDraft: true // <--- CRITICAL FLAG for backend
+            };
+
+            const res = await fetch(isEditMode ? `/api/products/${editProductId}` : "/api/products", {
+                method: isEditMode ? "PATCH" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) throw new Error("Failed to save draft");
+
+            toast.success("Draft saved successfully!");
+            clearPersistence();
+            router.push("/seller/manage-listings");
+        } catch (error: any) {
+            toast.error(error.message);
+        } finally {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+        }
+    };
+
     const handleBack = () => addProductStep > 1 && setAddProductStep(addProductStep - 1);
 
     if (isLoadingProduct) return (
@@ -365,10 +423,18 @@ export default function PostNewProductPage() {
                         <Button
                             variant="ghost"
                             onClick={handleBack}
-                            disabled={addProductStep === 1}
+                            disabled={addProductStep === 1 || isSubmitting}
                             className={`h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold transition-colors ${addProductStep === 1 ? "hidden" : "bg-white text-gray-500 hover:bg-gray-50 shadow-sm border border-gray-100"}`}
                         >
                             Go Back
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleSaveDraft}
+                            disabled={isSubmitting || productData.photos.some(p => p.isUploading)}
+                            className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold"
+                        >
+                            Save as Draft
                         </Button>
                         <StatefulButton
                             onClick={handleNext}
@@ -380,7 +446,7 @@ export default function PostNewProductPage() {
                             loadingText={isEditMode ? "Saving..." : "Creating..."}
                             className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold text-white bg-[#E87A3F] hover:bg-[#d96d34] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {addProductStep === 4 ? (isEditMode ? "Save Changes" : "Create Product") : "Next"}
+                            {addProductStep === 4 ? (isEditMode ? "Save Changes" : "Publish Product") : "Next"}
                         </StatefulButton>
                     </div>
                 </div>

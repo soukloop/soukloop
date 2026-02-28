@@ -239,12 +239,16 @@ export async function PATCH(
       hasPendingStyle: body.hasPendingStyle !== undefined ? body.hasPendingStyle : undefined
     }
 
-    // Handle explicit status updates
-    if (body.status === 'INACTIVE') {
+    // Handle explicit status updates and drafts
+    if (body.isDraft) {
+      updateData.isActive = false;
+      updateData.status = 'DRAFT';
+    } else if (body.status === 'INACTIVE') {
       updateData.isActive = false;
     } else if (body.status === 'SOLD') {
       updateData.status = 'SOLD';
-    } else if (body.status === 'ACTIVE') {
+    } else if (body.status === 'ACTIVE' || (!body.isDraft && existingProduct.status === 'DRAFT')) {
+      // If publishing a draft or explicitly activating
       updateData.isActive = true;
       updateData.status = 'ACTIVE';
     }

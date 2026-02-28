@@ -47,7 +47,7 @@ function customerOrderToDisplay(order: CustomerOrder): DisplayOrder {
   order.vendorOrders?.forEach(vo => {
     vo.items?.forEach(item => {
       // Prefer extracting slug if available in the type, else default to processing name
-      const slug = (item.product as any)?.slug || item.product?.name?.toLowerCase().replace(/\s+/g, '-');
+      const slug = (item.product as any)?.slug || (item.product as any)?.id || item.product?.name?.toLowerCase().replace(/\s+/g, '-');
       if (slug && !productSlug) productSlug = slug;
 
       if (item.product?.name || item.product?.title) {

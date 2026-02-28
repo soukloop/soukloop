@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function HelpLinePage() {
     const [showContactForm, setShowContactForm] = useState(false);
@@ -17,7 +18,7 @@ export default function HelpLinePage() {
         // TODO: API call to send message
         console.log('Submit helpline message:', formData);
         setFormData({ name: '', email: '', message: '' });
-        alert('Message sent successfully!');
+        toast.success('Message sent successfully!');
     };
 
     return (

@@ -112,12 +112,15 @@ model Vendor {
   reviewCount        Int                 @default(0) @map("review_count")
   walletBalance      Decimal             @default(0) @map("wallet_balance") @db.Decimal(10, 2)
   rewardBalance      Int                 @default(0) @map("reward_balance")
+  planTier           SubscriptionTier    @default(BASIC) @map("plan_tier")
   orders             Order[]
   payouts            Payout[]
   products           Product[]
+  subscriptions      Subscription[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   walletTransactions WalletTransaction[]
   bankAccounts       BankAccount[]
+  coupons            Coupon[]
 
   @@index([createdAt])
   @@index([kycStatus, isActive]) // Optimization for Product Query Joins
@@ -308,9 +311,11 @@ model Order {
   commissionRate      Float                @default(0.12) @map("commission_rate")
   netPayout           Float                @default(0) @map("net_payout")
   platformFee         Float                @default(0) @map("platform_fee")
+  couponId            String?              @map("coupon_id")
   delivery            Delivery?
   history             OrderHistory[]
   items               OrderItem[]
+  coupon              Coupon?              @relation(fields: [couponId], references: [id])
   customerOrder       CustomerOrder?       @relation(fields: [customerOrderId], references: [id], onDelete: Cascade)
   user                User                 @relation(fields: [userId], references: [id])
   vendor              Vendor               @relation(fields: [vendorId], references: [id])
@@ -585,6 +590,29 @@ model Settings {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model Coupon {
+  id              String   @id @default(uuid())
+  vendorId        String   @map("vendor_id")
+  code            String   @unique
+  discountType    String   @default("PERCENTAGE") // PERCENTAGE or FIXED
+  discountValue   Float    @map("discount_value")
+  minOrderValue   Float?   @map("min_order_value")
+  maxUses         Int?     @map("max_uses")
+  currentUses     Int      @default(0) @map("current_uses")
+  startDate       DateTime @default(now()) @map("start_date")
+  endDate         DateTime? @map("end_date")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  orders          Order[]
+
+  @@index([vendorId])
+  @@index([code])
+  @@map("coupons")
 }
 
 model SupportTicket {
@@ -908,6 +936,8 @@ model DressStyle {
   categoryType String              @map("category_type")  // display label only, not used for uniqueness
   categoryId   String?             @map("category_id")
   status       String              @default("approved") @db.VarChar(20)
+  totalProducts Int                @default(0) @map("total_products")
+  totalSold    Int                 @default(0) @map("total_sold")
   createdAt    DateTime            @default(now()) @map("created_at")
   updatedAt    DateTime            @updatedAt @map("updated_at")
   requests     DressStyleRequest[]
@@ -1065,3 +1095,30 @@ model Testimonial {
   
   @@map("testimonials")
 }
+
+enum SubscriptionTier {
+  BASIC
+  PREMIUM
+}
+
+model Subscription {
+  id                   String           @id @default(uuid())
+  vendorId             String           @map("vendor_id")
+  stripeCustomerId     String?          @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?          @unique @map("stripe_subscription_id")
+  stripePriceId        String?          @map("stripe_price_id")
+  tier                 SubscriptionTier @default(BASIC)
+  status               String           @default("active") // active, canceled, past_due, incomplete
+  currentPeriodStart   DateTime         @map("current_period_start")
+  currentPeriodEnd     DateTime         @map("current_period_end")
+  cancelAtPeriodEnd    Boolean          @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  vendor               Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([status])
+  @@map("subscriptions")
+}
+

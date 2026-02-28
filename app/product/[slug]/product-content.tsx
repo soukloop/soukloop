@@ -98,25 +98,26 @@ export default function ProductContent({ slug }: { slug?: string }) {
     const productLocation = (product as any)?.location;
 
     // Recommendations data - each section fetches its own data
-    const { data: sellerProducts } = useProducts({
-        params: vendorUserId ? { userId: vendorUserId, limit: 8 } : undefined
-    });
+    // Only fetch if product data is already available to avoid "fetch all" during main product load
+    const { data: sellerProducts } = useProducts(
+        product ? { params: vendorUserId ? { userId: vendorUserId, limit: 8 } : undefined } : undefined
+    );
 
-    const { data: occasionProducts } = useProducts({
-        params: productOccasion ? { occasion: productOccasion, limit: 8 } : undefined
-    });
+    const { data: occasionProducts } = useProducts(
+        product ? { params: productOccasion ? { occasion: productOccasion, limit: 8 } : undefined } : undefined
+    );
 
-    const { data: dressProducts } = useProducts({
-        params: productDress ? { dress: productDress, limit: 8 } : undefined
-    });
+    const { data: dressProducts } = useProducts(
+        product ? { params: productDress ? { dress: productDress, limit: 8 } : undefined } : undefined
+    );
 
-    const { data: brandProducts } = useProducts({
-        params: productBrand ? { brand: productBrand, limit: 8 } : undefined
-    });
+    const { data: brandProducts } = useProducts(
+        product ? { params: productBrand ? { brand: productBrand, limit: 8 } : undefined } : undefined
+    );
 
-    const { data: locationProducts } = useProducts({
-        params: productLocation ? { location: productLocation, limit: 8 } : undefined
-    });
+    const { data: locationProducts } = useProducts(
+        product ? { params: productLocation ? { location: productLocation, limit: 8 } : undefined } : undefined
+    );
 
     // Use real product images from API, fallback to placeholder
     const productImages =
@@ -155,10 +156,10 @@ export default function ProductContent({ slug }: { slug?: string }) {
                 router.push(`/chats?conversation=${conversation.id}`);
             } else {
                 const error = await res.json();
-                alert(error.error || "Failed to start chat");
+                toast.error(error.error || "Failed to start chat");
             }
         } catch (error) {
-            alert("Failed to start chat");
+            toast.error("Failed to start chat");
         } finally {
             setIsStartingChat(false);
         }
@@ -250,7 +251,8 @@ export default function ProductContent({ slug }: { slug?: string }) {
                     )}
 
                     {/* Loading State - Shimmer Skeleton */}
-                    {isLoading && <ProductSkeleton />}
+                    {/* Only show loader if we don't have product data yet */}
+                    {isLoading && !product && <ProductSkeleton />}
 
                     {/* Error State */}
                     {error && !isLoading && (
@@ -625,7 +627,7 @@ export default function ProductContent({ slug }: { slug?: string }) {
                                     <button
                                         onClick={() => {
                                             navigator.clipboard.writeText(window.location.href);
-                                            alert("Link copied to clipboard!");
+                                            toast.success("Link copied to clipboard!");
                                         }}
                                         className="flex items-center gap-2 text-sm font-bold text-gray-400 transition-colors hover:text-[#E87A3F]"
                                     >

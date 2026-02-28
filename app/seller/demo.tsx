@@ -1508,7 +1508,7 @@ export default function Dashboard() {
                       id: product.id,
                       name: product.title,
                       price: product.priceCents / 100,
-                      images: [{ url: product.image }],
+                      images: [{ url: (product as any).image || '/placeholder.svg' }],
                     })}
                     className="bg-orange-500 font-medium text-white hover:bg-orange-600"
                     style={{
@@ -1705,8 +1705,8 @@ export default function Dashboard() {
                   >
                     <div
                       className={`flex size-4 items-center justify-center rounded-full border-2 ${shapeByDateFilter === option.label
-                          ? "border-orange-500"
-                          : "border-gray-300"
+                        ? "border-orange-500"
+                        : "border-gray-300"
                         }`}
                       onClick={() => setShapeByDateFilter(option.label)}
                     >
@@ -1746,8 +1746,8 @@ export default function Dashboard() {
                   >
                     <div
                       className={`flex size-4 items-center justify-center rounded-full border-2 ${completedDateFilter === option.label
-                          ? "border-orange-500"
-                          : "border-gray-300"
+                        ? "border-orange-500"
+                        : "border-gray-300"
                         }`}
                       onClick={() => setCompletedDateFilter(option.label)}
                     >
@@ -1786,8 +1786,8 @@ export default function Dashboard() {
                   >
                     <div
                       className={`flex size-4 items-center justify-center rounded-full border-2 ${shippingFilter === option.label
-                          ? "border-orange-500"
-                          : "border-gray-300"
+                        ? "border-orange-500"
+                        : "border-gray-300"
                         }`}
                       onClick={() => setShippingFilter(option.label)}
                     >
@@ -1825,8 +1825,8 @@ export default function Dashboard() {
                   >
                     <div
                       className={`flex size-4 items-center justify-center rounded-full border-2 ${completedStatusFilter === option.label
-                          ? "border-orange-500"
-                          : "border-gray-300"
+                        ? "border-orange-500"
+                        : "border-gray-300"
                         }`}
                       onClick={() => setCompletedStatusFilter(option.label)}
                     >
@@ -3026,8 +3026,8 @@ export default function Dashboard() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`relative px-1 pb-4 text-sm font-medium transition-colors ${activeTab === tab
-                    ? "text-orange-500"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "text-orange-500"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 {tab}
@@ -3045,8 +3045,8 @@ export default function Dashboard() {
             <div
               key={notification.id}
               className={`flex items-start gap-4 p-6 ${index !== notifications.length - 1
-                  ? "border-b border-gray-100"
-                  : ""
+                ? "border-b border-gray-100"
+                : ""
                 }`}
             >
               <div className="shrink-0">
@@ -3378,28 +3378,28 @@ export default function Dashboard() {
               <button
                 onClick={() => handleNavigation(item.label)}
                 className={`flex h-[52px] w-[208px] items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors ${(item.label === "Dashboard" && currentView === "dashboard") ||
-                    (item.label === "Post New Product" &&
-                      currentView === "postNewProduct") ||
-                    (item.label === "Promotions" &&
-                      currentView === "promotions") ||
-                    (item.label === "Manage Listings" &&
-                      currentView === "manageListings") ||
-                    (item.label === "Orders" && currentView === "orders") ||
-                    (item.label === "Analytics & Stats" &&
-                      currentView === "analytics") ||
-                    (item.label === "Manage My Shop" &&
-                      currentView === "manageMyShop") ||
-                    (item.label === "Withdraw Earnings" &&
-                      currentView === "withdrawEarnings") ||
-                    (item.label === "Coupons & Offers" &&
-                      currentView === "couponsOffers") ||
-                    (item.label === "Customer Chats" &&
-                      currentView === "customerChats") ||
-                    (item.label === "Notifications" &&
-                      currentView === "notifications") ||
-                    (item.label === "Help Line" && currentView === "helpLine")
-                    ? "bg-orange-500 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
+                  (item.label === "Post New Product" &&
+                    currentView === "postNewProduct") ||
+                  (item.label === "Promotions" &&
+                    currentView === "promotions") ||
+                  (item.label === "Manage Listings" &&
+                    currentView === "manageListings") ||
+                  (item.label === "Orders" && currentView === "orders") ||
+                  (item.label === "Analytics & Stats" &&
+                    currentView === "analytics") ||
+                  (item.label === "Manage My Shop" &&
+                    currentView === "manageMyShop") ||
+                  (item.label === "Withdraw Earnings" &&
+                    currentView === "withdrawEarnings") ||
+                  (item.label === "Coupons & Offers" &&
+                    currentView === "couponsOffers") ||
+                  (item.label === "Customer Chats" &&
+                    currentView === "customerChats") ||
+                  (item.label === "Notifications" &&
+                    currentView === "notifications") ||
+                  (item.label === "Help Line" && currentView === "helpLine")
+                  ? "bg-orange-500 text-white"
+                  : "text-gray-600 hover:bg-gray-50"
                   }`}
               >
                 <item.icon className="size-5" />
@@ -3484,8 +3484,8 @@ export default function Dashboard() {
                         setShowStatusDropdown(false);
                       }}
                       className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${currentStatus === "Active"
-                          ? "font-medium text-orange-500"
-                          : "text-gray-700"
+                        ? "font-medium text-orange-500"
+                        : "text-gray-700"
                         }`}
                     >
                       Active
@@ -3504,8 +3504,8 @@ export default function Dashboard() {
                           setShowStatusModal(true); // Show modal for these
                         }}
                         className={`w-full px-4 py-2 text-left hover:bg-gray-50 ${currentStatus === status
-                            ? "font-medium text-orange-500"
-                            : "text-gray-700"
+                          ? "font-medium text-orange-500"
+                          : "text-gray-700"
                           }`}
                       >
                         {status}
@@ -3542,8 +3542,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-1">
                     <span
                       className={`text-sm ${metric.changeType === "up"
-                          ? "text-green-600"
-                          : "text-red-600"
+                        ? "text-green-600"
+                        : "text-red-600"
                         }`}
                     >
                       {metric.change}
@@ -3637,8 +3637,8 @@ export default function Dashboard() {
                         <td className="whitespace-nowrap px-6 py-4">
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-medium ${order.status === "Pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
                               }`}
                           >
                             {order.status}
@@ -3928,8 +3928,8 @@ export default function Dashboard() {
                 <label
                   key={plan.id}
                   className={`block cursor-pointer rounded-2xl border-2 p-4 transition-colors ${selectedPlan === plan.id
-                      ? "border-[#E55A3C] bg-[#FFF5F3]"
-                      : "border-gray-200 bg-white hover:border-gray-300"
+                    ? "border-[#E55A3C] bg-[#FFF5F3]"
+                    : "border-gray-200 bg-white hover:border-gray-300"
                     }`}
                 >
                   <div className="flex items-center justify-between">
@@ -4252,7 +4252,7 @@ export default function Dashboard() {
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg, image/png, image/webp"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
                     setUploadedImages((prev) => [...prev, ...files]);
@@ -4755,14 +4755,14 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => setDiscountType("percentage")}
                   className={`flex h-10 items-center gap-3 rounded-full border-2 px-4 py-1 transition-colors ${discountType === "percentage"
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-300 bg-white"
+                    ? "border-orange-500 bg-orange-50"
+                    : "border-gray-300 bg-white"
                     }`}
                 >
                   <div
                     className={`flex size-4 items-center justify-center rounded-full border-2 ${discountType === "percentage"
-                        ? "border-orange-500"
-                        : "border-gray-300"
+                      ? "border-orange-500"
+                      : "border-gray-300"
                       }`}
                   >
                     {discountType === "percentage" && (
@@ -4778,14 +4778,14 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => setDiscountType("fixed")}
                   className={`flex h-10 items-center gap-3 rounded-full border-2 px-4 py-1 transition-colors ${discountType === "fixed"
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-300 bg-white"
+                    ? "border-orange-500 bg-orange-50"
+                    : "border-gray-300 bg-white"
                     }`}
                 >
                   <div
                     className={`flex size-4 items-center justify-center rounded-full border-2 ${discountType === "fixed"
-                        ? "border-orange-500"
-                        : "border-gray-300"
+                      ? "border-orange-500"
+                      : "border-gray-300"
                       }`}
                   >
                     {discountType === "fixed" && (
@@ -5595,8 +5595,8 @@ export default function Dashboard() {
                     <button
                       onClick={() => setActiveTab("USPS")}
                       className={`font-medium transition-colors ${activeTab === "USPS"
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       style={{
                         width: "95px",
@@ -5609,8 +5609,8 @@ export default function Dashboard() {
                     <button
                       onClick={() => setActiveTab("UPS")}
                       className={`font-medium transition-colors ${activeTab === "UPS"
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       style={{
                         width: "95px",

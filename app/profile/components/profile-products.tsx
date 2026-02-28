@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { deleteProductAction, updateProductStatusAction } from "@/src/features/seller/actions";
 import { useRouter, useSearchParams } from "next/navigation";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ProfileProductsProps {
     userId: string;
@@ -43,8 +44,12 @@ export default function ProfileProducts({
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [animatingId, setAnimatingId] = useState<string | null>(null);
-    const [toast, setToast] = useState(false);
+    const [toastOpen, setToastOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
+
+    // Delete Confirmation State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<string | null>(null);
     const router = useRouter();
     const ITEMS_PER_PAGE = 6;
 
@@ -106,8 +111,8 @@ export default function ProfileProducts({
         setTimeout(async () => {
             await addItem(product.id, 1);
             setAnimatingId(null);
-            setToast(true);
-            setTimeout(() => setToast(false), 2500);
+            setToastOpen(true);
+            setTimeout(() => setToastOpen(false), 2500);
         }, 1200);
     };
 
@@ -116,16 +121,24 @@ export default function ProfileProducts({
         router.push(`/seller/post-new-product?edit=${product.id}`);
     };
 
-    const handleDelete = async (productId: string) => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
+    const handleDelete = (productId: string) => {
+        setProductToDelete(productId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
+
         startTransition(async () => {
-            const result = await deleteProductAction(productId);
+            const result = await deleteProductAction(productToDelete);
             if (result.success) {
                 toast.success("Product deleted successfully");
                 mutate();
             } else {
                 toast.error(result.error || "Failed to delete product");
             }
+            setIsDeleteDialogOpen(false);
+            setProductToDelete(null);
         });
     };
 
@@ -179,7 +192,7 @@ export default function ProfileProducts({
                         categoryFromURL={category}
                         onCategoryChange={(cat) => { setCategory(cat); setCurrentPage(1); }}
                         categories={filtersData.categories}
-                        brands={filtersData.brands}
+                        brands={filtersData.brands.map(b => ({ id: b, name: b }))}
                         allDressStyles={filtersData.dressStyles}
                     />
                 </aside>
@@ -248,7 +261,6 @@ export default function ProfileProducts({
                                                     isActive: product.isActive,
                                                     averageRating: product.averageRating,
                                                     reviewCount: product.reviewCount,
-                                                    reviewCount: product.reviewCount,
                                                     createdAt: product.createdAt,
                                                     pendingOrderCount: product.pendingOrderCount
                                                 }}
@@ -291,7 +303,7 @@ export default function ProfileProducts({
             </div>
 
             <AnimatePresence>
-                {toast && (
+                {toastOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 100 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -302,6 +314,17 @@ export default function ProfileProducts({
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ConfirmDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={confirmDelete}
+                title="Delete Product"
+                message="Are you sure you want to delete this product? This action cannot be undone."
+                type="danger"
+                confirmText="Delete"
+                isLoading={isPending}
+            />
         </div>
     );
 }
