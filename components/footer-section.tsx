@@ -40,12 +40,6 @@ export default function FooterSection() {
               <Link href="#" className="group flex size-9 items-center justify-center rounded-full border border-black bg-black transition-colors hover:opacity-90">
                 <Twitter className="size-4 text-white" />
               </Link>
-              <Link href="#" className="group flex size-9 items-center justify-center rounded-full border border-[#E4405F] bg-[#E4405F] transition-colors hover:opacity-90">
-                <Instagram className="size-4 text-white" />
-              </Link>
-              <Link href="#" className="group flex size-9 items-center justify-center rounded-full border border-[#E60023] bg-[#E60023] transition-colors hover:opacity-90">
-                <div className="font-bold text-white">P</div>
-              </Link>
               <Link href="#" className="group flex size-9 items-center justify-center rounded-full border border-[#FF0000] bg-[#FF0000] transition-colors hover:opacity-90">
                 <Youtube className="size-4 text-white" />
               </Link>

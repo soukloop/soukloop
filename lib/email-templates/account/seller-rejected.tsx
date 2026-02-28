@@ -1,10 +1,10 @@
 import {
     Section,
     Text,
-    Button,
     Heading
 } from '@react-email/components';
-import { EmailWrapper } from '../components/email-wrapper';
+import { EmailLayout } from '../components/email-layout';
+import { EmailButton } from '../components/email-button';
 import * as React from 'react';
 
 interface SellerRejectedEmailProps {
@@ -19,47 +19,96 @@ export const SellerRejectedEmail = ({
     actionUrl = process.env.NEXTAUTH_URL + '/seller/status'
 }: SellerRejectedEmailProps) => {
     return (
-        <EmailWrapper preview="Update on Your Seller Application">
-            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+        <EmailLayout preview="Update on Your Seller Application">
+            <Heading style={heading}>
                 Application Review Update
             </Heading>
-            <Text className="text-black text-[16px] leading-[24px]">
+            <Text style={paragraph}>
                 Dear {userName},
             </Text>
-            <Text className="text-black text-[16px] leading-[24px]">
+            <Text style={paragraph}>
                 Thank you for your interest in becoming a seller on SoukLoop. We appreciate the time you took to submit your application.
             </Text>
-            <Text className="text-black text-[16px] leading-[24px]">
+            <Text style={paragraph}>
                 After careful review, we regret to inform you that we cannot approve your seller application at this time.
             </Text>
 
-            <Section className="bg-[#f9f9f9] border border-[#e5e5e5] rounded-[8px] p-[20px] my-[24px]">
-                <Text className="text-[#E87A3F] text-[14px] font-bold uppercase tracking-wider m-0 mb-[8px]">
+            <Section style={infoBox}>
+                <Text style={infoBoxTitle}>
                     Reason for Rejection:
                 </Text>
-                <Text className="text-black text-[16px] leading-[24px] m-0">
+                <Text style={infoBoxText}>
                     {rejectionReason}
                 </Text>
             </Section>
 
-            <Text className="text-black text-[16px] leading-[24px]">
+            <Text style={paragraph}>
                 If you believe this decision was made in error or if you have corrected the issues mentioned above, you are welcome to submit a new application with the necessary updates.
             </Text>
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-                <Button
-                    className="bg-[#E87A3F] rounded text-white text-[16px] font-semibold no-underline text-center px-6 py-4"
-                    href={actionUrl}
-                >
+            <div style={buttonContainer}>
+                <EmailButton href={actionUrl}>
                     Review Your Application Status
-                </Button>
-            </Section>
+                </EmailButton>
+            </div>
 
-            <Text className="text-[#666666] text-[14px] leading-[24px] mt-[32px]">
+            <Text style={footerText}>
                 If you have any questions or require further clarification, please don't hesitate to contact our support team.
             </Text>
-        </EmailWrapper>
+        </EmailLayout>
     );
+};
+
+// Styles
+const heading = {
+    fontSize: '24px',
+    fontWeight: 'normal',
+    color: '#1a1a1a',
+    margin: '30px 0',
+    textAlign: 'center' as const
+};
+
+const paragraph = {
+    fontSize: '16px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '0 0 16px 0'
+};
+
+const infoBox = {
+    backgroundColor: '#f9f9f9',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '24px 0'
+};
+
+const infoBoxTitle = {
+    color: '#E87A3F',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase' as const,
+    letterSpacing: 'wider',
+    margin: '0 0 8px 0'
+};
+
+const infoBoxText = {
+    color: '#1a1a1a',
+    fontSize: '16px',
+    lineHeight: '1.6',
+    margin: '0'
+};
+
+const footerText = {
+    fontSize: '14px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '32px 0 0 0'
+};
+
+const buttonContainer = {
+    textAlign: 'center' as const,
+    margin: '32px 0'
 };
 
 export default SellerRejectedEmail;
