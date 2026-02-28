@@ -1,10 +1,10 @@
 import {
     Section,
     Text,
-    Button,
     Heading
 } from '@react-email/components';
-import { EmailWrapper } from '../components/email-wrapper';
+import { EmailLayout } from '../components/email-layout';
+import { EmailButton } from '../components/email-button';
 import * as React from 'react';
 
 interface LoginAlertEmailProps {
@@ -23,42 +23,88 @@ export const LoginAlertEmail = ({
     actionUrl = process.env.NEXTAUTH_URL + '/settings/security'
 }: LoginAlertEmailProps) => {
     return (
-        <EmailWrapper preview="New login to your SoukLoop account">
-            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+        <EmailLayout preview="New login to your SoukLoop account">
+            <Heading style={heading}>
                 New Login Detected
             </Heading>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 Hello {userName},
             </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 We noticed a new login to your SoukLoop account. If this was you, no further action is needed.
             </Text>
 
-            <Section className="bg-gray-50 p-4 rounded-md my-4 border border-gray-200">
-                <Text className="m-0 text-[12px] font-semibold text-gray-500 uppercase">Device</Text>
-                <Text className="m-0 text-[14px] mb-2 text-gray-800">{deviceInfo}</Text>
+            <Section style={infoBox}>
+                <Text style={infoLabel}>Device</Text>
+                <Text style={infoValue}>{deviceInfo}</Text>
 
-                <Text className="m-0 text-[12px] font-semibold text-gray-500 uppercase">Time</Text>
-                <Text className="m-0 text-[14px] mb-2 text-gray-800">{loginTime}</Text>
+                <Text style={infoLabel}>Time</Text>
+                <Text style={infoValue}>{loginTime}</Text>
 
-                <Text className="m-0 text-[12px] font-semibold text-gray-500 uppercase">Location</Text>
-                <Text className="m-0 text-[14px] text-gray-800">{location}</Text>
+                <Text style={infoLabel}>Location</Text>
+                <Text style={infoValueLast}>{location}</Text>
             </Section>
 
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 If you did not authorize this login, please change your password immediately.
             </Text>
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-                <Button
-                    className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
-                    href={actionUrl}
-                >
+            <div style={buttonContainer}>
+                <EmailButton href={actionUrl}>
                     Secure My Account
-                </Button>
-            </Section>
-        </EmailWrapper>
+                </EmailButton>
+            </div>
+        </EmailLayout>
     );
+};
+
+// Styles
+const heading = {
+    fontSize: '24px',
+    fontWeight: 'normal',
+    color: '#1a1a1a',
+    margin: '30px 0',
+    textAlign: 'center' as const
+};
+
+const paragraph = {
+    fontSize: '16px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '0 0 16px 0'
+};
+
+const infoBox = {
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    padding: '16px',
+    margin: '16px 0'
+};
+
+const infoLabel = {
+    color: '#6b7280',
+    fontSize: '12px',
+    fontWeight: '600',
+    textTransform: 'uppercase' as const,
+    margin: '0'
+};
+
+const infoValue = {
+    color: '#1f2937',
+    fontSize: '14px',
+    margin: '0 0 8px 0'
+};
+
+const infoValueLast = {
+    color: '#1f2937',
+    fontSize: '14px',
+    margin: '0'
+};
+
+const buttonContainer = {
+    textAlign: 'center' as const,
+    margin: '32px 0'
 };
 
 export default LoginAlertEmail;

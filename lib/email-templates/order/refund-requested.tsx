@@ -1,13 +1,13 @@
 import {
     Section,
     Text,
-    Button,
     Heading,
     Row,
     Column,
     Img
 } from '@react-email/components';
-import { EmailWrapper } from '../components/email-wrapper';
+import { EmailLayout } from '../components/email-layout';
+import { EmailButton } from '../components/email-button';
 import * as React from 'react';
 
 interface RefundItem {
@@ -39,56 +39,124 @@ export const RefundRequestedEmail = ({
     const productImage = firstItem?.images?.[0]?.url;
 
     return (
-        <EmailWrapper preview={`Refund Requested for Order #${orderNumber}`}>
-            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+        <EmailLayout preview={`Refund Requested for Order #${orderNumber}`}>
+            <Heading style={heading}>
                 Refund Requested
             </Heading>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 We have received your refund request for the following item from Order **#{orderNumber}**.
             </Text>
 
             {/* Refund Item Card */}
-            <Section className="bg-white border border-gray-200 rounded-lg overflow-hidden my-6 shadow-sm">
+            <Section style={cardSection}>
                 <Row>
-                    <Column width="80" className="p-2 align-middle">
+                    <Column width="80" style={imageColumn}>
                         {productImage ? (
                             <Img
                                 src={productImage}
                                 alt={productName}
                                 width="80"
                                 height="80"
-                                className="object-cover rounded"
+                                style={productImageStyle}
                             />
                         ) : (
-                            <div className="w-[80px] h-[80px] bg-gray-200 rounded"></div>
+                            <div style={placeholderImage}></div>
                         )}
                     </Column>
-                    <Column className="p-4 align-middle">
-                        <Text className="m-0 text-[14px] font-semibold text-gray-800">{productName}</Text>
-                        <Text className="m-0 text-[14px] font-bold text-gray-900 mt-1">
+                    <Column style={detailsColumn}>
+                        <Text style={productNameStyle}>{productName}</Text>
+                        <Text style={refundAmountStyle}>
                             Refund Amount: ${refundAmount.toFixed(2)}
                         </Text>
-                        <Text className="m-0 text-[12px] text-gray-500 mt-1">
+                        <Text style={reasonStyle}>
                             Reason: {reason}
                         </Text>
                     </Column>
                 </Row>
             </Section>
 
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 Our team (or the seller) will review this request. You will be notified once the status changes.
             </Text>
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-                <Button
-                    className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
-                    href={actionUrl}
-                >
+            <div style={buttonContainer}>
+                <EmailButton href={actionUrl}>
                     View Request Status
-                </Button>
-            </Section>
-        </EmailWrapper>
+                </EmailButton>
+            </div>
+        </EmailLayout>
     );
+};
+
+// Styles
+const heading = {
+    fontSize: '24px',
+    fontWeight: 'normal',
+    color: '#1a1a1a',
+    margin: '30px 0',
+    textAlign: 'center' as const
+};
+
+const paragraph = {
+    fontSize: '16px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '0 0 16px 0'
+};
+
+const cardSection = {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    margin: '24px 0'
+};
+
+const imageColumn = {
+    padding: '8px',
+    verticalAlign: 'middle' as const
+};
+
+const productImageStyle = {
+    objectFit: 'cover' as const,
+    borderRadius: '4px'
+};
+
+const placeholderImage = {
+    width: '80px',
+    height: '80px',
+    backgroundColor: '#e5e7eb',
+    borderRadius: '4px'
+};
+
+const detailsColumn = {
+    padding: '16px',
+    verticalAlign: 'middle' as const
+};
+
+const productNameStyle = {
+    margin: '0',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1f2937'
+};
+
+const refundAmountStyle = {
+    margin: '4px 0 0 0',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#111827'
+};
+
+const reasonStyle = {
+    margin: '4px 0 0 0',
+    fontSize: '12px',
+    color: '#6b7280'
+};
+
+const buttonContainer = {
+    textAlign: 'center' as const,
+    margin: '32px 0'
 };
 
 export default RefundRequestedEmail;

@@ -1,13 +1,13 @@
 import {
     Section,
     Text,
-    Button,
     Heading,
     Img,
     Column,
     Row
 } from '@react-email/components';
-import { EmailWrapper } from '../components/email-wrapper';
+import { EmailLayout } from '../components/email-layout';
+import { EmailButton } from '../components/email-button';
 import * as React from 'react';
 
 interface ProductStatusEmailProps {
@@ -30,70 +30,174 @@ export const ProductStatusEmail = ({
     actionUrl = process.env.NEXTAUTH_URL + '/seller/manage-listings'
 }: ProductStatusEmailProps) => {
     const isNegative = status === 'Rejected';
-    const headingColor = isNegative ? 'text-red-600' : 'text-green-600';
+    const headingColor = isNegative ? '#dc2626' : '#16a34a';
     const statusText = status === 'Live' ? 'is now Live!' : status === 'Rejected' ? 'was Rejected' : 'has been Listed';
 
     return (
-        <EmailWrapper preview={`Your product ${statusText}`}>
-            <Heading className={`text-[24px] font-normal text-center p-0 my-[30px] mx-0 ${headingColor}`}>
+        <EmailLayout preview={`Your product ${statusText}`}>
+            <Heading style={{ ...heading, color: headingColor }}>
                 Product {status}
             </Heading>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 Hello {vendorName},
             </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 Your product **{productName}** {status === 'Live' ? 'is now live on the marketplace!' : isNegative ? 'could not be approved.' : 'has been successfully listed.'}
             </Text>
 
             {/* Product Card */}
-            <Section className="bg-white border border-gray-200 rounded-lg overflow-hidden my-6 shadow-sm">
+            <Section style={cardSection}>
                 <Row>
-                    <Column width="100" className="p-0 align-middle">
+                    <Column width="100" style={imageColumn}>
                         {productImage ? (
                             <Img
                                 src={productImage}
                                 alt={productName}
                                 width="100"
                                 height="100"
-                                className="object-cover w-full h-full block rounded-l-lg"
+                                style={productImageStyle}
                             />
                         ) : (
-                            <div className="w-[100px] h-[100px] bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                            <div style={placeholderImage}>
                                 No Image
                             </div>
                         )}
                     </Column>
-                    <Column className="p-4 align-middle">
-                        <Text className="m-0 text-[16px] font-semibold text-gray-800 line-clamp-1">{productName}</Text>
+                    <Column style={detailsColumn}>
+                        <Text style={productNameStyle}>{productName}</Text>
                         {productPrice !== undefined && (
-                            <Text className="m-0 text-[14px] font-bold text-gray-900 mt-1">
+                            <Text style={productPriceStyle}>
                                 ${productPrice.toFixed(2)}
                             </Text>
                         )}
-                        <Text className="m-0 text-[12px] text-gray-500 mt-2">
-                            Status: <span className={isNegative ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>{status.toUpperCase()}</span>
+                        <Text style={statusStyleContainer}>
+                            Status: <span style={isNegative ? statusNegativeStyle : statusPositiveStyle}>{status.toUpperCase()}</span>
                         </Text>
                     </Column>
                 </Row>
             </Section>
 
             {reason && (
-                <Section className="bg-red-50 p-4 rounded border border-red-100 mb-6">
-                    <Text className="text-red-800 text-[14px] font-bold m-0 mb-1">Reason for Rejection:</Text>
-                    <Text className="text-red-700 text-[14px] m-0">{reason}</Text>
+                <Section style={reasonSection}>
+                    <Text style={reasonTitle}>Reason for Rejection:</Text>
+                    <Text style={reasonText}>{reason}</Text>
                 </Section>
             )}
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-                <Button
-                    className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
-                    href={actionUrl}
-                >
+            <div style={buttonContainer}>
+                <EmailButton href={actionUrl}>
                     {isNegative ? 'Edit Listing' : 'View Product'}
-                </Button>
-            </Section>
-        </EmailWrapper>
+                </EmailButton>
+            </div>
+        </EmailLayout>
     );
+};
+
+// Styles
+const heading = {
+    fontSize: '24px',
+    fontWeight: 'normal',
+    margin: '30px 0',
+    textAlign: 'center' as const
+};
+
+const paragraph = {
+    fontSize: '16px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '0 0 16px 0'
+};
+
+const cardSection = {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    margin: '24px 0'
+};
+
+const imageColumn = {
+    padding: '0',
+    verticalAlign: 'middle' as const
+};
+
+const productImageStyle = {
+    objectFit: 'cover' as const,
+    width: '100%',
+    height: '100%',
+    display: 'block' as const
+};
+
+const placeholderImage = {
+    width: '100px',
+    height: '100px',
+    backgroundColor: '#e5e7eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#9ca3af',
+    fontSize: '12px'
+};
+
+const detailsColumn = {
+    padding: '16px',
+    verticalAlign: 'middle' as const
+};
+
+const productNameStyle = {
+    margin: '0',
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#1f2937'
+};
+
+const productPriceStyle = {
+    margin: '4px 0 0 0',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#111827'
+};
+
+const statusStyleContainer = {
+    margin: '8px 0 0 0',
+    fontSize: '12px',
+    color: '#6b7280'
+};
+
+const statusNegativeStyle = {
+    color: '#dc2626',
+    fontWeight: 'bold'
+};
+
+const statusPositiveStyle = {
+    color: '#16a34a',
+    fontWeight: 'bold'
+};
+
+const reasonSection = {
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fee2e2',
+    borderRadius: '4px',
+    padding: '16px',
+    margin: '0 0 24px 0'
+};
+
+const reasonTitle = {
+    color: '#991b1b',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    margin: '0 0 4px 0'
+};
+
+const reasonText = {
+    color: '#b91c1c',
+    fontSize: '14px',
+    margin: '0'
+};
+
+const buttonContainer = {
+    textAlign: 'center' as const,
+    margin: '32px 0'
 };
 
 export default ProductStatusEmail;

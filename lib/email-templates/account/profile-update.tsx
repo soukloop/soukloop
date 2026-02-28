@@ -1,10 +1,9 @@
 import {
-    Section,
     Text,
-    Button,
     Heading
 } from '@react-email/components';
-import { EmailWrapper } from '../components/email-wrapper';
+import { EmailLayout } from '../components/email-layout';
+import { EmailButton } from '../components/email-button';
 import * as React from 'react';
 
 interface ProfileUpdateEmailProps {
@@ -21,35 +20,53 @@ export const ProfileUpdateEmail = ({
     actionUrl = process.env.NEXTAUTH_URL + '/settings'
 }: ProfileUpdateEmailProps) => {
     return (
-        <EmailWrapper preview={`Your SoukLoop ${updateType} was updated`}>
-            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+        <EmailLayout preview={`Your SoukLoop ${updateType} was updated`}>
+            <Heading style={heading}>
                 Account Update
             </Heading>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 Hello {userName},
             </Text>
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 This email is to confirm that your **{updateType}** was updated on {updateTime}.
             </Text>
 
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 If you made this change, you can safely ignore this email.
             </Text>
 
-            <Text className="text-black text-[14px] leading-[24px]">
+            <Text style={paragraph}>
                 If you did **not** make this change, please contact support immediately or secure your account below.
             </Text>
 
-            <Section className="text-center mt-[32px] mb-[32px]">
-                <Button
-                    className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
-                    href={actionUrl}
-                >
+            <div style={buttonContainer}>
+                <EmailButton href={actionUrl}>
                     Review My Account
-                </Button>
-            </Section>
-        </EmailWrapper>
+                </EmailButton>
+            </div>
+        </EmailLayout>
     );
+};
+
+// Styles
+const heading = {
+    fontSize: '20px',
+    fontWeight: '600',
+    color: '#1a1a1a',
+    margin: '0 0 16px 0',
+    textAlign: 'center' as const
+};
+
+const paragraph = {
+    fontSize: '16px',
+    color: '#666666',
+    lineHeight: '1.6',
+    margin: '0 0 16px 0'
+};
+
+const buttonContainer = {
+    textAlign: 'center' as const,
+    margin: '32px 0'
 };
 
 export default ProfileUpdateEmail;
