@@ -36,6 +36,7 @@ export interface BillingAddressFormData {
     lastName: string
     email: string
     phone: string
+    company?: string
     address1: string
     city: string
     state: string
@@ -91,6 +92,7 @@ export default function BillingAddressForm({
             lastName: '',
             email: '',
             phone: '',
+            company: '',
             address1: '',
             city: '',
             state: '',
@@ -112,6 +114,7 @@ export default function BillingAddressForm({
                     lastName: initialData.lastName || '',
                     email: initialData.email || '',
                     phone: initialData.phone || '',
+                    company: (initialData as any).company || '',
                     address1: initialData.address1 || '',
                     city: initialData.city || '',
                     state: initialData.state || '',
@@ -176,6 +179,7 @@ export default function BillingAddressForm({
                 lastName: '',
                 email: '',
                 phone: '',
+                company: '',
                 address1: '',
                 city: '',
                 state: '',

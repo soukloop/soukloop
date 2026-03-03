@@ -30,6 +30,7 @@ export default function RefundDetailsPage() {
     const { isAuthChecking, hasPermission } = useAdminAuth();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [actionToConfirm, setActionToConfirm] = useState<'PROCESSED' | 'REJECTED' | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const { data: refund, error, isLoading } = useSWR(id ? `/api/refunds/${id}` : null, fetcher);
 

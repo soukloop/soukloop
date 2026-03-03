@@ -1,6 +1,6 @@
 "use client";
 
-import { OrderListTable, DisplayOrder } from '@/app/editprofile/components/my-orders';
+import { OrderListTable, DisplayOrder } from '@/app/edit-profile/components/my-orders';
 
 interface SellerOrdersTabProps {
     orders: DisplayOrder[];

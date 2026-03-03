@@ -194,6 +194,8 @@ export default function ProfileProducts({
                         categories={filtersData.categories}
                         brands={filtersData.brands.map(b => ({ id: b, name: b }))}
                         allDressStyles={filtersData.dressStyles}
+                        initialOccasions={[]}
+                        initialMaterials={[]}
                     />
                 </aside>
 

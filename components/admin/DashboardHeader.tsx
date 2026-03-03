@@ -17,7 +17,7 @@ export default function DashboardHeader({
     const searchParams = useSearchParams();
 
     const updateParam = (key: string, value: string) => {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParams?.toString() || '');
         params.set(key, value);
         router.push(`/admin?${params.toString()}`);
     };

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         emailVerified: new Date(),
         vendor: {
           create: {
-            storeName: 'TechGear Pro',
+            // storeName: 'TechGear Pro',
             slug: 'techgear-pro',
             description: 'Premium electronics and gadgets for tech enthusiasts',
             isActive: true,

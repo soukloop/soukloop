@@ -3,7 +3,7 @@
 // ===== ENUMS =====
 export type Role = 'USER' | 'SELLER' | 'ADMIN' | 'SUPER_ADMIN'
 export type KycStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
-export type OrderStatus = 'PENDING' | 'PAID' | 'DELIVERED' | 'CANCELED' | 'REFUNDED' | 'PROCESSING' | 'SHIPPED'
+export type OrderStatus = 'PENDING' | 'PAID' | 'DELIVERED' | 'FULFILLED' | 'CANCELED' | 'REFUNDED' | 'PROCESSING' | 'SHIPPED'
 export type PaymentProvider = 'STRIPE' | 'PAYPAL' | 'COINBASE'
 export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED'
 // NotificationType is defined in the NOTIFICATIONS section below
@@ -262,7 +262,7 @@ export type NotificationType =
 export interface Notification {
   id: string
   userId: string
-  type: string // NotificationType enum value
+  type: NotificationType // NotificationType enum value
   title: string
   message: string
   data: Record<string, unknown> | null

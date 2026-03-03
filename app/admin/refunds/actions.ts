@@ -62,24 +62,29 @@ export async function getRefunds({
             include: { vendor: true }
         });
 
+        // Permission & Scope Logic
+        if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
+          return { success: false, error: "Insufficient permissions" };
+        }
+
         // Permission & Scope Logic (similar to API route)
         const where: Prisma.RefundWhereInput = {};
 
         // Role-based scoping
-        if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
+        // if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
             // Admin sees all
-        } else if (user?.vendor) {
+        // } else if (user?.vendor) {
             // Basic vendor logic - this action seems specific to Admin page, so we could enforce ADMIN role
             // But to keep it consistent with the API logic:
             // If accessing admin page, they must be admin? 
             // app/admin/* is protected by middleware or layout usually.
             // But for safety, let's enforce Admin for this specific action if it's for the Admin Table.
-            if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
-                return { success: false, error: "Insufficient permissions" };
-            }
-        } else {
-            return { success: false, error: "Insufficient permissions" };
-        }
+        //     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+        //         return { success: false, error: "Insufficient permissions" };
+        //     }
+        // } else {
+        //     return { success: false, error: "Insufficient permissions" };
+        // }
 
         // Search Logic
         if (search) {

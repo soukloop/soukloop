@@ -43,6 +43,10 @@ export async function notifyPaymentSuccess(buyerId: string, data: PaymentData) {
         }
     });
 
+    // compute subtotal and shipping (shipping not tracked, default to 0)
+    const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+    const shipping = 0;
+
     const emailHtml = await render(
         OrderPlacedEmail({
             orderNumber: data.orderNumber,
@@ -50,7 +54,9 @@ export async function notifyPaymentSuccess(buyerId: string, data: PaymentData) {
             itemCount: items.length,
             currency: data.currency || 'USD',
             orderUrl: `${process.env.NEXTAUTH_URL}/trackorders?order=${data.orderId}`,
-            items: items as any
+            items: items as any,
+            subtotal,
+            shipping
         })
     );
 

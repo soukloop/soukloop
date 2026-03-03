@@ -38,13 +38,14 @@ export async function getPaginatedSellers({
     }
 
     if (search) {
-        const userSearch = {
+        const userSearch: Prisma.UserWhereInput = {
             OR: [
                 { name: { contains: search, mode: 'insensitive' as Prisma.QueryMode } },
                 { email: { contains: search, mode: 'insensitive' as Prisma.QueryMode } }
             ]
         };
-        applicantWhere.user = { ...applicantWhere.user, ...userSearch };
+        // Prisma types for nested relations can be very complex, so coerce to any
+        (applicantWhere as any).user = { ...applicantWhere.user, ...userSearch };
         vendorWhere.user = userSearch;
     }
 

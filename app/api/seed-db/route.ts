@@ -50,19 +50,16 @@ export async function GET() {
                 }
             });
 
-            // Address
+            // Address (schema does not include firstName/lastName/phone)
             await prisma.address.create({
                 data: {
                     userId: user.id,
                     isBilling: true,
-                    firstName: user.name?.split(' ')[0] || "User",
-                    lastName: user.name?.split(' ')[1] || "Name",
                     address1: `${getRandomInt(1, 999)} Main St`,
                     city: getRandomArrayItem(CITIES),
                     state: "NY", // simplified
                     postalCode: "10001",
                     country: "USA",
-                    phone: `+1555000${getRandomInt(1000, 9999)}`,
                     isDefault: true
                 }
             });
@@ -79,11 +76,9 @@ export async function GET() {
             categories.push(cat);
         }
 
-        const locationObjs = [];
-        for (const locName of LOCATIONS) {
-            const loc = await prisma.location.create({ data: { name: locName } });
-            locationObjs.push(loc);
-        }
+        // location model was removed from schema; LOCATIONS constant kept for later use
+        // previously seeds would create location records, but today's schema doesn't
+        // include a Location model so we no longer perform this step.
 
         // 4. Vendors (linked to Sellers)
         const sellers = users.filter(u => u.role === "SELLER");
@@ -92,7 +87,6 @@ export async function GET() {
             const vendor = await prisma.vendor.create({
                 data: {
                     userId: seller.id,
-                    storeName: `${seller.name}'s Store`,
                     slug: `store-${seller.id}-${timestamp}`,
                     description: "Best products in town.",
                     kycStatus: getRandomBoolean() ? "APPROVED" : "PENDING",
@@ -114,7 +108,7 @@ export async function GET() {
                 const product = await prisma.product.create({
                     data: {
                         vendorId: vendor.id,
-                        name: `Product ${i} from ${vendor.storeName}`,
+                        name: `Product ${i} from ${vendor.slug}`,
                         slug: `prod-${vendor.id}-${i}-${timestamp}`,
                         description: "High quality item.",
                         price: price,
@@ -137,7 +131,7 @@ export async function GET() {
                 const listingProduct = await prisma.product.create({
                     data: {
                         vendorId: vendor.id, // technically C2C should be user-based, but for now linking to vendor profile is safest per schema
-                        name: `Listing ${i} - ${vendor.storeName}`,
+                        name: `Listing ${i} - ${vendor.slug}`,
                         slug: `listing-${vendor.id}-${i}-${timestamp}`,
                         description: "Used item, good condition.",
                         price: listingPrice,

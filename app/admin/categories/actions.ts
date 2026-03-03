@@ -169,50 +169,50 @@ export async function toggleColorStatus(id: string, isActive: boolean) {
 
 // --- States & Cities ---
 // State creation usually manual/seeded, but allowing update/delete is fine.
-export async function createState(data: { name: string; abbreviation: string; country: string }) {
-    try {
-        await prisma.state.create({ data });
-        revalidatePath('/admin/categories');
-        return { success: true };
-    } catch (error) {
-        return { error: 'Failed to create state' };
-    }
-}
+// export async function createState(data: { name: string; abbreviation: string; country: string }) {
+//     try {
+//         await prisma.state.create({ data });
+//         revalidatePath('/admin/categories');
+//         return { success: true };
+//     } catch (error) {
+//         return { error: 'Failed to create state' };
+//     }
+// }
 
-export async function deleteState(id: string) {
-    try {
-        await prisma.state.delete({ where: { id } });
-        revalidatePath('/admin/categories');
-        return { success: true };
-    } catch (error) {
-        return { error: 'Failed to delete state' };
-    }
-}
+// export async function deleteState(id: string) {
+//     try {
+//         await prisma.state.delete({ where: { id } });
+//         revalidatePath('/admin/categories');
+//         return { success: true };
+//     } catch (error) {
+//         return { error: 'Failed to delete state' };
+//     }
+// }
 
-export async function createCity(data: { name: string; stateId: string }) {
-    try {
-        const existing = await prisma.city.findFirst({
-            where: { name: data.name, stateId: data.stateId }
-        });
-        if (existing) return { error: 'City already exists in this state' };
+// export async function createCity(data: { name: string; stateId: string }) {
+//     try {
+//         const existing = await prisma.city.findFirst({
+//             where: { name: data.name, stateId: data.stateId }
+//         });
+//         if (existing) return { error: 'City already exists in this state' };
 
-        await prisma.city.create({ data });
-        revalidatePath('/admin/categories');
-        return { success: true };
-    } catch (error) {
-        return { error: 'Failed to create city' };
-    }
-}
+//         await prisma.city.create({ data });
+//         revalidatePath('/admin/categories');
+//         return { success: true };
+//     } catch (error) {
+//         return { error: 'Failed to create city' };
+//     }
+// }
 
-export async function deleteCity(id: string) {
-    try {
-        await prisma.city.delete({ where: { id } });
-        revalidatePath('/admin/categories');
-        return { success: true };
-    } catch (error) {
-        return { error: 'Failed to delete city' };
-    }
-}
+// export async function deleteCity(id: string) {
+//     try {
+//         await prisma.city.delete({ where: { id } });
+//         revalidatePath('/admin/categories');
+//         return { success: true };
+//     } catch (error) {
+//         return { error: 'Failed to delete city' };
+//     }
+// }
 
 
 import { notifySellerStyleApproved, notifySellerProductListed, notifyFollowersNewProduct } from '@/lib/notifications/templates/product-templates';

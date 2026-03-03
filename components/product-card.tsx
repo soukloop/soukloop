@@ -435,7 +435,7 @@ export default function ProductCard({
                             className={`flex w-full items-center justify-center rounded-lg border border-gray-500 bg-white font-bold text-gray-500 uppercase tracking-wide cursor-pointer hover:bg-gray-50 transition-colors ${compact ? "py-1.5 text-[10px] sm:text-xs" : "py-2 sm:py-3 text-xs sm:text-sm"}`}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onEdit) onEdit(product);
+                                (onEdit as any)?.(product);
                             }}
                         >
                             Publish Draft

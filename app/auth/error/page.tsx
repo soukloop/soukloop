@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation"
 
 function ErrorContent() {
     const searchParams = useSearchParams()
-    const error = searchParams.get("error")
+    const error = searchParams?.get("error") ?? null
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">

@@ -104,7 +104,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        let buffer = Buffer.from(await file.arrayBuffer())
+        // let buffer = Buffer.from(await file.arrayBuffer())
+        let buffer = Buffer.from(new Uint8Array(await file.arrayBuffer())) as unknown as Buffer;
         let originalName = file.name
         let mimeType = file.type || 'application/octet-stream'
         let finalFilename = `chat-${Date.now()}-${originalName.replace(/\s+/g, '-')}`

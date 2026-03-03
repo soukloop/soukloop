@@ -192,7 +192,6 @@ export default function BankAccountsSection() {
                                     // But if we support Edit, and they leave it blank, we need to handle that in backend (keep existing).
                                     // My backend `updateBankAccount` overrides it. 
                                     // Let's make it required. They have to re-enter it to verify/change.
-                                    required
                                 />
                             </div>
                         </div>

@@ -83,7 +83,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                                 <div key={item.rating} className="flex items-center gap-2 text-xs font-bold text-gray-600">
                                     <span className="w-3">{item.rating}</span>
                                     <Star className="size-3 text-gray-400" />
-                                    <Progress value={item.percentage} className="h-2 flex-1" indicatorColor="bg-[#E87A3F]" />
+                                    <Progress value={item.percentage} className="h-2 flex-1 bg-[#E87A3F]" />
                                     <span className="w-8 text-right">{item.percentage}%</span>
                                 </div>
                             ))}

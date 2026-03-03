@@ -6,7 +6,7 @@ import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { toast } from "sonner";
 
 export default function PermissionListener() {
-    const { socket } = useSocket();
+    const { centrifuge: socket } = useSocket();
     const { checkSession, adminUser } = useAdminAuth();
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export default function PermissionListener() {
         // We will assume the socket provider or layout handles joining the room.
         // If not, we might need to emit a 'join-user-room' event here.
 
-        socket.emit("join-user-room", adminUser.id);
+        (socket as any)?.emit("join-user-room", adminUser.id);
 
         const onPermissionUpdate = async (data: any) => {
             console.log("Permission update received:", data);
@@ -28,10 +28,10 @@ export default function PermissionListener() {
             await checkSession();
         };
 
-        socket.on("permission-update", onPermissionUpdate);
+        (socket as any)?.on("permission-update", onPermissionUpdate);
 
         return () => {
-            socket.off("permission-update", onPermissionUpdate);
+            (socket as any)?.off("permission-update", onPermissionUpdate);
         };
     }, [socket, adminUser, checkSession]);
 

@@ -11,6 +11,7 @@ interface ReportActionsProps {
     reportId: string;
     productId?: string | null;
     reportedUserId?: string | null;
+    sellerId?: string | null;
     status: string;
 }
 

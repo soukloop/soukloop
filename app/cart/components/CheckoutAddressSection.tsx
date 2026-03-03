@@ -30,16 +30,16 @@ export default function CheckoutAddressSection({ onAddressReady }: CheckoutAddre
     useEffect(() => {
         if (profile || defaultShippingAddress) {
             const data = {
-                firstName: profile?.firstName || defaultShippingAddress?.firstName || '',
-                lastName: profile?.lastName || defaultShippingAddress?.lastName || '',
+                firstName: profile?.firstName || (defaultShippingAddress as any)?.firstName || '',
+                lastName: profile?.lastName || (defaultShippingAddress as any)?.lastName || '',
                 email: userEmail || '',
-                phone: profile?.phone || defaultShippingAddress?.phone || '',
-                company: defaultShippingAddress?.company || '',
-                address1: defaultShippingAddress?.address1 || '',
-                city: defaultShippingAddress?.city || '',
-                state: defaultShippingAddress?.state || '',
-                postalCode: defaultShippingAddress?.postalCode || '',
-                country: defaultShippingAddress?.country || 'United States',
+                phone: profile?.phone || (defaultShippingAddress as any)?.phone || '',
+                company: (defaultShippingAddress as any)?.company || '',
+                address1: (defaultShippingAddress as any)?.address1 || '',
+                city: (defaultShippingAddress as any)?.city || '',
+                state: (defaultShippingAddress as any)?.state || '',
+                postalCode: (defaultShippingAddress as any)?.postalCode || '',
+                country: (defaultShippingAddress as any)?.country || 'United States',
             }
             setInitialFormData(data)
 

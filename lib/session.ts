@@ -126,9 +126,8 @@ export async function getUserActiveSessions(userId: string) {
                 id: true,
                 sessionToken: true,
                 expires: true,
-                createdAt: true,
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { expires: 'desc' }
         });
 
         return { success: true, sessions };

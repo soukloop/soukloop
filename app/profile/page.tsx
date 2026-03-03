@@ -15,8 +15,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   }
 
   // Redirect to professional URL if accessed via /profile?id=...
-  if (id && profileData.user.username && id !== profileData.user.username) {
-    redirect(`/u/${profileData.user.username}`);
+  if (id && (profileData.user as any).username && id !== (profileData.user as any).username) {
+    redirect(`/u/${(profileData.user as any).username}`);
   }
 
   return (

@@ -80,7 +80,7 @@ export const RefundRequestedEmail = ({
             </Text>
 
             <div style={buttonContainer}>
-                <EmailButton href={actionUrl}>
+                <EmailButton href={actionUrl ?? ''}>
                     View Request Status
                 </EmailButton>
             </div>

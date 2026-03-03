@@ -13,7 +13,7 @@ export default function ConditionalHeader({ children }: { children: React.ReactN
     const hideOnRoutes = ["/admin", "/seller"];
 
     const shouldHide = hideOnRoutes.some((route) =>
-        pathname === route || pathname.startsWith(route + "/")
+        pathname === route || pathname?.startsWith(route + "/")
     );
 
     if (shouldHide) return null;

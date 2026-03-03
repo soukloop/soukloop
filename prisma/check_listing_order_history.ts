@@ -5,13 +5,13 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Checking listing orders for status history entries...')
 
-  const ordersWithHistory = await prisma.listingOrder.findMany({
+  const ordersWithHistory = await prisma.order.findMany({
     where: {},
-    include: { statusHistory: true },
+    include: { history: true },
     take: 10
   })
 
-  const anyWithHistory = ordersWithHistory.some(o => (o as any).statusHistory && (o as any).statusHistory.length > 0)
+  const anyWithHistory = ordersWithHistory.some((o) => o.history.length > 0)
 
   if (!anyWithHistory) {
     console.error('No orders with status history found. Test failed.')

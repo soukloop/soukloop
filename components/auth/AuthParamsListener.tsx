@@ -8,8 +8,8 @@ function AuthListenerInner() {
     const router = useRouter();
 
     useEffect(() => {
-        const authParam = searchParams.get('auth');
-        const errorParam = searchParams.get('error');
+        const authParam = searchParams?.get('auth');
+        const errorParam = searchParams?.get('error');
 
         // 1. Handle Login Modal Trigger
         if (authParam === 'login') {

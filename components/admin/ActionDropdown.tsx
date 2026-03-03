@@ -17,7 +17,6 @@ export interface ActionItem {
     onClick?: () => void;
     href?: string;
     className?: string;
-    className?: string;
     disabled?: boolean;
     icon?: React.ReactNode;
 }

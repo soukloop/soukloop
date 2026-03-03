@@ -51,21 +51,36 @@ export async function GET() {
             });
 
             // Address
+            // await prisma.address.create({
+            //     data: {
+            //         userId: user.id,
+            //         isBilling: true,
+            //         firstName: user.name?.split(' ')[0] || "User",
+            //         lastName: user.name?.split(' ')[1] || "Name",
+            //         address1: `${getRandomInt(1, 999)} Main St`,
+            //         city: getRandomArrayItem(CITIES),
+            //         state: "NY", // simplified
+            //         postalCode: "10001",
+            //         country: "USA",
+            //         phone: `+1555000${getRandomInt(1000, 9999)}`,
+            //         isDefault: true
+            //     }
+            // });
             await prisma.address.create({
-                data: {
-                    userId: user.id,
-                    isBilling: true,
-                    firstName: user.name?.split(' ')[0] || "User",
-                    lastName: user.name?.split(' ')[1] || "Name",
-                    address1: `${getRandomInt(1, 999)} Main St`,
-                    city: getRandomArrayItem(CITIES),
-                    state: "NY", // simplified
-                    postalCode: "10001",
-                    country: "USA",
-                    phone: `+1555000${getRandomInt(1000, 9999)}`,
-                    isDefault: true
-                }
-            });
+  data: {
+    userId: user.id,
+    isBilling: true,
+    isShipping: false,        // set as you want
+    isSellerAddress: false,   // set as you want
+    address1: `${getRandomInt(1, 999)} Main St`,
+    address2: null,
+    city: getRandomArrayItem(CITIES),
+    state: "NY",
+    postalCode: "10001",
+    country: "USA",
+    isDefault: true,
+  },
+});
         }
 
         // 3. Categories & Locations
@@ -79,11 +94,11 @@ export async function GET() {
             categories.push(cat);
         }
 
-        const locationObjs = [];
-        for (const locName of LOCATIONS) {
-            const loc = await prisma.location.create({ data: { name: locName } });
-            locationObjs.push(loc);
-        }
+        // const locationObjs = [];
+        // for (const locName of LOCATIONS) {
+        //     const loc = await prisma.location.create({ data: { name: locName } });
+        //     locationObjs.push(loc);
+        // }
 
         // 4. Vendors (linked to Sellers)
         const sellers = users.filter(u => u.role === "SELLER");
@@ -92,7 +107,7 @@ export async function GET() {
             const vendor = await prisma.vendor.create({
                 data: {
                     userId: seller.id,
-                    storeName: `${seller.name}'s Store`,
+                    // storeName: `${seller.name}'s Store`,
                     slug: `store-${seller.id}-${timestamp}`,
                     description: "Best products in town.",
                     kycStatus: getRandomBoolean() ? "APPROVED" : "PENDING",
@@ -114,11 +129,11 @@ export async function GET() {
                 const product = await prisma.product.create({
                     data: {
                         vendorId: vendor.id,
-                        name: `Product ${i} from ${vendor.storeName}`,
+                        name: `Product ${i} from ${vendor.slug}`,
                         slug: `prod-${vendor.id}-${i}-${timestamp}`,
                         description: "High quality item.",
                         price: price,
-                        quantity: getRandomInt(0, 100),
+                        // quantity: getRandomInt(0, 100),
                         category: getRandomArrayItem(CATEGORIES), // string field in Product
                         dress: getRandomArrayItem(DRESS_STYLES), // For stats
                         isActive: true,
@@ -137,12 +152,12 @@ export async function GET() {
                 const listingProduct = await prisma.product.create({
                     data: {
                         vendorId: vendor.id, // technically C2C should be user-based, but for now linking to vendor profile is safest per schema
-                        name: `Listing ${i} - ${vendor.storeName}`,
+                        name: `Listing ${i} - ${vendor.slug}`,
                         slug: `listing-${vendor.id}-${i}-${timestamp}`,
                         description: "Used item, good condition.",
                         price: listingPrice,
-                        quantity: 1,
-                        isC2C: true,
+                        // quantity: 1,
+                        // isC2C: true,
                         location: "New York, USA", // simplified
                         category: getRandomArrayItem(categories).name, // Product uses string category
                         isActive: true,

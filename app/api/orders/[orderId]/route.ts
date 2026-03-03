@@ -67,7 +67,8 @@ export async function GET(
 
             // --- STRIPE SESSION VERIFICATION (Professional Sync) ---
             const sessionId = request.nextUrl.searchParams.get('session_id')
-            if (sessionId && customerOrder.vendorOrders.some(vo => vo.status === 'PENDING')) {
+            // annotate vo to avoid implicit any
+            if (sessionId && customerOrder.vendorOrders.some((vo: { status: string }) => vo.status === 'PENDING')) {
                 try {
                     const { stripe } = await import('@/lib/stripe')
                     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
@@ -150,13 +151,13 @@ export async function GET(
                                     orderId: customerOrder.id,
                                     orderNumber: customerOrder.orderNumber,
                                     total: customerOrder.totalAmount,
-                                    itemCount: customerOrder.vendorOrders.reduce((acc, vo: any) => acc + (vo.items?.length || 0), 0),
+                                    itemCount: customerOrder.vendorOrders.reduce((acc: number, vo: any) => acc + (vo.items?.length || 0), 0),
                                     shippingAddress: customerOrder.shippingAddress as any,
                                     paymentMethod: 'Credit Card (Stripe)'
                                 });
 
                                 // Notify Vendors
-                                const vendorIds = customerOrder.vendorOrders.map(vo => vo.vendorId);
+                                const vendorIds = customerOrder.vendorOrders.map((vo: any) => vo.vendorId);
                                 const vendors = await prisma.vendor.findMany({
                                     where: { id: { in: vendorIds } },
                                     select: { id: true, userId: true }

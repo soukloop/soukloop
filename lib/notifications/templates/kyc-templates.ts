@@ -20,7 +20,7 @@ export async function notifyKycApproved(userId: string, data: KycData) {
         type: 'KYC_APPROVED',
         title: 'Seller Application Approved! 🎉',
         message: 'Congratulations! Your seller application has been approved. You can now start listing products and reach customers worldwide.',
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl,
         sendEmail: true,
         emailSubject: 'Your Seller Application Has Been Approved! 🎉',
@@ -46,7 +46,7 @@ export async function notifyKycRejected(userId: string, data: KycData) {
         type: 'KYC_REJECTED',
         title: 'Seller Application Update',
         message: `Unfortunately, your seller application was not approved. ${reasonText}`,
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl,
         sendEmail: true,
         emailSubject: 'Update on Your Seller Application',
@@ -72,7 +72,7 @@ export async function notifyKycInfoNeeded(userId: string, data: KycData & { fiel
         type: 'KYC_INFO_NEEDED',
         title: 'Additional Information Required 📝',
         message: `We need more information to process your seller application.${fieldsText}`,
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl: '/seller/onboarding',
         sendEmail: true,
         emailSubject: 'Action Required: Complete Your Seller Application'
@@ -89,7 +89,7 @@ export async function notifyKycSubmitted(userId: string, data: KycData) {
         type: 'KYC_SUBMITTED',
         title: 'Application Submitted! 📋',
         message: 'Your seller application has been submitted successfully. We will review it within 24-48 hours.',
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl: '/seller/status',
         sendEmail: true,
         emailSubject: 'Seller Application Received - We\'re Reviewing It!'
@@ -105,7 +105,7 @@ export async function notifyAdminsNewKycSubmission(data: KycData) {
         'NEW_KYC_SUBMISSION',
         'New Seller Application 📋',
         `${data.userName || 'A user'} has submitted a seller application for review.`,
-        data,
+        data as unknown as Record<string, unknown>,
         `/admin/kyc/${data.verificationId}`
     )
 }

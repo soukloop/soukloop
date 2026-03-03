@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { getMetricCards, getCachedDashboardBaseStats, getPaginatedTopStyles } from '@/lib/admin/dashboard-service';
+import type { PaginatedTopStyles, PaginatedListedStyles } from '@/lib/admin/types';
 import AdminStatsCards from '@/components/admin/AdminStatsCards';
 import PendingActions from '@/components/admin/PendingActions';
 import TopDressStyles from '@/components/admin/TopDressStyles';
@@ -45,12 +46,10 @@ export default async function AdminDashboard({
     const selectedYear = yearParam ? parseInt(yearParam) : currentYear;
 
     // 2. Fetch Granular Data
-    const [baseStats, initialMetrics, initialSellingStyles, initialListedStyles] = await Promise.all([
-        getCachedDashboardBaseStats(selectedMonth, selectedYear),
-        getMetricCards('daily'),
-        getPaginatedTopStyles('selling', 1, 10),
-        getPaginatedTopStyles('listed', 1, 10)
-    ]);
+    const baseStats = await getCachedDashboardBaseStats(selectedMonth, selectedYear);
+    const initialMetrics = await getMetricCards('daily');
+    const initialSellingStyles = await getPaginatedTopStyles('selling', 1, 10) as PaginatedTopStyles;
+    const initialListedStyles = await getPaginatedTopStyles('listed', 1, 10) as PaginatedListedStyles;
 
     return (
         <div className="space-y-6">

@@ -83,7 +83,7 @@ export async function notifySellerProductListed(sellerId: string, data: ProductD
   const title = 'Product Listed Successfully! 📦'
   const message = `Your product is now live on SoukLoop.`
 
-  const emailHtml = render(
+  const emailHtml = await render(
     ProductStatusEmail({
       productName: data.productName,
       productImage: data.imageUrl,
@@ -114,7 +114,7 @@ export async function notifySellerProductPending(sellerId: string, data: Product
   const actionUrl = `/product/${data.productSlug || data.productId}`
   const title = 'Product Listed (Pending Approval) ⏳'
 
-  const emailHtml = render(
+  const emailHtml = await render(
     ProductStatusEmail({
       productName: data.productName,
       productImage: data.imageUrl,
@@ -189,7 +189,7 @@ export async function notifyFollowersNewProduct(sellerId: string, data: ProductD
 
   // Generate HTML once
   const { ProductStatusEmail } = await import('@/lib/email-templates/product/product-status');
-  const emailHtml = render(
+  const emailHtml = await render(
     ProductStatusEmail({
       vendorName: sellerName, // Providing seller name here for context
       productName: data.productName,
@@ -222,13 +222,14 @@ export async function notifyFollowersNewProduct(sellerId: string, data: ProductD
 /**
  * Notify reporter that their product report has been received
  */
-export async function notifyReportReceived(userId: string, data: { productName: string, reason: string }) {
+export async function notifyReportReceived(userId: string, data: { reportId: string, productName: string, reason: string }) {
   const { ReportSubmittedEmail } = await import('@/lib/email-templates/support/report-submitted');
   const { render } = await import('@react-email/render');
 
-  const emailHtml = render(
+  const emailHtml = await render(
     ReportSubmittedEmail({
       recipientType: 'REPORTER',
+      reportId: data.reportId,
       targetName: data.productName,
       reason: data.reason
     })

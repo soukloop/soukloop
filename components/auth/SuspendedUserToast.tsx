@@ -7,7 +7,7 @@ import { toast } from "sonner";
 export function SuspendedUserToast() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const error = searchParams.get("error");
+    const error = searchParams?.get("error");
 
     useEffect(() => {
         if (error === "SuspendedAccount") {

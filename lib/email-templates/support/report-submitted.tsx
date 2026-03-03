@@ -72,7 +72,7 @@ export const ReportSubmittedEmail = ({
             )}
 
             <div style={buttonContainer}>
-                <EmailButton href={actionUrl}>
+                <EmailButton href={actionUrl || ''}>
                     {ctaText}
                 </EmailButton>
             </div>

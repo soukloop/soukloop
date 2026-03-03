@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
 
             if (product) {
                 notifyReportReceived(session.user.id, {
+                    reportId: report.id,
                     productName: product.name,
                     reason
                 }).catch(err => console.error('[Report] Reporter notification failed:', err))

@@ -103,8 +103,6 @@ export default function BestSellersSection() {
             size: p.size,
             vendorId: p.vendorId,
             vendorUserId: (p as any).vendor?.userId, // Pass vendor's owner ID
-            isActive: p.isActive,
-            status: p.status,
           }));
           setProducts(formatted);
         }

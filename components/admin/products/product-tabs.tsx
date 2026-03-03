@@ -10,7 +10,7 @@ interface ProductTabsProps {
 
 export default function ProductTabs({ productId }: ProductTabsProps) {
     const searchParams = useSearchParams();
-    const currentTab = searchParams.get("tab") || "overview";
+    const currentTab = searchParams?.get("tab") || "overview";
 
     const tabs = [
         { id: "overview", label: "Overview" },

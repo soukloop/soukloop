@@ -59,7 +59,7 @@ export async function notifyNewReport(data: {
     const { ReportSubmittedEmail } = await import('@/lib/email-templates/support/report-submitted');
     const { render } = await import('@react-email/render');
 
-    const emailHtml = render(
+    const emailHtml = await render(
         ReportSubmittedEmail({
             recipientType: 'ADMIN',
             reportId: data.reportId,

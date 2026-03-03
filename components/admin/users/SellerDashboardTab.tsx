@@ -2,7 +2,7 @@
 
 import { SellerMetricsCards } from '@/app/seller/components/dashboard/seller-metrics-cards';
 import { SellerSalesChart } from '@/app/seller/components/dashboard/seller-sales-chart';
-import { OrderListTable, DisplayOrder } from '@/app/editprofile/components/my-orders';
+import { OrderListTable, DisplayOrder } from '@/app/edit-profile/components/my-orders';
 
 interface SellerDashboardTabProps {
     stats: any;

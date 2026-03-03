@@ -57,12 +57,13 @@ export function NotificationListener() {
             notifiedIdsRef.current.add(notification.id)
 
             // Map notification type to Sonner toast method
-            const isSuccess = notification.type.includes('SUCCESS') ||
-                notification.type.includes('APPROVED') ||
-                notification.type === 'ACCOUNT_ACTIVATED'
-            const isError = notification.type.includes('FAILED') ||
-                notification.type.includes('REJECTED') ||
-                notification.type === 'ACCOUNT_SUSPENDED'
+            const t = notification.type as string;
+            const isSuccess = t.includes('SUCCESS') ||
+                t.includes('APPROVED') ||
+                t === 'ACCOUNT_ACTIVATED'
+            const isError = t.includes('FAILED') ||
+                t.includes('REJECTED') ||
+                t === 'ACCOUNT_SUSPENDED'
 
             // Show toast using Sonner
             if (isError) {
@@ -74,11 +75,12 @@ export function NotificationListener() {
             }
 
             // Check for critical updates directly from standard notifications too
-            if (notification.type === 'ROLE_UPDATED' ||
-                notification.type === 'ACCOUNT_ACTIVATED' ||
-                notification.type === 'ACCOUNT_SUSPENDED' ||
-                notification.type.includes('APPROVED') ||
-                notification.type.includes('REJECTED')
+            const t2 = notification.type as string;
+            if (t2 === 'ROLE_UPDATED' ||
+                t2 === 'ACCOUNT_ACTIVATED' ||
+                t2 === 'ACCOUNT_SUSPENDED' ||
+                t2.includes('APPROVED') ||
+                t2.includes('REJECTED')
             ) {
                 console.log('[NotificationListener] Critical account update received. Verifying status...');
                 const isActive = await checkSuspensionStatus();

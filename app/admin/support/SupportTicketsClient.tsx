@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 interface SupportTicket {
     id: string;
-    userId: string;
+    userId: string | null;
     subject: string;
     description: string;
     status: string;
@@ -21,7 +21,7 @@ interface SupportTicket {
         id: string;
         name: string | null;
         email: string;
-    };
+    } | null;
     guestName?: string | null;
     guestEmail?: string | null;
 }

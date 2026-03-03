@@ -159,7 +159,7 @@ export function useStartChat() {
     setError(null)
 
     try {
-      const { data, error: apiError } = await createOrGetChatConversation(sellerId, { productId })
+      const { data, error: apiError } = await createOrGetChatConversation(sellerId, productId)
 
       if (apiError) {
         setError(apiError.message)

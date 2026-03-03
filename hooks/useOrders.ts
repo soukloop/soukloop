@@ -73,7 +73,7 @@ export function useVendorOrders(enabled: boolean = true, mode: 'lite' | 'full' =
 
   const { data, error, isLoading, mutate } = useSWR(
     isAuthenticated && enabled ? `/api/vendor/orders?mode=${mode}` : null,
-    async (url) => {
+    async (url: string) => {
       // If url is null (not enabled), SWR won't even call this fetcher
       // It's a double safeguard just in case
       if (!url) return [];

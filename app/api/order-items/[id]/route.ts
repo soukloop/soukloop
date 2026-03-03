@@ -21,7 +21,7 @@ export async function PATCH(
         // if (session.user.role !== 'ADMIN') { ... }
 
         const body = await request.json();
-        const { quantity, price, listingId, orderId } = body;
+        const { quantity, price, orderId } = body; // listingId not a field on OrderItem, productId is handled elsewhere
 
         // Validate existence of item
         const existingItem = await prisma.orderItem.findUnique({
@@ -41,7 +41,6 @@ export async function PATCH(
             data: {
                 quantity: quantity !== undefined ? quantity : undefined,
                 price: price !== undefined ? price : undefined,
-                listingId: listingId !== undefined ? listingId : undefined,
                 orderId: orderId !== undefined ? orderId : undefined,
                 // updatedAt is handled automatically by @updatedAt or default(now()) in schema
                 // but we can explicitly set it to match the user's "updated_at = NOW()" intent

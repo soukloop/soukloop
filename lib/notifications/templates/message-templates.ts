@@ -37,7 +37,7 @@ export async function notifyNewMessage(recipientId: string, data: MessageData) {
         type: 'NEW_MESSAGE',
         title: `💬 New message from ${data.senderName}`,
         message,
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl: `/chats?conversation=${data.conversationId}`,
         sendEmail: false // Messages are usually too frequent for email
     })
@@ -64,7 +64,7 @@ export async function notifyNewReview(sellerId: string, data: ReviewData) {
         type: 'NEW_REVIEW',
         title: `New ${data.rating}-Star Review ${stars}`,
         message,
-        data,
+        data: data as unknown as Record<string, unknown>,
         actionUrl: `/product/${data.productId || (data as any).productSlug}`, // Fixed to use fallback or vice versa
         // Wait, the interface says productId is required. Let's use:
         // actionUrl: `/product/${(data as any).productSlug || data.productId}`,

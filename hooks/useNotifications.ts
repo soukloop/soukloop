@@ -160,10 +160,11 @@ export function useNotifications() {
 export function useNotificationFilters() {
   const { notifications, getNotificationsByType } = useNotifications()
 
-  const orderNotifications = getNotificationsByType('ORDER_UPDATE')
-  const messageNotifications = getNotificationsByType('MESSAGE')
-  const followNotifications = getNotificationsByType('FOLLOW')
-  const systemNotifications = getNotificationsByType('SYSTEM')
+  // Derive special categories since the union doesn't include generic names
+  const orderNotifications = notifications.filter(n => (n.type as string).startsWith('ORDER_'))
+  const messageNotifications = notifications.filter(n => n.type === 'NEW_MESSAGE')
+  const followNotifications = notifications.filter(n => n.type === 'NEW_FOLLOWER')
+  const systemNotifications = notifications.filter(n => n.type === 'SYSTEM_ANNOUNCEMENT')
 
   const getNotificationsByDateRange = (startDate: Date, endDate: Date) => {
     return notifications.filter(n => {

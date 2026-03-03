@@ -1,6 +1,6 @@
 
 import { prisma } from "@/lib/prisma";
-import { Truck, MapPin, Calendar, ExternalLink } from "lucide-react";
+import { Truck, MapPin, Calendar, ExternalLink, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/admin/StatusBadge";
 import Link from "next/link";

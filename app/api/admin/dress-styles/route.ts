@@ -246,10 +246,17 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
     try {
-        const isAdmin = await verifyAdmin(request);
-        if (!isAdmin) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // const isAdmin = await verifyAdmin(request);
+        // if (!isAdmin) {
+        //     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        // }
+        const authResult = await verifyAdminAuth(request);
+        if (!authResult.success) {
+          return NextResponse.json(
+          { error: authResult.error },
+          { status: authResult.status }
+         );
+    }
 
         const body = await request.json();
         const { id } = body;

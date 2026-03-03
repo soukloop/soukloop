@@ -57,7 +57,7 @@ export default function PricingPage() {
     "",
   ]);
 
-  const handleCodeChange = (index, value) => {
+  const handleCodeChange = (index: number, value: string) => {
     if (/^[0-9]?$/.test(value)) {
       const newCode = [...verificationCode];
       newCode[index] = value;
@@ -503,10 +503,10 @@ export default function PricingPage() {
             {/* Confirm Button */}
             <Button
               className="mx-auto h-11 sm:h-12 lg:h-14 w-full sm:w-[300px] lg:w-[436px] rounded-full bg-orange-500 text-sm sm:text-base lg:text-lg font-semibold text-white hover:bg-orange-600"
-              onClick={
-                (() => setShowPaymentOptionModal(false),
-                handleVerificationConfirm)
-              }
+              onClick={() => {
+                setShowPaymentOptionModal(false);
+                handleVerificationConfirm();
+              }}
             >
               Confirm
             </Button>

@@ -28,7 +28,7 @@ export async function notifyAdminsNewTicket(
     );
 
     return notifyAllAdmins(
-        'SUPPORT_TICKET',
+        'NEW_SUPPORT_TICKET',
         'New Support Ticket',
         `New ticket from ${userName || userEmail}: ${subject}`,
         {
@@ -75,7 +75,7 @@ export async function notifyUserTicketConfirmation(
     if (userId) {
         return createNotification({
             userId,
-            type: 'SUPPORT_TICKET_RECEIVED',
+            type: 'SYSTEM_ANNOUNCEMENT',
             title: 'Support Ticket Received',
             message: `We've received your ticket: ${subject}. We'll get back to you shortly.`,
             actionUrl: `/help`,
@@ -123,7 +123,7 @@ export async function notifyTicketReply(
     if (userId) {
         return createNotification({
             userId,
-            type: 'SUPPORT_REPLY',
+            type: 'SYSTEM_ANNOUNCEMENT',
             title: 'New Reply to Support Ticket',
             message: `Support team has replied to your ticket: ${subject}`,
             actionUrl: `/help`,
@@ -172,7 +172,7 @@ export async function notifyUserTicketResolved(
     if (userId) {
         return createNotification({
             userId,
-            type: 'SUPPORT_TICKET_RESOLVED',
+            type: 'SYSTEM_ANNOUNCEMENT',
             title: 'Support Ticket Resolved',
             message: `Your ticket "${subject}" has been marked as resolved.`,
             actionUrl: `/help`,

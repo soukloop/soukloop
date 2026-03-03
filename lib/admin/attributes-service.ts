@@ -77,40 +77,6 @@ export async function getPaginatedColors({ page = 1, pageSize = 10, search = '',
     }, page, pageSize);
 }
 
-// --- States ---
-export async function getPaginatedStates({ page = 1, pageSize = 10, search = '' }: AttributeFilterParams) {
-    const where: Prisma.StateWhereInput = search ? {
-        OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { abbreviation: { contains: search, mode: 'insensitive' } }
-        ]
-    } : {};
-
-    return getPaginatedData(prisma.state, {
-        where,
-        orderBy: { name: 'asc' },
-        include: { _count: { select: { cities: true } } }
-    }, page, pageSize);
-}
-
-// --- Cities ---
-export async function getPaginatedCities({ page = 1, pageSize = 10, search = '' }: AttributeFilterParams) {
-    const where: Prisma.CityWhereInput = search ? {
-        OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { state: { name: { contains: search, mode: 'insensitive' } } }
-        ]
-    } : {};
-
-    return getPaginatedData(prisma.city, {
-        where,
-        orderBy: { name: 'asc' },
-        include: {
-            state: true,
-            _count: { select: { products: true } }
-        }
-    }, page, pageSize);
-}
 
 // --- Materials ---
 export async function getPaginatedMaterials({ page = 1, pageSize = 10, search = '', status }: AttributeFilterParams) {

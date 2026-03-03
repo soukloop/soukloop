@@ -19,7 +19,7 @@ export function DashboardShell({ children, period, metrics, comparisonText }: Da
 
     const handlePeriodChange = (value: string) => {
         startTransition(() => {
-            const params = new URLSearchParams(searchParams.toString());
+            const params = new URLSearchParams(searchParams?.toString() || '');
             params.set("period", value);
             router.push(`?${params.toString()}`, { scroll: false });
         });

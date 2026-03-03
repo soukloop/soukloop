@@ -11,7 +11,7 @@ export default function MobileNav() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [openCategory, setOpenCategory] = useState<string | null>(null);
-    const [dressStyles, setDressStyles] = useState<GroupedDressStyles>({});
+    const [dressStyles, setDressStyles] = useState<GroupedDressStyles>({} as GroupedDressStyles);
     const [isLoadingStyles, setIsLoadingStyles] = useState(true);
 
     const FALLBACK_CATEGORIES = ['men', 'women', 'kids'];

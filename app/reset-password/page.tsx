@@ -10,8 +10,8 @@ export default function ResetPasswordPage() {
     const [isValidLink, setIsValidLink] = useState(false);
 
     useEffect(() => {
-        const token = searchParams.get("token");
-        const email = searchParams.get("email");
+        const token = searchParams?.get("token");
+        const email = searchParams?.get("email");
 
         if (!token || !email) {
             // Invalid link - redirect to login after a moment or show error

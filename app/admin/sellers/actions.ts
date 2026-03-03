@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notifications/create-notification';
 import { outbox } from '@/lib/outbox';
 import { generateUniqueSlug } from '@/lib/slug';
+import { notifyKycApproved } from "@/lib/notifications/templates/kyc-templates";
 
 // Helper for permissions (simplified for Actions)
 // In a real app, use the same verifyAdminAuth or checkPermission helpers
@@ -123,7 +124,7 @@ export async function approveSeller(sellerId: string) { // sellerId here is User
             const user = await prisma.user.findUnique({ where: { id: finalUserId }, select: { name: true } });
             await notifyKycApproved(finalUserId, {
                 verificationId: sellerId,
-                userName: user?.name // fallback
+                userName: user?.name ?? undefined
             }).catch(console.error);
 
             // 2. Trigger Real-time Session Refresh

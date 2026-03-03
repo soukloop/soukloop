@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import DataTable, { Column } from '@/components/admin/DataTable';
+import DataTable, { Column, FilterOption } from '@/components/admin/DataTable';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';

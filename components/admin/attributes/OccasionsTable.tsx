@@ -189,7 +189,7 @@ export default function OccasionsTable({ data, total, page, pageSize }: Occasion
                 ] as FilterOption<any>[]}
                 initialFilters={{
                     status: searchParams?.get('status') || undefined
-                }}
+                } as any}
                 onRowClick={(row) => router.push(`/admin/categories/occasions/${row.id}`)}
                 toolbarActions={
                     <Button

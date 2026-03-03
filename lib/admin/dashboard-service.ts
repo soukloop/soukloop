@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 
-import { DashboardStats, MetricData } from "@/lib/admin/types";
+import { DashboardStats, MetricData, DashboardMetrics, PendingActionsCount, TopStyleData, ListedStyleData } from "@/lib/admin/types";
 
 /**
  * Generate daily chart data for a specific month using SQL aggregation
