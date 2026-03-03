@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "dev:all": "npx -y concurrently \"docker-compose up postgres redis centrifugo\" \"next dev\"",
     "lint": "next lint",

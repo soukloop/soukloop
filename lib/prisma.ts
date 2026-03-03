@@ -1,20 +1,38 @@
 import { PrismaClient } from "@prisma/client"
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 
-// Fix for Docker/Node IPv6 resolution issues: Force 127.0.0.1 over localhost
-const databaseUrl = process.env.DATABASE_URL?.replace('localhost', '127.0.0.1');
+function getDatabaseUrl() {
+    const rawUrl = process.env.DATABASE_URL
+    if (!rawUrl) return undefined
 
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost')) {
-    console.log('🔧 Auto-corrected DATABASE_URL: localhost -> 127.0.0.1');
+    // Force IPv4 loopback in local Docker/Node environments
+    if (rawUrl.includes("localhost")) {
+        console.log("[Prisma] Auto-corrected DATABASE_URL host: localhost -> 127.0.0.1")
+        return rawUrl.replace("localhost", "127.0.0.1")
+    }
+
+    return rawUrl
 }
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-    datasources: {
-        db: {
-            url: databaseUrl,
-        },
-    },
-})
+function createPrismaClient() {
+    const databaseUrl = getDatabaseUrl()
+
+    // Only override datasource URL when we have a real value.
+    // Passing `url: undefined` can fail during module evaluation in build.
+    if (databaseUrl) {
+        return new PrismaClient({
+            datasources: {
+                db: {
+                    url: databaseUrl,
+                },
+            },
+        })
+    }
+
+    return new PrismaClient()
+}
+
+export const prisma = globalForPrisma.prisma || createPrismaClient()
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
