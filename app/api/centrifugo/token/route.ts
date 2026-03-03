@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import jwt from "jsonwebtoken";
 
-if (!process.env.CENTRIFUGO_TOKEN_SECRET) {
-    throw new Error("CENTRIFUGO_TOKEN_SECRET is not set");
-}
-const CENTRIFUGO_SECRET = process.env.CENTRIFUGO_TOKEN_SECRET;
-
 export async function GET() {
     try {
+        const centrifugoSecret = process.env.CENTRIFUGO_TOKEN_SECRET;
+        if (!centrifugoSecret) {
+            return NextResponse.json(
+                { error: "Centrifugo token endpoint is not configured" },
+                { status: 503 }
+            );
+        }
+
         const session = await auth();
 
         // For guest users, we can either deny or give an anonymous token
@@ -27,7 +30,7 @@ export async function GET() {
                     "product-stock-updates": {}
                 }
             },
-            CENTRIFUGO_SECRET
+            centrifugoSecret
         );
 
         return NextResponse.json({ token });
