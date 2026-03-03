@@ -1,17 +1,27 @@
 import NextAuth from "next-auth"
 import { authConfig } from "./auth.config"
-import {
-  checkLoginRateLimit,
-  checkRegisterRateLimit,
-  checkPasswordResetRateLimit,
-  checkApiRateLimit
-} from "./middleware/rate-limit"
-import { NextResponse, NextRequest } from "next/server"
-import { Role } from "@prisma/client"
-import { hasRole } from "./lib/roles"
+import { NextResponse } from "next/server"
 
 // Initialize NextAuth with Edge-safe config
 const { auth } = NextAuth(authConfig)
+
+type AppRole = "USER" | "SELLER" | "ADMIN" | "SUPER_ADMIN"
+
+const ROLE_LEVEL: Record<AppRole, number> = {
+  USER: 1,
+  SELLER: 2,
+  ADMIN: 5,
+  SUPER_ADMIN: 10,
+}
+
+function hasRequiredRole(currentRole: string | undefined, minRole: AppRole): boolean {
+  if (!currentRole) return false
+  const role = currentRole as AppRole
+  const currentLevel = ROLE_LEVEL[role]
+  const requiredLevel = ROLE_LEVEL[minRole]
+  if (currentLevel === undefined || requiredLevel === undefined) return false
+  return currentLevel >= requiredLevel
+}
 
 // ===== PUBLIC ROUTES =====
 const PUBLIC_PAGES = [
@@ -51,15 +61,15 @@ const PUBLIC_API_PREFIXES = [
 // ===== ROLE-BASED ROUTE PROTECTION =====
 // Define the MINIMUM role required for each prefix
 const PROTECTED_ROUTES = [
-  { prefix: '/admin', minRole: Role.ADMIN },
-  { prefix: '/api/admin', minRole: Role.ADMIN },
+  { prefix: '/admin', minRole: "ADMIN" as const },
+  { prefix: '/api/admin', minRole: "ADMIN" as const },
   // Allow all authenticated users (User, Seller, Admin) to access onboarding
-  { prefix: '/become-a-seller', minRole: Role.USER },
-  { prefix: '/api/seller/onboarding', minRole: Role.USER },
-  { prefix: '/api/seller/upload', minRole: Role.USER },
-  { prefix: '/seller', minRole: Role.SELLER },
-  { prefix: '/api/vendor', minRole: Role.SELLER },
-  { prefix: '/api/seller', minRole: Role.SELLER },
+  { prefix: '/become-a-seller', minRole: "USER" as const },
+  { prefix: '/api/seller/onboarding', minRole: "USER" as const },
+  { prefix: '/api/seller/upload', minRole: "USER" as const },
+  { prefix: '/seller', minRole: "SELLER" as const },
+  { prefix: '/api/vendor', minRole: "SELLER" as const },
+  { prefix: '/api/seller', minRole: "SELLER" as const },
 ];
 
 export default auth(async (req) => {
@@ -114,9 +124,9 @@ export default auth(async (req) => {
   // Use the FIRST matching prefix (most specific wins since they're listed specific-to-broad)
   for (const route of PROTECTED_ROUTES) {
     if (pathname.startsWith(route.prefix)) {
-      const hasRequiredRole = hasRole(userRole as Role, route.minRole);
+      const allowed = hasRequiredRole(userRole as string | undefined, route.minRole);
 
-      if (!hasRequiredRole) {
+      if (!allowed) {
         return NextResponse.redirect(new URL("/", nextUrl));
       }
       break; // Stop after first match to prevent broader prefixes from overriding
