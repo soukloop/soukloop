@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
                         id: true,
                         name: true,
                         image: true,
-                        vendor: { select: { logo: true } },
+                        vendor: { select: { logo: true, planTier: true } },
                         profile: { select: { avatar: true } }
                     }
                 },

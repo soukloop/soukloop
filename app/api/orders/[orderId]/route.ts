@@ -369,8 +369,13 @@ export async function PATCH(
                 if (payoutAmount.isZero()) {
                     const subtotal = new Prisma.Decimal(order.subtotal);
                     const shipping = new Prisma.Decimal(order.shipping || 0);
-                    // Standard Logic: Net Payout = (Subtotal * 88%) + Shipping
-                    payoutAmount = subtotal.mul(0.88).add(shipping);
+
+                    // Fallback to order's saved commissionRate, or default to 12% standard rate (0.12)
+                    const commissionRate = order.commissionRate != null ? new Prisma.Decimal(order.commissionRate) : new Prisma.Decimal(0.12);
+                    const vendorSharePercentage = new Prisma.Decimal(1).sub(commissionRate);
+
+                    // Dynamic Logic: Net Payout = (Subtotal * Vendor Share %) + Shipping
+                    payoutAmount = subtotal.mul(vendorSharePercentage).add(shipping);
                 }
 
                 await tx.vendor.update({

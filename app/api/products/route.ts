@@ -1,5 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server'
+import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 import { handleApiError } from '@/lib/api-wrapper';
 import { ProductSchema } from '@/lib/validations';
 import { auth } from '@/auth'
@@ -224,7 +224,8 @@ export async function GET(request: NextRequest) {
                         id: true,
                         userId: true,
                         kycStatus: true,
-                        isActive: true
+                        isActive: true,
+                        planTier: true
                     }
                 },
                 images: {
@@ -372,6 +373,37 @@ export async function POST(request: NextRequest) {
 
         if (!vendor) {
             return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
+        }
+
+        // Feature Gating: Enforce Product Limits based on Plan Tier
+        if (isDraft && vendor.planTier === 'BASIC') {
+            return NextResponse.json({
+                error: "Premium Feature Required",
+                details: "Saving product drafts is a Premium feature. Please upgrade to the Starter or Pro plan to save drafts.",
+                code: 'UPGRADE_REQUIRED'
+            }, { status: 403 });
+        }
+
+        if (!isDraft) {
+            const planLimits = SUBSCRIPTION_PLANS[vendor.planTier];
+
+            // Only enforce if the limit is not infinity
+            if (planLimits.maxActiveListings !== Infinity) {
+                const productCount = await prisma.product.count({
+                    where: {
+                        vendorId: vendor.id,
+                        status: 'ACTIVE' // Count currently active products
+                    }
+                });
+
+                if (productCount >= planLimits.maxActiveListings) {
+                    return NextResponse.json({
+                        error: "Subscription limit reached",
+                        details: `You have reached the maximum limit of ${planLimits.maxActiveListings} active products for the ${vendor.planTier} plan. Please upgrade to a higher tier to add more products.`,
+                        code: 'UPGRADE_REQUIRED'
+                    }, { status: 403 });
+                }
+            }
         }
 
         // Check if dress style is pending

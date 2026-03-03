@@ -4,7 +4,8 @@ import { useState } from 'react'
 import {
     FileType,
     MapPin,
-    Edit3
+    Edit3,
+    Loader2
 } from 'lucide-react'
 import { useSellerVerification } from '@/hooks/useSellerVerification'
 import { Button } from '@/components/ui/button'
@@ -70,6 +71,7 @@ export default function SellerApplicationSection() {
                 status={status}
                 rejectionReason={verification?.rejectionReason}
                 isExistingSeller={isExistingSeller}
+                planTier={session?.user?.planTier}
             />
 
             {/* Approved Summary View */}

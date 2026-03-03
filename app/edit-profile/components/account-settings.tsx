@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import MyOrdersSection from './my-orders';
 import AddressBookSection from './AddressBookSection';
-import BankAccountsSection from './BankAccountsSection';
+import PaymentsSection from './PaymentsSection';
 import SellerApplicationSection from './SellerApplicationSection';
 import { useSellerAuth } from "@/hooks/useSellerAuth";
 import WishlistSection from './WishlistSection';
@@ -72,14 +72,32 @@ export default function AccountSettings() {
 
   const { isSeller } = useSellerAuth();
 
-  const tabs = [
-    { id: 'edit-profile', label: 'Edit Profile', icon: Edit },
-    { id: 'my-orders', label: 'My Orders', icon: Package },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart },
-    { id: 'address', label: 'Address Book', icon: MapPin },
-    ...(isSeller ? [{ id: 'payment', label: 'Bank Accounts', icon: Building2 }] : []),
-    ...(isSeller ? [{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }] : []),
-  ];
+  // Actually, we should use the user object to check the tier.
+  // Wait, I need to get the user from useProfile or useAuth.
+  const { profile } = useProfile();
+  const planTier = useMemo(() => {
+    return (profile?.user as any)?.planTier || (profile?.user as any)?.vendor?.planTier || (typeof window !== 'undefined' ? (window as any).__USER_PLAN_TIER__ : 'BASIC');
+  }, [profile]);
+
+  const filteredTabs = useMemo(() => {
+    const isPremium = planTier === 'STARTER' || planTier === 'PRO';
+    return [
+      { id: 'edit-profile', label: 'Edit Profile', icon: Edit },
+      { id: 'my-orders', label: 'My Orders', icon: Package },
+      { id: 'wishlist', label: 'Wishlist', icon: Heart },
+      { id: 'address', label: 'Address Book', icon: MapPin },
+      ...(isSeller ? [{ id: 'payment', label: 'Payments', icon: CreditCard }] : []),
+      ...(isSeller && isPremium ? [{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }] : []),
+    ];
+  }, [isSeller, planTier]);
+
+  // Mandatory Redirect for restricted sections
+  useEffect(() => {
+    const isPremium = planTier === 'STARTER' || planTier === 'PRO';
+    if (activeSection === 'promo-codes' && (!isSeller || !isPremium)) {
+      handleSectionChange('edit-profile');
+    }
+  }, [activeSection, isSeller, planTier]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,7 +111,7 @@ export default function AccountSettings() {
                 justify-between md:justify-center md:gap-4 w-full mx-auto hide-scrollbar
               `}
             >
-              {tabs.map((item) => {
+              {filteredTabs.map((item) => {
                 const isActive = activeSection === item.id;
                 const Icon = item.icon;
 
@@ -142,7 +160,7 @@ export default function AccountSettings() {
             {/* Mobile Active Section Title */}
             <div className="md:hidden text-center pb-2 animate-in fade-in slide-in-from-top-1 duration-300">
               <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2 mx-10">
-                {tabs.find(i => i.id === activeSection)?.label}
+                {filteredTabs.find(i => i.id === activeSection)?.label}
               </h2>
             </div>
           </div>
@@ -166,16 +184,12 @@ export default function AccountSettings() {
         {/* Address Book */}
         {activeSection === 'address' && <AddressBookSection />}
 
-        {/* Bank Accounts (Payouts) */}
+        {/* Payments Section */}
+        {/* Payments Section */}
         {activeSection === 'payment' && (
           <div className="flex justify-center px-4 sm:px-6">
-            <div className="w-full max-w-6xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-              <div>
-                <h2 className="text-xl md:text-2xl font-black text-gray-900">Bank Accounts</h2>
-                <p className="text-sm text-gray-500 mt-1">Manage your bank accounts for receiving earnings and payouts.</p>
-              </div>
-              <div className="h-px bg-gray-100" />
-              <BankAccountsSection />
+            <div className="w-full max-w-6xl animate-in fade-in slide-in-from-right-4 duration-500">
+              <PaymentsSection />
             </div>
           </div>
         )}
@@ -184,7 +198,7 @@ export default function AccountSettings() {
         {activeSection === 'wishlist' && <WishlistSection />}
 
         {/* Promo Codes */}
-        {activeSection === 'promo-codes' && isSeller && (
+        {activeSection === 'promo-codes' && isSeller && (planTier === 'STARTER' || planTier === 'PRO') && (
           <div className="flex justify-center px-4 sm:px-6">
             <div className="w-full max-w-6xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div>
@@ -196,6 +210,8 @@ export default function AccountSettings() {
             </div>
           </div>
         )}
+
+        {/* No restricted UI prompt - we use absolute redirection now */}
       </div>
 
       <div className="h-16 md:h-[100px]"></div>
@@ -209,6 +225,6 @@ export default function AccountSettings() {
           display: none;
         }
       `}</style>
-    </div >
+    </div>
   );
 }

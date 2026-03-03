@@ -22,7 +22,7 @@ export default function CartFlow({ savedAddresses = [], initialCartData }: CartF
     const initialOrderId = searchParams?.get("orderId");
     const isCanceled = searchParams?.get("canceled") === "true";
 
-    const [currentStep, setCurrentStep] = useState(initialOrderId ? 3 : isCanceled ? 2 : 1);
+    const [currentStep, setCurrentStep] = useState(isCanceled ? 2 : initialOrderId ? 3 : 1);
     const [appliedPromo, setAppliedPromo] = useState<{
         code: string;
         couponId: string;

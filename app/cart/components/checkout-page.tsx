@@ -13,6 +13,7 @@ import BillingAddressForm, { BillingAddressFormData } from '@/components/forms/B
 import { CheckoutSkeleton } from "@/components/ui/skeletons"
 import { Skeleton } from "@/components/ui/skeleton"
 import { createCheckoutSession } from "@/actions/stripe/create-checkout"
+import { cancelCheckoutSession } from "@/actions/stripe/cancel-checkout"
 import { StyledPhoneInput } from "@/components/ui/phone-input"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
@@ -69,10 +70,38 @@ export default function CheckoutPage({
   const hasShowCanceled = useRef(false);
 
   useEffect(() => {
-    if (searchParams?.get("canceled") === "true" && !hasShowCanceled.current) {
-      toast.error("Payment was canceled. You can try again whenever you're ready.");
-      hasShowCanceled.current = true;
-    }
+    const handleCancellation = async () => {
+      if (searchParams?.get("canceled") === "true" && !hasShowCanceled.current) {
+        hasShowCanceled.current = true;
+
+        const orderIdToCancel = searchParams?.get("orderId");
+
+        if (orderIdToCancel) {
+          try {
+            const res = await cancelCheckoutSession(orderIdToCancel);
+            if (res.success) {
+              toast.error("Payment was canceled.");
+
+              // Clean up the URL to prevent duplicate strict-mode executions
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.delete("canceled");
+              newUrl.searchParams.delete("orderId");
+              window.history.replaceState({}, "", newUrl.pathname + newUrl.search);
+
+            } else {
+              toast.error("Payment was canceled. Please try again.");
+              console.error("Cancellation Action Error:", res.error);
+            }
+          } catch (err) {
+            toast.error("Payment was canceled.");
+          }
+        } else {
+          toast.error("Payment was canceled. You can try again whenever you're ready.");
+        }
+      }
+    };
+
+    handleCancellation();
   }, [searchParams]);
 
   // Phone editing state
@@ -600,7 +629,7 @@ export default function CheckoutPage({
                     showDiscardButton
                     onDiscard={() => setShowAddAddress(false)}
                     savedAddresses={savedAddresses}
-                    excludeFields={['firstName', 'lastName', 'phone', 'email', 'company']}
+                    excludeFields={['firstName', 'lastName', 'phone', 'email']}
                     showTitle={false}
                   />
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FormSelect } from "@/components/ui/FormSelect";
 import { ProductData } from "./types";
 import RequestDressStyleModal from "./request-dress-style-modal";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 interface ProductDetailsStepProps {
     data: ProductData;
     onUpdate: (updates: Partial<ProductData>) => void;
+    isBasicSeller?: boolean;
 }
 
 interface DressStyleOption {
@@ -24,7 +26,8 @@ interface DressStyleOption {
 // Controls which "Add" modal is currently open
 type AddModalType = "brand" | "material" | "occasion" | null;
 
-export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsStepProps) {
+export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: ProductDetailsStepProps) {
+    const router = useRouter();
     const [dressStyles, setDressStyles] = useState<DressStyleOption[]>([]);
     const [isLoadingStyles, setIsLoadingStyles] = useState(false);
     const [showRequestModal, setShowRequestModal] = useState(false);
@@ -217,7 +220,14 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                 placeholder="Select or add brand"
                 actionItem={{
                     label: "Add new brand",
-                    onClick: (query) => openAddModal("brand", query)
+                    onClick: (query) => {
+                        if (isBasicSeller) {
+                            router.push("/pricing");
+                            return;
+                        }
+                        openAddModal("brand", query);
+                    },
+                    premium: isBasicSeller
                 }}
                 hideDefaultAddOption={true}
             />
@@ -277,7 +287,14 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                 isLoading={isLoadingMaterials}
                 actionItem={{
                     label: "Add new fabric",
-                    onClick: (query) => openAddModal("material", query)
+                    onClick: (query) => {
+                        if (isBasicSeller) {
+                            router.push("/pricing");
+                            return;
+                        }
+                        openAddModal("material", query);
+                    },
+                    premium: isBasicSeller
                 }}
                 hideDefaultAddOption={true}
             />
@@ -312,9 +329,14 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                         actionItem={{
                             label: "Request new style",
                             onClick: (query) => {
+                                if (isBasicSeller) {
+                                    router.push("/pricing");
+                                    return;
+                                }
                                 setRequestedStyleName(query);
                                 setShowRequestModal(true);
-                            }
+                            },
+                            premium: isBasicSeller
                         }}
                         hideDefaultAddOption={true}
                         renderOption={(opt) => {
@@ -355,7 +377,14 @@ export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsSte
                 isLoading={isLoadingOccasions}
                 actionItem={{
                     label: "Add new occasion",
-                    onClick: (query) => openAddModal("occasion", query)
+                    onClick: (query) => {
+                        if (isBasicSeller) {
+                            router.push("/pricing");
+                            return;
+                        }
+                        openAddModal("occasion", query);
+                    },
+                    premium: isBasicSeller
                 }}
                 hideDefaultAddOption={true}
             />

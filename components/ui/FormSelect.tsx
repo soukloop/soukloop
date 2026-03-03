@@ -28,7 +28,7 @@ interface FormSelectProps {
     renderOption?: (option: any) => React.ReactNode;
     renderValue?: (value: string) => React.ReactNode;
     searchable?: boolean;
-    actionItem?: { label: string; onClick: (query: string) => void };
+    actionItem?: { label: string; onClick: (query: string) => void; premium?: boolean };
     hideDefaultAddOption?: boolean;
 }
 
@@ -233,6 +233,11 @@ export function FormSelect({
                             >
                                 <Plus className="h-4 w-4" />
                                 {actionItem.label}
+                                {actionItem.premium && (
+                                    <span className="ml-auto bg-[#E87A3F] text-white text-[10px] leading-tight font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                        UPGRADE
+                                    </span>
+                                )}
                             </button>
                         </div>
                     )}

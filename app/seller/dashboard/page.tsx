@@ -8,6 +8,7 @@ import { unstable_cache } from "next/cache";
 import { DashboardCharts } from "./dashboard-charts";
 import { DashboardOrders } from "./dashboard-orders";
 import { DashboardShell } from "./dashboard-shell";
+import { SellerDashboardLock } from "./components/dashboard-lock";
 // No Lucide imports needed here as icons are now mapped via strings in the Client Component
 
 interface PageProps {
@@ -47,6 +48,10 @@ export default async function SellerDashboard({ searchParams }: PageProps) {
                 <FooterSection />
             </div>
         );
+    }
+
+    if (vendor.planTier === 'BASIC') {
+        return <SellerDashboardLock />;
     }
 
     // Date Logic

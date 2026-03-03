@@ -108,7 +108,7 @@ export async function PUT(
             await prisma.address.updateMany({
                 where: {
                     userId: session.user.id,
-                    type: data.type || existingAddress.type,
+                    ...(existingAddress.isBilling ? { isBilling: true } : { isShipping: true }),
                     id: { not: params.id }
                 },
                 data: {

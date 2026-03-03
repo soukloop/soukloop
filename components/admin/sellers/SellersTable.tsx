@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { CopyButton } from "@/components/ui/copy-button";
+import { PremiumBadge } from '@/components/ui/premium-badge';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 type Seller = {
@@ -180,8 +181,13 @@ export default function SellersTable({
                         )}
                     </div>
                     <div>
-                        <div className="font-medium text-gray-900 hover:text-orange-600 transition-colors">
-                            {seller.name}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="font-medium text-gray-900 hover:text-orange-600 transition-colors">
+                                {seller.name}
+                            </div>
+                            {seller.planTier && (seller.planTier === 'PRO' || seller.planTier === 'STARTER') && (
+                                <PremiumBadge tier={seller.planTier} iconClassName="size-4" />
+                            )}
                         </div>
                         <CopyButton
                             value={seller.email}

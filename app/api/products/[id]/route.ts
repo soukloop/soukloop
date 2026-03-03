@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 import { prisma } from '@/lib/prisma'
 import { auth } from "@/auth"
 import { Role } from '@prisma/client'
@@ -56,6 +57,7 @@ export async function GET(
               id: true,
               name: true,
               image: true,
+              planTier: true,
               profile: {
                 select: { avatar: true }
               }
@@ -67,7 +69,7 @@ export async function GET(
       reviews: {
         include: {
           user: {
-            select: { name: true, image: true }
+            select: { name: true, image: true, vendor: { select: { planTier: true } } }
           }
         },
         orderBy: { createdAt: 'desc' as const }
@@ -208,6 +210,41 @@ export async function PATCH(
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden: You do not own this product" }, { status: 403 });
+    }
+
+    if (body.isDraft && existingProduct.vendor.planTier === 'BASIC') {
+      return NextResponse.json({
+        error: "Premium Feature Required",
+        details: "Saving product drafts is a Premium feature. Please upgrade to the Starter or Pro plan to save drafts.",
+        code: 'UPGRADE_REQUIRED'
+      }, { status: 403 });
+    }
+
+    // Subscription Limit Check when activating a product
+
+    // We only need to check limits if they are trying to activate a product that is currently inactive/draft
+    const isActivating = (body.status === 'ACTIVE' || (!body.isDraft && existingProduct.status === 'DRAFT'));
+    const isAlreadyActive = existingProduct.status === 'ACTIVE';
+
+    if (isActivating && !isAlreadyActive) {
+      const planLimits = SUBSCRIPTION_PLANS[existingProduct.vendor.planTier];
+
+      if (planLimits.maxActiveListings !== Infinity) {
+        const productCount = await prisma.product.count({
+          where: {
+            vendorId: existingProduct.vendor.id,
+            status: 'ACTIVE'
+          }
+        });
+
+        if (productCount >= planLimits.maxActiveListings) {
+          return NextResponse.json({
+            error: "Subscription limit reached",
+            details: `You have reached the maximum limit of ${planLimits.maxActiveListings} active products for the ${existingProduct.vendor.planTier} plan. Please upgrade to a higher tier to publish this product.`,
+            code: 'UPGRADE_REQUIRED'
+          }, { status: 403 });
+        }
+      }
     }
 
     const updateData: any = {

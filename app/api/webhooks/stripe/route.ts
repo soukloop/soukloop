@@ -7,6 +7,7 @@ import { notifyOrderPlaced, notifySellersNewOrder } from '@/lib/notifications/te
 import { notifyPaymentSuccess } from '@/lib/notifications/templates/payment-templates';
 import { RewardService } from '@/features/rewards/service';
 import { REWARD_RULES, ACTION_TYPES, REFERENCE_TYPES } from '@/features/rewards/constants';
+import { handleSubscriptionCheckoutCompleted, handleSubscriptionChange, handleSubscriptionInvoicePaid } from '@/features/subscriptions/webhook-handlers';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -31,8 +32,20 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleSubscriptionInvoicePaid(invoice);
+        break;
+      }
+
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        if (session.mode === 'subscription') {
+          await handleSubscriptionCheckoutCompleted(session);
+          break;
+        }
+
         const customerOrderId = session.metadata?.customerOrderId;
 
         if (!customerOrderId) {
@@ -318,6 +331,62 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`Payment failed: ${paymentIntent.id}`);
+        break;
+      }
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const subscriptionEvent = event.data.object as Stripe.Subscription;
+        await handleSubscriptionChange(subscriptionEvent);
+        break;
+      }
+
+      case 'checkout.session.expired': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const customerOrderId = session.metadata?.customerOrderId;
+
+        if (!customerOrderId) {
+          console.error('Expired session missing customerOrderId in metadata');
+          break;
+        }
+
+        console.log(`Checkout session expired for CustomerOrder: ${customerOrderId}. Beginning cleanup.`);
+
+        const customerOrder = await prisma.customerOrder.findUnique({
+          where: { id: customerOrderId },
+          include: { vendorOrders: true }
+        });
+
+        if (!customerOrder) {
+          console.log(`CustomerOrder ${customerOrderId} already deleted or not found.`);
+          break;
+        }
+
+        const isSafeToDelete = customerOrder.vendorOrders.every(order => order.status === 'PENDING');
+
+        if (!isSafeToDelete) {
+          console.log(`⚠️ Expired Session: CustomerOrder ${customerOrderId} has non-PENDING sub-orders. Skipping deletion to prevent race condition.`);
+          break;
+        }
+
+        // Delete the orphaned PENDING order
+        await prisma.$transaction(async (tx) => {
+          const vendorOrderIds = customerOrder.vendorOrders.map(o => o.id);
+
+          await tx.paymentTransaction.deleteMany({
+            where: {
+              orderId: { in: vendorOrderIds },
+              status: 'PENDING'
+            }
+          });
+
+          await tx.customerOrder.delete({
+            where: { id: customerOrderId }
+          });
+        });
+
+        console.log(`Successfully cleaned up expired CustomerOrder ${customerOrderId}`);
         break;
       }
 

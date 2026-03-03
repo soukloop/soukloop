@@ -109,8 +109,8 @@ export default function WithdrawalClient({ initialData }: WithdrawalClientProps)
             toast.error("Please select a bank account");
             return;
         }
-        if (isNaN(amount) || amount < 10) {
-            toast.error("Minimum withdrawal amount is $10.00");
+        if (isNaN(amount) || amount < 50) {
+            toast.error("Minimum withdrawal amount is $50.00");
             return;
         }
 
@@ -254,7 +254,7 @@ export default function WithdrawalClient({ initialData }: WithdrawalClientProps)
                                                 Amount exceeds your available balance (${initialData.balance.toFixed(2)})
                                             </p>
                                         )}
-                                        <p className="text-xs text-gray-500">Minimum withdrawal: $10.00</p>
+                                        <p className="text-xs text-gray-500">Minimum withdrawal: $50.00</p>
                                     </div>
 
                                     <div className="space-y-2">

@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import React from "react";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+});
 import Providers from "@/components/Providers";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
 import { auth } from "@/auth";
@@ -31,7 +37,7 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head />
       <body suppressHydrationWarning>
         <Providers session={session}>

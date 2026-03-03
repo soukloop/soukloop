@@ -119,7 +119,15 @@ export default auth(async (req) => {
       if (!hasRequiredRole) {
         return NextResponse.redirect(new URL("/", nextUrl));
       }
-      break; // Stop after first match to prevent broader prefixes from overriding
+
+      // Check tier for seller routes
+      if (pathname.startsWith('/seller')) {
+        const planTier = req.auth?.user?.planTier;
+        if (planTier === 'BASIC') {
+          return NextResponse.redirect(new URL("/pricing", nextUrl));
+        }
+      }
+      break;
     }
   }
 

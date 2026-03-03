@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import AuthPopup from "@/components/auth/auth-popup";
 import { isAtLeastSeller, isAtLeastAdmin } from "@/lib/roles";
 import WishlistButton from "@/components/ui/wishlist-button";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 interface Product {
     id: string;
@@ -40,6 +41,9 @@ interface Product {
     quantity?: number;
     slug?: string;
     pendingOrderCount?: number;
+    vendor?: {
+        planTier?: string;
+    };
 }
 
 interface ProductCardProps {
@@ -348,8 +352,11 @@ export default function ProductCard({
 
             <div className={`flex flex-1 flex-col ${compact ? "gap-0.5" : "gap-1"}`}>
                 {/* Title */}
-                <h3 className={`font-bold text-gray-900 line-clamp-1 ${compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"}`}>
+                <h3 className={`font-bold text-gray-900 line-clamp-1 flex items-center gap-1 ${compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"}`}>
                     {product.title}
+                    {product.vendor?.planTier && (product.vendor.planTier === 'PRO' || product.vendor.planTier === 'STARTER') && (
+                        <PremiumBadge tier={product.vendor.planTier} className="inline-flex" iconClassName="size-3.5" />
+                    )}
                 </h3>
 
                 {/* Category.Size Row */}
@@ -435,7 +442,7 @@ export default function ProductCard({
                             className={`flex w-full items-center justify-center rounded-lg border border-gray-500 bg-white font-bold text-gray-500 uppercase tracking-wide cursor-pointer hover:bg-gray-50 transition-colors ${compact ? "py-1.5 text-[10px] sm:text-xs" : "py-2 sm:py-3 text-xs sm:text-sm"}`}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onEdit) onEdit(product);
+                                if (onEdit) (onEdit as any)(product);
                             }}
                         >
                             Publish Draft

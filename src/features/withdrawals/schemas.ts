@@ -9,7 +9,7 @@ export const bankAccountSchema = z.object({
 });
 
 export const withdrawalRequestSchema = z.object({
-    amount: z.number().min(10, "Minimum withdrawal amount is $10"),
+    amount: z.number().min(50, "Minimum withdrawal amount is $50"),
     bankAccountId: z.string().min(1, "Please select a bank account"),
 });
 

@@ -75,6 +75,11 @@ export async function getPaginatedUsers({
                         lastName: true,
                         avatar: true
                     }
+                },
+                vendor: {
+                    select: {
+                        planTier: true
+                    }
                 }
             }
         })
@@ -89,6 +94,7 @@ export async function getPaginatedUsers({
         status: user.isActive ? 'Active' : 'Suspended',
         lastActive: user.createdAt.toISOString().split('T')[0], // Fallback to createdAt
         avatar: user.profile?.avatar || user.image || null,
+        planTier: user.vendor?.planTier || 'BASIC',
         isDeletable: true // Can contain logic if needed
     }));
 

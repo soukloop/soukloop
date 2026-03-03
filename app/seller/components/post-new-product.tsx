@@ -107,7 +107,8 @@ export default function PostNewProduct({ onShowPaymentModal }: PostNewProductPro
                 });
 
                 if (!res.ok) {
-                    throw new Error("Failed to create product");
+                    const errorData = await res.json().catch(() => null);
+                    throw new Error(errorData?.details || errorData?.error || "Failed to create product");
                 }
 
                 const createdProduct = await res.json();
@@ -116,9 +117,9 @@ export default function PostNewProduct({ onShowPaymentModal }: PostNewProductPro
                 // 5. Success
                 router.push("/profile");
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Submission error:", error);
-                toast.error("Failed to create product. Please try again.");
+                toast.error(error.message || "Failed to create product. Please try again.");
             } finally {
                 setIsSubmitting(false);
             }

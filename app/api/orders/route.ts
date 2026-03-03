@@ -5,6 +5,7 @@ import { auth } from '@/auth'
 import { RewardService } from '@/features/rewards/service'
 import { REWARD_RULES, ACTION_TYPES, REFERENCE_TYPES } from '@/features/rewards/constants'
 import { notifyOrderPlaced, notifySellersNewOrder } from '@/lib/notifications/templates/order-templates'
+import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 
 export const dynamic = 'force-dynamic'
 
@@ -399,8 +400,7 @@ export async function POST(request: NextRequest) {
       // Create VendorOrder for each vendor
       const vendorEntries = Object.entries(vendorGroups)
 
-      for (let i = 0; i < vendorEntries.length; i++) {
-        const [vendorId, groupData] = vendorEntries[i]
+      await Promise.all(vendorEntries.map(async ([vendorId, groupData], i) => {
         const vendorItems = groupData.items
         const vendorPlanTier = groupData.planTier
 
@@ -415,8 +415,10 @@ export async function POST(request: NextRequest) {
         const total = subtotal + shipping + tax
 
         // Calculate dynamic commission based on vendor's plan tier
-        // 8% for PREMIUM sellers, 12% for BASIC sellers
-        const COMMISSION_RATE = vendorPlanTier === 'PREMIUM' ? 0.08 : 0.12;
+        const planKey = (vendorPlanTier as any) || 'BASIC';
+        const planConfig = (SUBSCRIPTION_PLANS as any)[planKey] || SUBSCRIPTION_PLANS.BASIC;
+        const commissionBps = planConfig.commissionBps ?? 1200;
+        const COMMISSION_RATE = commissionBps / 10000; // e.g. 1200 -> 0.12
         const platformFee = subtotal * COMMISSION_RATE
 
         // Net payout = (subtotal after commission) + shipping reimbursement
@@ -425,7 +427,17 @@ export async function POST(request: NextRequest) {
         const thisVendorCouponDiscount = (validCoupon && validCoupon.vendorId === vendorId) ? couponDiscount : 0;
         const netPayout = (subtotal * (1 - COMMISSION_RATE)) + shipping - thisVendorCouponDiscount;
 
+        // Apply Points Discount Proportionally
+        let thisVendorPointsDiscount = 0;
+        if (rewardDiscountAmount > 0 && grandSubtotal > 0) {
+          // Distribute points discount based on this vendor's subtotal share
+          thisVendorPointsDiscount = (subtotal / grandSubtotal) * rewardDiscountAmount;
+        }
+
         const vendorOrderNumber = `${parentOrderNumber}-V${i + 1}`
+
+        // Final discounted total for this specific vendor
+        const discountedTotal = Math.max(0, subtotal + shipping + tax - thisVendorCouponDiscount - thisVendorPointsDiscount);
 
         const createdOrderRecord = await tx.order.create({
           data: {
@@ -437,7 +449,7 @@ export async function POST(request: NextRequest) {
             subtotal,
             tax,
             shipping,
-            total,
+            total: discountedTotal,
             commissionRate: COMMISSION_RATE,
             platformFee,
             netPayout,
@@ -457,7 +469,7 @@ export async function POST(request: NextRequest) {
               create: {
                 provider: 'STRIPE',
                 status: 'PENDING',
-                amount: total,
+                amount: discountedTotal,
                 currency: 'USD'
               }
             }
@@ -469,7 +481,7 @@ export async function POST(request: NextRequest) {
           data: {
             orderId: createdOrderRecord.id,
             userId: session.user.id,
-            amount: new Prisma.Decimal(total),
+            amount: new Prisma.Decimal(discountedTotal),
             currency: 'USD',
             provider: 'STRIPE',
             status: 'PENDING',
@@ -477,31 +489,34 @@ export async function POST(request: NextRequest) {
           }
         })
 
-      }
+      }))
 
       /* 
       // Inventory and Rewards are now handled by Stripe Webhook
       // to ensure payment is successful before taking stock or giving points.
       */
 
-      // Return parent order with vendor orders
-      const createdOrder = await tx.customerOrder.findUnique({
-        where: { id: parentOrder.id },
-        include: {
-          vendorOrders: {
-            include: {
-              items: {
-                include: {
-                  product: { include: { images: true } }
-                }
-              },
-              vendor: true
-            }
+      return { customerOrderId: parentOrder.id, vendorGroups } // Return both for notification logic
+    }, {
+      maxWait: 5000,
+      timeout: 15000 // Extended timeout to prevent Prisma P2028
+    })
+
+    // Fetch the deeply nested order AFTER the transaction lock is released
+    const createdOrder = await prisma.customerOrder.findUnique({
+      where: { id: result.customerOrderId },
+      include: {
+        vendorOrders: {
+          include: {
+            items: {
+              include: {
+                product: { include: { images: true } }
+              }
+            },
+            vendor: true
           }
         }
-      })
-
-      return { customerOrder: createdOrder, vendorGroups } // Return both for notification logic
+      }
     })
 
     // Notifications are now triggered by Stripe Webhook upon successful payment
@@ -539,7 +554,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      customerOrder: result.customerOrder,
+      customerOrder: createdOrder,
       redeemedPoints: redeemedPoints || 0,
       message: `Created order with ${Object.keys(result.vendorGroups).length} shipments`
     })

@@ -124,14 +124,6 @@ export default function BankAccountsSection() {
         }
     }
 
-    if (isLoading && accounts.length === 0) {
-        return (
-            <div className="flex h-48 items-center justify-center">
-                <Loader2 className="size-8 animate-spin text-[#E87A3F]" />
-            </div>
-        )
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -234,7 +226,7 @@ export default function BankAccountsSection() {
                 {isLoading ? (
                     // Skeletons
                     [1, 2].map(i => (
-                        <div key={i} className="rounded-xl border border-gray-100 bg-white p-5 md:p-6 space-y-3">
+                        <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 animate-pulse p-5 md:p-6 space-y-3">
                             <div className="flex justify-between items-start">
                                 <div className="space-y-2 w-full">
                                     <div className="h-4 bg-gray-100 rounded w-1/3" />

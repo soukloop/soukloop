@@ -118,39 +118,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 token.picture = user.image;
                 token.tokenVersion = user.tokenVersion ?? 0;
                 token.isActive = user.isActive;
-            }
 
-            // 2. ALWAYS Validate against DB on every check (Paranoid Mode)
-            // This ensures "Zombie Sessions" (deleted users) are killed immediately
-            if (token && token.id) {
-                try {
-                    const dbUser = await prisma.user.findUnique({
-                        where: { id: token.id as string },
-                        select: { id: true, role: true, isActive: true, image: true, tokenVersion: true }
-                    });
-
-                    if (!dbUser) {
-                        console.warn(`[Auth] User ${token.id} not found in DB. Invalidating token.`);
-                        return null; // This invalidates the session
-                    }
-
-                    if (!dbUser.isActive) {
-                        console.warn(`[Auth] User ${token.id} is suspended. Invalidating token.`);
-                        return null; // This invalidates the session
-                    }
-
-                    // Sync latest state
-                    token.role = dbUser.role;
-                    token.picture = dbUser.image;
-                    token.isActive = dbUser.isActive;
-                    token.tokenVersion = dbUser.tokenVersion;
-
-                } catch (error) {
-                    console.error("[Auth] Token validation error:", error);
-                    // In case of DB error, we might want to keep the session alive or fail closed.
-                    // For security, failing closed (returning null) is safer but risks outage during DB blips.
-                    // We'll keep the old token for now to be resilient.
-                }
+                // ✅ FETCH PLAN TIER FOR SESSION
+                const vendor = await prisma.vendor.findUnique({
+                    where: { userId: user.id },
+                    select: { planTier: true }
+                });
+                token.planTier = vendor?.planTier || 'BASIC';
             }
 
             return token;
@@ -162,6 +136,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 session.user.image = token.picture;
                 session.user.tokenVersion = token.tokenVersion as number;
                 session.user.isActive = token.isActive as boolean;
+                session.user.planTier = token.planTier as string | undefined;
             }
             return session;
         },

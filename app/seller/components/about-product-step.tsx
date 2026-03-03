@@ -13,11 +13,13 @@ import { FormSelect } from "@/components/ui/FormSelect";
 interface AboutProductStepProps {
     data: ProductData;
     onUpdate: (updates: Partial<ProductData>) => void;
+    isBasicSeller?: boolean;
 }
 
 export default function AboutProductStep({
     data,
     onUpdate,
+    isBasicSeller,
 }: AboutProductStepProps) {
     // Dropdown state moved to FormSelect internal Popover
 

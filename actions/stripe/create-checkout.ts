@@ -152,9 +152,10 @@ export async function createCheckoutSession(customerOrderId: string, pointsToDed
             line_items,
             discounts: discounts.length > 0 ? discounts : undefined,
             success_url: `${origin}/order-confirmation/${customerOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/cart?canceled=true`,
+            cancel_url: `${origin}/cart?canceled=true&orderId=${customerOrder.id}`,
             customer_email: session.user.email || undefined,
             automatic_tax: { enabled: false }, // Disabled per user request (missing head office address)
+            expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Enforce strictly 30-minute expiration minimum
             metadata: {
                 customerOrderId: customerOrder.id, // Track Parent ID
                 userId: session.user.id,
