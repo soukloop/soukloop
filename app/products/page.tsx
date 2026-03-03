@@ -1,4 +1,4 @@
-import SearchResults from "../products/components/search-results"
+import SearchResults from "./components/search-results"
 import { getAllCategories } from "@/features/categories/queries"
 import { getBrands, getDressStyles, getOccasions, getMaterials } from "@/features/products/queries"
 
