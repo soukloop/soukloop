@@ -59,7 +59,7 @@ const faqData = [
 
 export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gray-50/50 sm:mt-[-9rem] mt-[-6.2rem]">
       <EcommerceHeader />
 
       {/* Main FAQ Content */}
