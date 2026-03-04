@@ -57,7 +57,6 @@ export async function GET(
               id: true,
               name: true,
               image: true,
-              planTier: true,
               profile: {
                 select: { avatar: true }
               }
