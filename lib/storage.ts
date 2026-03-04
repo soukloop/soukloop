@@ -78,7 +78,7 @@ class S3StorageProvider extends StorageProvider {
     constructor() {
         super();
         this.region = process.env.AWS_REGION || 'us-east-1';
-        this.bucket = process.env.AWS_BUCKET_NAME || '';
+        this.bucket = process.env.AWS_BUCKET_NAME || process.env.AWS_S3_BUCKET || '';
 
         this.client = new S3Client({
             region: this.region,
