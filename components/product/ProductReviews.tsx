@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea"; // Assuming we have this
 import { toast } from "sonner";
-// If Textarea doesn't exist, we fallback to standard textarea or Input
+import ProductSellerInfo from "./ProductSellerInfo";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 interface ProductReviewsProps {
     productId: string;
@@ -83,7 +84,7 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                                 <div key={item.rating} className="flex items-center gap-2 text-xs font-bold text-gray-600">
                                     <span className="w-3">{item.rating}</span>
                                     <Star className="size-3 text-gray-400" />
-                                    <Progress value={item.percentage} className="h-2 flex-1 bg-[#E87A3F]" />
+                                    <Progress value={item.percentage} className="h-2 flex-1" indicatorClassName="bg-[#E87A3F]" />
                                     <span className="w-8 text-right">{item.percentage}%</span>
                                 </div>
                             ))}
@@ -147,7 +148,12 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                                             {review.user?.name?.charAt(0) || "U"}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900">{review.user?.name || "Anonymous"}</p>
+                                            <p className="font-bold text-gray-900 flex items-center gap-1.5">
+                                                {review.user?.name || "Anonymous"}
+                                                {review.user?.vendor?.planTier && (review.user.vendor.planTier === 'PRO' || review.user.vendor.planTier === 'STARTER') && (
+                                                    <PremiumBadge tier={review.user.vendor.planTier} iconClassName="size-3.5" />
+                                                )}
+                                            </p>
                                             <div className="flex text-yellow-400 text-xs">
                                                 {[1, 2, 3, 4, 5].map((star) => (
                                                     <Star

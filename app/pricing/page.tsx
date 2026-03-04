@@ -1,18 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
+import { createSubscriptionCheckout } from "@/features/subscriptions/actions";
+import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
+import { PricingCards } from "@/components/subscription/PricingCards";
+import { useMemo } from "react";
 
 export default function PricingPage() {
   const [showPaymentOptionModal, setShowPaymentOptionModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [isMounted, setIsMounted] = useState(false);
+  const { profile } = useProfile();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const currentTier = useMemo(() => {
+    if (!isMounted) return null;
+    const user = profile?.user as any;
+    return user?.vendor?.planTier || user?.planTier || (typeof window !== 'undefined' ? (window as any).__USER_PLAN_TIER__ : 'BASIC');
+  }, [profile, isMounted]);
+
+  const handleCheckout = (priceId?: string) => {
+    startTransition(() => {
+      createSubscriptionCheckout(priceId).catch(err => {
+        toast.error("Checkout Unavailable", {
+          description: err.message || "Failed to start checkout. Ensure you are an approved seller."
+        });
+      });
+    });
+  };
+
   const paymentMethods = [
     {
       id: "mastercard",
@@ -67,7 +97,7 @@ export default function PricingPage() {
       if (value && index < 5) {
         const nextInput =
           document.querySelectorAll<HTMLInputElement>("input[type='text']")[
-            index + 1
+          index + 1
           ];
         nextInput?.focus();
       }
@@ -76,7 +106,7 @@ export default function PricingPage() {
       if (!value && index > 0) {
         const prevInput =
           document.querySelectorAll<HTMLInputElement>("input[type='text']")[
-            index - 1
+          index - 1
           ];
         prevInput?.focus();
       }
@@ -101,187 +131,74 @@ export default function PricingPage() {
         {/* Header Section */}
         <div className="mb-12 text-center">
           <h1 className="mb-6 text-3xl font-bold text-gray-900 sm:text-4xl md:text-5xl">
-            Find Your Perfect Plan
+            Pricing plans
           </h1>
           <p className="mx-auto mb-8 max-w-2xl text-base text-gray-600 sm:text-lg">
-            Discover the ideal plan to fuel your business growth. Our pricing
-            options are carefully crafted to cater to businesses.
+            Choose the plan that suits your business needs. Switch plans or cancel any time.
           </p>
-
-          {/* Plan Toggle */}
-          <div className="mb-12 flex items-center justify-center">
-            <div
-              className="flex items-center rounded-[14px] bg-gray-100 p-1"
-              style={{
-                width: "256px",
-                height: "65px",
-              }}
-            >
-              <span className="flex-1 px-4 text-center text-lg font-medium text-gray-700">
-                Buyer
-              </span>
-              <div className="relative">
-                <Button
-                  className="relative bg-[#E87A3F] text-lg font-medium text-white hover:bg-[#d96d34]"
-                  style={{
-                    width: "120px",
-                    height: "49px",
-                    borderRadius: "12px",
-                  }}
-                >
-                  Seller
-                  <span className="absolute -right-1 -top-1 rounded-md bg-black px-2 py-0.5 text-xs font-medium text-white">
-                    20% off
-                  </span>
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 lg:mr-56 lg:grid-cols-2 lg:px-0">
-          {/* Basic Plan */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <div className="mb-6">
-              <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                Basic Plan
-              </h3>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-gray-900">Free</span>
-                <span className="text-gray-600">per month</span>
-              </div>
-            </div>
+        <div className="mb-24">
+          <PricingCards
+            currentTier={currentTier || "BASIC"}
+            onSelect={handleCheckout}
+            isPending={isPending}
+          />
+        </div>
 
-            <ul className="mb-8 space-y-4">
-              <li className="flex items-center gap-3">
-                <Check className="size-5 shrink-0 text-green-600" />
-                <span className="text-gray-700">Limited Product Listings</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="size-5 shrink-0 text-green-600" />
-                <span className="text-gray-700">Basic Order Management</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Check className="size-5 shrink-0 text-green-600" />
-                <span className="text-gray-700">Standard Seller Support</span>
-              </li>
-            </ul>
-
-            <Button
-              variant="outline"
-              className="h-12 w-full rounded-[12px] border-gray-300 bg-transparent text-lg font-medium hover:bg-gray-50 lg:h-[57px] lg:w-[420px]"
-            >
-              Get Started
-            </Button>
-          </div>
-
-          {/* Premium Plan */}
-          <div
-            className="relative mx-auto h-auto w-full overflow-hidden rounded-[20px] p-8 text-white lg:h-[860px] lg:w-[708px]"
-            style={{
-              background: "#E0622C",
-              border: "1px solid rgba(232, 232, 232, 0.2)",
-              boxShadow:
-                "0px 244px 98px rgba(224, 98, 44, 0.01), 0px 137px 82px rgba(224, 98, 44, 0.05), 0px 61px 61px rgba(224, 98, 44, 0.09), 0px 15px 34px rgba(224, 98, 44, 0.1)",
-            }}
-          >
-            <div className="absolute right-0 top-8 h-44 w-full overflow-hidden rounded-t-[20px] sm:h-56 lg:h-[280px]">
-              <img
-                src="/images/premium-women-new.png"
-                alt="Two women smiling"
-                className="size-full object-cover object-center"
-              />
-            </div>
-
-            {/* Content overlay */}
-            <div className="relative z-10 flex h-full flex-col">
-              {/* Spacer to push below image */}
-              <div className="h-44 sm:h-56 lg:h-[200px]" />
-
-              {/* Bottom content section */}
-              <div className="mt-auto">
-                {/* Gem Icon */}
-                <div className="mb-6">
-                  <div className="flex size-12 items-center justify-center rounded-xl bg-white/20">
-                    <img
-                      src="/images/gem-icon.png"
-                      alt="Premium gem icon"
-                      className="size-6"
-                    />
-                  </div>
-                </div>
-
-                {/* Plan Title and Description */}
-                <div className="mb-8">
-                  <div className="mb-3 flex items-center gap-3">
-                    <h3 className="text-2xl font-bold">Premium Plan</h3>
-                    <span
-                      className="flex items-center justify-center rounded-lg border border-white text-sm font-semibold text-white"
-                      style={{
-                        width: "79px",
-                        height: "24px",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      Best offer
-                    </span>
-                  </div>
-                  <p className="mb-6 text-base text-white/90">
-                    Take Your Business to the Next Level with Premium Plan.
-                  </p>
-
-                  {/* Price */}
-                  <div className="mb-8 flex items-baseline gap-2">
-                    <span className="text-5xl font-bold">$100</span>
-                    <span className="text-lg text-white/90">per month</span>
-                  </div>
-
-                  {/* Divider line */}
-                  <div className="mb-8 h-px w-full bg-white/30" />
-                </div>
-
-                {/* Features List */}
-                <ul className="mb-8 space-y-4">
-                  <li className="flex items-center gap-3">
-                    <Check className="size-5 shrink-0 text-white" />
-                    <span className="text-white">
-                      Unlimited Product Listings
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check className="size-5 shrink-0 text-white" />
-                    <span className="text-white">
-                      Free Shipping on Eligible Orders
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check className="size-5 shrink-0 text-white" />
-                    <span className="text-white">
-                      Boosted Product Visibility
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check className="size-5 shrink-0 text-white" />
-                    <span className="text-white">In-Depth Sales Analytics</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check className="size-5 shrink-0 text-white" />
-                    <span className="text-white">
-                      Promote Listings with Free Credits
-                    </span>
-                  </li>
-                </ul>
-
-                {/* Get Started Button */}
-                <Button
-                  onClick={() => setShowPaymentOptionModal(true)}
-                  className="h-12 w-full rounded-[12px] bg-white text-lg font-medium text-[#E87A3F] hover:bg-gray-100 lg:h-[61px] lg:w-[628px]"
-                >
-                  Get Started
-                </Button>
-              </div>
-            </div>
+        {/* Feature Comparison Table */}
+        <div className="mx-auto max-w-6xl px-4 lg:px-0">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Compare features</h2>
+          <div className="overflow-x-auto">
+            <Table className="w-full table-fixed">
+              <TableHeader>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableHead className="w-[28%] font-semibold text-gray-900 px-6">Features</TableHead>
+                  <TableHead className="w-[24%] font-semibold text-gray-900 px-6 text-center">Basic plan</TableHead>
+                  <TableHead className="w-[24%] font-semibold text-orange-950 bg-orange-50 px-6 text-center">Starter plan</TableHead>
+                  <TableHead className="w-[24%] font-semibold text-white bg-orange-500 rounded-t-2xl text-center px-6">Pro plan</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Active Listings</TableCell>
+                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">3</TableCell>
+                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">30</TableCell>
+                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Unlimited</TableCell>
+                </TableRow>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Commission Rate</TableCell>
+                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">12%</TableCell>
+                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">10%</TableCell>
+                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">8%</TableCell>
+                </TableRow>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Active Promo Codes</TableCell>
+                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
+                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">5</TableCell>
+                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Unlimited</TableCell>
+                </TableRow>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Payout Schedule</TableCell>
+                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">Standard</TableCell>
+                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">Weekly</TableCell>
+                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Weekly</TableCell>
+                </TableRow>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Seller Stats</TableCell>
+                  <TableCell className="border-b border-gray-100 px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
+                  <TableCell className="bg-orange-50 text-center px-6 py-5"><Check className="size-5 text-orange-500 mx-auto" /></TableCell>
+                  <TableCell className="bg-orange-500 text-center px-6 py-5"><Check className="size-5 text-white mx-auto" /></TableCell>
+                </TableRow>
+                <TableRow className="border-none hover:bg-transparent">
+                  <TableCell className="font-medium px-6 py-5">Premium Badge</TableCell>
+                  <TableCell className="px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
+                  <TableCell className="bg-orange-50 text-center px-6 py-5"><Check className="size-5 text-orange-500 mx-auto" /></TableCell>
+                  <TableCell className="bg-orange-500 rounded-b-2xl text-center px-6 py-5"><Check className="size-5 text-white mx-auto" /></TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </main>
@@ -308,11 +225,10 @@ export default function PricingPage() {
                   <div
                     key={method.id}
                     onClick={() => setSelectedMethod(method.id)}
-                    className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all sm:p-6 ${
-                      selectedMethod === method.id
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                    }`}
+                    className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all sm:p-6 ${selectedMethod === method.id
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-gray-200 bg-gray-50 hover:border-gray-300"
+                      }`}
                   >
                     <div className="flex flex-col items-center space-y-3 text-center">
                       <div className="flex size-8 items-center justify-center">
@@ -451,15 +367,14 @@ export default function PricingPage() {
                     !formData.expireDate ||
                     !formData.cvc
                   }
-                  className={`h-12 w-full rounded-lg text-white sm:h-14 sm:w-[297px] transition-colors ${
-                    !selectedMethod ||
+                  className={`h-12 w-full rounded-lg text-white sm:h-14 sm:w-[297px] transition-colors ${!selectedMethod ||
                     !formData.nameOnCard ||
                     !formData.cardNumber ||
                     !formData.expireDate ||
                     !formData.cvc
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-orange-500 hover:bg-orange-600"
-                  }`}
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-orange-500 hover:bg-orange-600"
+                    }`}
                 >
                   Confirm Payment Option
                 </Button>

@@ -11,6 +11,7 @@ import StatusBadge from '@/components/admin/StatusBadge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import EditUserModal from '@/components/admin/EditUserModal';
 import { User } from '@/lib/admin/types';
+import { PremiumBadge } from '@/components/ui/premium-badge';
 import { X } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { suspendUser, activateUser, deleteUser } from '@/src/features/admin/actions';
@@ -82,9 +83,14 @@ export default function UsersTable({ initialUsers, totalRecords, initialPage }: 
                         </div>
                     </Link>
                     <div>
-                        <Link href={`/admin/users/${user.id}`} className="font-medium text-gray-900 truncate max-w-[120px] sm:max-w-xs block hover:text-orange-600 hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {user.name}
-                        </Link>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <Link href={`/admin/users/${user.id}`} className="font-medium text-gray-900 truncate max-w-[120px] sm:max-w-xs block hover:text-orange-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                                {user.name}
+                            </Link>
+                            {user.planTier && (user.planTier === 'PRO' || user.planTier === 'STARTER') && (
+                                <PremiumBadge tier={user.planTier} iconClassName="size-4" />
+                            )}
+                        </div>
                         {/* Copyable ID for convenience */}
                         <CopyButton
                             value={user.id}

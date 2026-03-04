@@ -6,7 +6,7 @@ import { handleApiError } from "@/lib/api-wrapper";
 import { z } from "zod";
 
 const payoutRequestSchema = z.object({
-    amount: z.number().min(10, "Minimum withdrawal is $10"),
+    amount: z.number().min(50, "Minimum withdrawal is $50"),
     method: z.string().optional()
 });
 

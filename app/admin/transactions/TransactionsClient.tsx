@@ -23,13 +23,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type ActiveTab = "transactions" | "payouts" | "subscriptions";
+
 interface TransactionsClientProps {
   data: any[];
   stats: any;
   totalCount: number;
   page: number;
   limit: number;
-  activeTab: "transactions" | "payouts";
+  activeTab: ActiveTab;
 }
 
 export default function TransactionsClient({
@@ -43,24 +45,21 @@ export default function TransactionsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // const handleTabChange = (tab: 'transactions' | 'payouts') => {
-  //     if (tab === activeTab) return;
+  // Approval State
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
 
-  //     startTransition(() => {
-  //         const params = new URLSearchParams(searchParams.toString());
-  //         params.set('type', tab);
-  //         params.set('page', '1');
-  //         // Keep search if exists, or clear it? Usually better to clear search when switching contexts drastically
-  //         params.delete('search');
-  //         router.push(`?${params.toString()}`);
-  //     });
-  // };
-  const handleTabChange = (tab: "transactions" | "payouts") => {
+  // Rejection State
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const handleTabChange = (tab: ActiveTab) => {
     if (tab === activeTab) return;
 
     startTransition(() => {
-      const current = searchParams?.toString() ?? ""; // ✅ handles null
+      const current = searchParams?.toString() ?? "";
       const params = new URLSearchParams(current);
 
       params.set("type", tab);
@@ -71,7 +70,6 @@ export default function TransactionsClient({
     });
   };
 
-  // Transaction columns
   const transactionColumns: Column<any>[] = [
     {
       key: "providerTransactionId",
@@ -141,7 +139,6 @@ export default function TransactionsClient({
     },
   ];
 
-  // Payout columns
   const payoutColumns: Column<any>[] = [
     {
       key: "id",
@@ -202,15 +199,67 @@ export default function TransactionsClient({
     },
   ];
 
-  const [actionLoading, setActionLoading] = useState(false);
-
-  // Approval State
-  const [showApproveModal, setShowApproveModal] = useState(false);
-  const [selectedPayoutId, setSelectedPayoutId] = useState<string | null>(null);
-
-  // Rejection State
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+  const subscriptionColumns: Column<any>[] = [
+    {
+      key: "stripeInvoiceId",
+      header: "Invoice ID",
+      render: (s) => (
+        <div className="group/sub-id flex items-center gap-1.5">
+          <span className="font-medium text-blue-600">
+            #{(s.stripeInvoiceId || s.id).slice(0, 12).toUpperCase()}
+          </span>
+          <CopyButton
+            value={s.stripeInvoiceId || s.id}
+            hoverOnly
+            className="h-3 w-3 text-gray-400 hover:text-blue-600"
+          />
+        </div>
+      ),
+    },
+    {
+      key: "subscriber",
+      header: "Subscriber",
+      render: (s) => (
+        <span className="text-gray-900">
+          {s.vendor?.user?.name || s.vendor?.user?.email || "Unknown"}
+        </span>
+      ),
+    },
+    {
+      key: "subscription",
+      header: "Subscription",
+      render: (s) => (
+        <span className="text-gray-600">
+          {s.subscription?.stripeSubscriptionId || "N/A"}
+        </span>
+      ),
+    },
+    {
+      key: "createdAt",
+      header: "Date",
+      render: (s) => (
+        <span className="text-gray-600">
+          {new Date(s.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      render: (s) => (
+        <span className="font-medium text-gray-900">
+          ${parseFloat(String(s.amount)).toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (s) => (
+        <StatusBadge status={s.status || "unknown"} type="transaction" />
+      ),
+    },
+  ];
 
   const handleApproveClick = (payoutId: string) => {
     setSelectedPayoutId(payoutId);
@@ -219,7 +268,7 @@ export default function TransactionsClient({
 
   const handleRejectClick = (payoutId: string) => {
     setSelectedPayoutId(payoutId);
-    setRejectReason(""); // Reset reason
+    setRejectReason("");
     setShowRejectModal(true);
   };
 
@@ -283,7 +332,6 @@ export default function TransactionsClient({
 
   return (
     <div className="space-y-6">
-      {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -308,10 +356,20 @@ export default function TransactionsClient({
           >
             Seller Payouts
           </button>
+          <button
+            onClick={() => handleTabChange("subscriptions")}
+            disabled={isPending}
+            className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+              activeTab === "subscriptions"
+                ? "border-orange-500 text-orange-600"
+                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            Subscriptions
+          </button>
         </nav>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
         {activeTab === "transactions" ? (
           <>
@@ -327,9 +385,9 @@ export default function TransactionsClient({
               </p>
               <p className="text-2xl font-bold text-green-600">
                 $
-                {stats.revenue.toLocaleString(undefined, {
+                {stats.revenue?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                })}
+                }) || "0.00"}
               </p>
             </div>
             <div className="rounded-xl border bg-white p-4 shadow-sm">
@@ -347,7 +405,7 @@ export default function TransactionsClient({
               <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
             </div>
           </>
-        ) : (
+        ) : activeTab === "payouts" ? (
           <>
             <div className="rounded-xl border bg-white p-4 shadow-sm">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -361,9 +419,9 @@ export default function TransactionsClient({
               </p>
               <p className="text-2xl font-bold text-green-600">
                 $
-                {stats.completed.toLocaleString(undefined, {
+                {stats.completed?.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                })}
+                }) || "0.00"}
               </p>
             </div>
             <div className="rounded-xl border bg-white p-4 shadow-sm">
@@ -383,14 +441,43 @@ export default function TransactionsClient({
               </p>
             </div>
           </>
+        ) : (
+          <>
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Total Renewals
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Total Recurring
+              </p>
+              <p className="text-2xl font-bold text-green-600">
+                $
+                {stats.completed?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                }) || "0.00"}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-4 shadow-sm">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Failed Renewals
+              </p>
+              <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Data Table */}
       <DataTable
         data={data}
         columns={
-          activeTab === "transactions" ? transactionColumns : payoutColumns
+          activeTab === "transactions"
+            ? transactionColumns
+            : activeTab === "payouts"
+              ? payoutColumns
+              : subscriptionColumns
         }
         actions={activeTab === "payouts" ? getPayoutActions : undefined}
         pageSize={limit}
@@ -402,7 +489,9 @@ export default function TransactionsClient({
         searchPlaceholder={
           activeTab === "transactions"
             ? "Search transactions..."
-            : "Search payouts..."
+            : activeTab === "payouts"
+              ? "Search payouts..."
+              : "Search subscriptions..."
         }
         filterOptions={
           activeTab === "transactions"
@@ -427,29 +516,39 @@ export default function TransactionsClient({
                   ],
                 },
               ]
-            : [
-                {
-                  key: "status",
-                  label: "Status",
-                  options: [
-                    { label: "Completed", value: "completed" },
-                    { label: "Pending", value: "pending" },
-                    { label: "Processing", value: "processing" },
-                  ],
-                },
-                {
-                  key: "method",
-                  label: "Payout Method",
-                  options: [
-                    { label: "Stripe Connect", value: "stripe_connect" },
-                    { label: "Bank Transfer", value: "BANK_TRANSFER" },
-                  ],
-                },
-              ]
+            : activeTab === "payouts"
+              ? [
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Completed", value: "completed" },
+                      { label: "Pending", value: "pending" },
+                      { label: "Processing", value: "processing" },
+                    ],
+                  },
+                  {
+                    key: "method",
+                    label: "Payout Method",
+                    options: [
+                      { label: "Stripe Connect", value: "stripe_connect" },
+                      { label: "Bank Transfer", value: "BANK_TRANSFER" },
+                    ],
+                  },
+                ]
+              : [
+                  {
+                    key: "status",
+                    label: "Status",
+                    options: [
+                      { label: "Paid", value: "succeeded" },
+                      { label: "Failed", value: "failed" },
+                    ],
+                  },
+                ]
         }
       />
 
-      {/* Approval Confirmation */}
       <ConfirmDialog
         isOpen={showApproveModal}
         onClose={() => setShowApproveModal(false)}
@@ -461,7 +560,6 @@ export default function TransactionsClient({
         isLoading={actionLoading}
       />
 
-      {/* Rejection Dialog (Custom) */}
       <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
         <DialogContent>
           <DialogHeader>

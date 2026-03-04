@@ -1,5 +1,7 @@
 "use client";
 
+import { format } from "date-fns";
+
 import DataTable, { Column } from '@/components/admin/DataTable';
 import StatusBadge from '@/components/admin/StatusBadge';
 import { getOverallStatus } from "@/services/orders.service";
@@ -33,7 +35,7 @@ export default function OrdersClient({ orders, total, page, limit }: OrdersClien
             orderNumber: o.orderNumber,
             customer: o.user?.name || o.user?.email || 'Guest',
             email: o.user?.email,
-            date: new Date(o.createdAt).toLocaleDateString(),
+            date: format(new Date(o.createdAt), "MM/dd/yyyy"),
             total: `$${Number(o.total).toFixed(2)}`,
             status: getOverallStatus(o as any),
             productNames,

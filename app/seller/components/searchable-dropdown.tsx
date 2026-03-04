@@ -78,7 +78,7 @@ export default function SearchableDropdown({
     // Filter options based on search
     const filteredOptions = useMemo(() => {
         // 1. First, sanitize options (remove empty/null)
-        const cleanOptions = options.filter(opt => opt && opt.trim().length > 0);
+        const cleanOptions = options.filter(opt => opt && typeof opt === 'string' && opt.trim().length > 0);
 
         // If not searchable (and variant is button), just return clean options
         if (!searchable && variant === "button") return cleanOptions;

@@ -4,6 +4,7 @@ import { Star, X, Search, MapPin, Calendar } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import Image from "next/image";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 interface SellerProfileProps {
   vendor: {
@@ -16,6 +17,7 @@ interface SellerProfileProps {
     description?: string | null;
     averageRating: number;
     reviewCount: number;
+    planTier?: string;
     createdAt: Date;
     user: {
       name?: string | null;
@@ -75,7 +77,10 @@ export default function SellerProfile({ vendor }: SellerProfileProps) {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
                   <h2 className="mb-2 text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    {displayName}
+                    <span className="flex items-center gap-1.5">
+                      {displayName}
+                      {(vendor.planTier === 'PRO' || vendor.planTier === 'STARTER') && <PremiumBadge tier={vendor.planTier} className="size-6" />}
+                    </span>
                     {!vendor.isActive && (
                       <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">
                         Suspended

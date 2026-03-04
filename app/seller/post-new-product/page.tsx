@@ -34,7 +34,10 @@ export default function PostNewProductPage() {
     const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
     const isSubmittingRef = useRef(false);
-    const { isSeller, isLoading: isAuthLoading } = useSellerAuth();
+    const { isSeller, isLoading: isAuthLoading, session } = useSellerAuth();
+
+    const vendorPlanTier = (session?.user as any)?.planTier;
+    const isBasicSeller = !vendorPlanTier || vendorPlanTier === 'BASIC';
 
     useEffect(() => {
         async function fetchProduct() {
@@ -308,7 +311,10 @@ export default function PostNewProductPage() {
                     body: JSON.stringify(payload),
                 });
 
-                if (!res.ok) throw new Error("Submission failed");
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => null);
+                    throw new Error(errorData?.details || errorData?.error || "Submission failed");
+                }
                 toast.success("Product saved!");
                 clearPersistence();
                 router.push("/seller/manage-listings");
@@ -322,6 +328,11 @@ export default function PostNewProductPage() {
     };
 
     const handleSaveDraft = async () => {
+        if (isBasicSeller) {
+            router.push("/pricing");
+            return;
+        }
+
         if (isSubmittingRef.current) return;
 
         // We still need at least a name
@@ -366,7 +377,10 @@ export default function PostNewProductPage() {
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Failed to save draft");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => null);
+                throw new Error(errorData?.details || errorData?.error || "Failed to save draft");
+            }
 
             toast.success("Draft saved successfully!");
             clearPersistence();
@@ -407,8 +421,8 @@ export default function PostNewProductPage() {
                     </div>
                     <div className="min-h-[350px] sm:min-h-[400px]">
                         {addProductStep === 1 && <UploadPhotosStep photos={productData.photos} onPhotosChange={handlePhotosChange} />}
-                        {addProductStep === 2 && <AboutProductStep data={productData} onUpdate={updateProductData} />}
-                        {addProductStep === 3 && <ProductDetailsStep data={productData} onUpdate={updateProductData} />}
+                        {addProductStep === 2 && <AboutProductStep data={productData} onUpdate={updateProductData} isBasicSeller={isBasicSeller} />}
+                        {addProductStep === 3 && <ProductDetailsStep data={productData} onUpdate={updateProductData} isBasicSeller={isBasicSeller} />}
                         {addProductStep === 4 && (
                             <UploadVideoStep
                                 video={productData.video}
@@ -432,9 +446,14 @@ export default function PostNewProductPage() {
                             variant="outline"
                             onClick={handleSaveDraft}
                             disabled={isSubmitting || productData.photos.some(p => p.isUploading)}
-                            className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold"
+                            className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold flex items-center justify-center gap-2"
                         >
                             Save as Draft
+                            {isBasicSeller && (
+                                <span className="bg-[#E87A3F] text-white text-[10px] leading-tight font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                    UPGRADE
+                                </span>
+                            )}
                         </Button>
                         <StatefulButton
                             onClick={handleNext}

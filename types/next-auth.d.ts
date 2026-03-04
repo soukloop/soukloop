@@ -12,6 +12,7 @@ declare module 'next-auth' {
       triggerUpdate?: boolean
       tokenVersion?: number
       isActive?: boolean
+      planTier?: string
     }
   }
 
@@ -24,6 +25,7 @@ declare module 'next-auth' {
     tokenVersion?: number
     isActive?: boolean
     emailVerified?: Date | null
+    planTier?: string
   }
 }
 
@@ -33,6 +35,7 @@ declare module '@auth/core/adapters' {
     tokenVersion?: number
     isActive?: boolean
     emailVerified?: Date | null
+    planTier?: string
   }
 }
 
@@ -44,5 +47,6 @@ declare module 'next-auth/jwt' {
     error?: string
     triggerUpdate?: boolean
     isActive?: boolean
+    planTier?: string
   }
 }

@@ -223,14 +223,18 @@ export async function getPaginatedTopStyles(type: 'selling' | 'listed', page: nu
                 c.name as "category",
                 SUM(oi.price * oi.quantity) as "totalValue",
                 SUM(oi.quantity) as "totalCount",
-                (SELECT url FROM "product_images" WHERE "productId" = p.id AND "isPrimary" = true LIMIT 1) as "imageUrl"
+                (SELECT pi.url 
+                 FROM "products" p2 
+                 JOIN "product_images" pi ON pi."productId" = p2.id 
+                 WHERE p2."dress_style_id" = ds.id AND pi."isPrimary" = true 
+                 LIMIT 1) as "imageUrl"
             FROM "order_items" oi
             JOIN "orders" o ON oi."orderId" = o.id
             JOIN "products" p ON oi."productId" = p.id
             JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
             LEFT JOIN "categories" c ON ds."category_id" = c.id
             WHERE o."status" IN ('PAID', 'DELIVERED')
-            GROUP BY ds.id, ds.name, c.name, p.id
+            GROUP BY ds.id, ds.name, c.name
             ORDER BY "totalValue" DESC
             LIMIT ${limit} OFFSET ${offset}
         `;
@@ -263,12 +267,16 @@ export async function getPaginatedTopStyles(type: 'selling' | 'listed', page: nu
                 ds.name as "name",
                 c.name as "category",
                 COUNT(p.id) as "totalCount",
-                (SELECT url FROM "product_images" WHERE "productId" = p.id AND "isPrimary" = true LIMIT 1) as "imageUrl"
+                (SELECT pi.url 
+                 FROM "products" p2 
+                 JOIN "product_images" pi ON pi."productId" = p2.id 
+                 WHERE p2."dress_style_id" = ds.id AND pi."isPrimary" = true 
+                 LIMIT 1) as "imageUrl"
             FROM "products" p
             JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
             LEFT JOIN "categories" c ON ds."category_id" = c.id
             WHERE p."isActive" = true
-            GROUP BY ds.id, ds.name, c.name, p.id
+            GROUP BY ds.id, ds.name, c.name
             ORDER BY "totalCount" DESC
             LIMIT ${limit} OFFSET ${offset}
         `;

@@ -71,6 +71,7 @@ export default function SellerApplicationSection() {
                 status={status}
                 rejectionReason={verification?.rejectionReason}
                 isExistingSeller={isExistingSeller}
+                planTier={session?.user?.planTier}
             />
 
             {/* Approved Summary View */}

@@ -118,9 +118,10 @@ model Vendor {
   products           Product[]
   subscriptions      Subscription[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  walletTransactions WalletTransaction[]
-  bankAccounts       BankAccount[]
-  coupons            Coupon[]
+  walletTransactions       WalletTransaction[]
+  bankAccounts             BankAccount[]
+  coupons                  Coupon[]
+  subscriptionTransactions SubscriptionTransaction[]
 
   @@index([createdAt])
   @@index([kycStatus, isActive]) // Optimization for Product Query Joins
@@ -1098,7 +1099,8 @@ model Testimonial {
 
 enum SubscriptionTier {
   BASIC
-  PREMIUM
+  STARTER
+  PRO
 }
 
 model Subscription {
@@ -1116,9 +1118,27 @@ model Subscription {
   updatedAt            DateTime         @updatedAt @map("updated_at")
 
   vendor               Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  transactions         SubscriptionTransaction[]
 
   @@index([vendorId])
   @@index([status])
   @@map("subscriptions")
+}
+
+model SubscriptionTransaction {
+  id                   String       @id @default(uuid())
+  subscriptionId       String       @map("subscription_id")
+  vendorId             String       @map("vendor_id")
+  stripeInvoiceId      String?      @unique @map("stripe_invoice_id")
+  amount               Decimal      @db.Decimal(10, 2)
+  status               String       @default("succeeded") // succeeded, failed, pending
+  createdAt            DateTime     @default(now()) @map("created_at")
+
+  subscription         Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  vendor               Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([subscriptionId])
+  @@map("subscription_transactions")
 }
 

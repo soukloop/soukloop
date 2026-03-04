@@ -14,12 +14,14 @@ interface ApplicationStatusBoxProps {
     status: 'incomplete' | 'submitted' | 'approved' | 'rejected'
     rejectionReason?: string | null
     isExistingSeller?: boolean
+    planTier?: string
 }
 
 export default function ApplicationStatusBox({
     status,
     rejectionReason,
-    isExistingSeller
+    isExistingSeller,
+    planTier
 }: ApplicationStatusBoxProps) {
     const router = useRouter()
 
@@ -92,9 +94,19 @@ export default function ApplicationStatusBox({
                             <Button
                                 onClick={() => router.push('/seller/dashboard')}
                                 className="h-11 px-6 rounded-xl bg-[#E87A3F] font-bold text-white transition-all hover:bg-[#d96d34]"
+                                disabled={planTier === 'BASIC'}
                             >
                                 Seller Dashboard
                             </Button>
+                            {planTier === 'BASIC' && (
+                                <Button
+                                    onClick={() => router.push('/pricing')}
+                                    variant="outline"
+                                    className="h-11 px-6 rounded-xl border-[#E87A3F] text-[#E87A3F] font-bold hover:bg-orange-50"
+                                >
+                                    Upgrade
+                                </Button>
+                            )}
                         </div>
                     </div>
                     <div className="hidden md:flex size-24 items-center justify-center rounded-2xl bg-white text-green-500 shadow-sm ring-1 ring-green-100">

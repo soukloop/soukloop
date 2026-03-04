@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { User, ChevronRight, LogOut, X, Settings, Bell, RotateCcw, Package, Truck, Gift, MessageCircle, Heart, LayoutDashboard, PlusCircle, List, Wallet, Shield } from "lucide-react";
+import { User as UserIcon, ChevronRight, LogOut, X, Settings, Bell, RotateCcw, Package, Truck, Gift, MessageCircle, Heart, LayoutDashboard, PlusCircle, List, Wallet, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useSellerAuth } from "@/hooks/useSellerAuth";
@@ -12,6 +12,7 @@ import { useSellerVerification } from "@/hooks/useSellerVerification";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import { isAtLeastSeller, isAtLeastAdmin, hasRole } from "@/lib/roles";
+import { PremiumBadge } from "@/components/ui/premium-badge";
 
 export default function UserMenu() {
     const router = useRouter();
@@ -64,8 +65,15 @@ export default function UserMenu() {
     }
 
     // 2. Add Seller items if user is at least a seller
-    if (isAtLeastSeller(user?.role)) {
-        menuItems = [...menuItems, ...sellerMenuItems];
+    if (isAtLeastSeller(displayUser?.role as any)) {
+        const planTier = (displayUser as any)?.planTier || (user as any)?.planTier;
+        const filteredSellerItems = sellerMenuItems.filter(item => {
+            if (item.label === "Dashboard" && (!planTier || planTier === 'BASIC')) {
+                return false;
+            }
+            return true;
+        });
+        menuItems = [...menuItems, ...filteredSellerItems];
     }
 
     // 3. Add Common items
@@ -110,7 +118,7 @@ export default function UserMenu() {
                             className="size-12 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:text-orange-500 transition-colors relative"
                             onClick={() => setShowProfile(!showProfile)}
                         >
-                            <User className="size-6" />
+                            <UserIcon className="size-6" />
                             {/* Profile Icon Global Badge */}
                             {(hasUnreadGeneral || hasUnreadMessages) && (
                                 <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white"></span>
@@ -122,6 +130,23 @@ export default function UserMenu() {
                                 className="absolute right-0 z-[9999] mt-2 flex max-h-[85vh] w-[280px] flex-col overflow-y-auto custom-scrollbar rounded-lg border border-gray-100 bg-white shadow-lg"
                                 onClick={(e) => e.stopPropagation()}
                             >
+                                {/* Display plan badge if applicable */}
+                                {(() => {
+                                    const planTier = (user as any).planTier;
+                                    if (planTier && ['STARTER', 'PRO'].includes(planTier)) {
+                                        return (
+                                            <div className="px-3 py-2 border-b border-gray-100 bg-orange-50/50">
+                                                <div className="flex items-center gap-2">
+                                                    <PremiumBadge tier={planTier} size="sm" />
+                                                    <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">
+                                                        {planTier} Seller
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                                 {/* Profile Section */}
                                 <div className="shrink-0 border-b border-gray-100 p-2">
                                     <div className="flex items-center gap-3">
@@ -134,8 +159,11 @@ export default function UserMenu() {
                                             />
                                         </div>
                                         <div>
-                                            <h3 className="text-base font-medium text-gray-900">
+                                            <h3 className="text-base font-medium text-gray-900 flex items-center gap-1.5">
                                                 {displayUser?.name || "Guest"}
+                                                {((displayUser as any)?.planTier === 'STARTER' || (displayUser as any)?.planTier === 'PRO') && (
+                                                    <PremiumBadge tier={(displayUser as any).planTier} className="size-5" />
+                                                )}
                                             </h3>
                                             {displayUser?.email && (
                                                 <p className="text-xs text-gray-400">
@@ -229,7 +257,7 @@ export default function UserMenu() {
                             className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors relative"
                             onClick={() => setShowProfile(!showProfile)}
                         >
-                            <User className="size-5 text-gray-700" />
+                            <UserIcon className="size-5 text-gray-700" />
                             {/* Mobile Icon Global Badge */}
                             {(hasUnreadGeneral || hasUnreadMessages) && (
                                 <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white"></span>
@@ -254,8 +282,9 @@ export default function UserMenu() {
                                             />
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-900">
+                                            <h3 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
                                                 {user?.username || "Guest"}
+                                                {(user as any)?.planTier === 'PRO' && <PremiumBadge tier={(user as any).planTier} className="size-4" />}
                                             </h3>
                                             <Link href="/profile">
                                                 <p className="text-xs text-gray-500">View profile</p>

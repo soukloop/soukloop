@@ -59,9 +59,66 @@ export default function OrderCompletePage({ orderId }: OrderCompletePageProps) {
   }, [order, isLoading, allItems, clearCart]);
 
   // Get delivery status
+  // Get delivery status
   const deliveryStatus = order?.vendorOrders ? getDeliveryStatusText(order) : '';
 
+  // Security: Check if order payment failed or hasn't started
+  const [isRenderable, setIsRenderable] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    if (!isLoading && order) {
+      // If it's explicitly canceled
+      if (order.status === 'CANCELED') {
+        setErrorMessage("This order was canceled and its payment was not completed.");
+        setIsRenderable(false);
+        return;
+      }
+
+      // If it's pending but we don't have a session_id
+      if (order.status === 'PENDING' && !sessionId) {
+        setErrorMessage("Payment verification is required to view this page.");
+        setIsRenderable(false);
+        return;
+      }
+
+      setIsRenderable(true);
+    }
+  }, [isLoading, order, sessionId]);
+
+  if (error || (!isLoading && !order && orderId)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flexflex-col items-center justify-center p-4">
+        <div className="bg-white rounded-[20px] p-8 max-w-md w-full text-center shadow-md border border-gray-100">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-red-50 text-red-500 mb-6">
+            <Package className="size-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Not Found</h2>
+          <p className="text-gray-500 mb-8">We couldn't find the order details you're looking for.</p>
+          <Link href="/cart">
+            <Button className="w-full h-12 rounded-full bg-[#E87A3F] text-white hover:bg-[#d96d34]">Return to Cart</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoading && order && !isRenderable) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-[20px] p-8 max-w-md w-full text-center shadow-md border border-gray-100">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-orange-50 text-[#E87A3F] mb-6">
+            <Package className="size-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Incomplete</h2>
+          <p className="text-gray-500 mb-8">{errorMessage}</p>
+          <Link href="/cart">
+            <Button className="w-full h-12 rounded-full bg-[#E87A3F] text-white hover:bg-[#d96d34]">Return to Checkout</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

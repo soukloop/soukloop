@@ -43,7 +43,12 @@ export const GET = withAuth(async (request: any) => {
                         image: true,
                         role: true,
                         rewardBalance: true,
-                        createdAt: true
+                        createdAt: true,
+                        vendor: {
+                            select: {
+                                planTier: true
+                            }
+                        }
                     }
                 }
             }
@@ -64,7 +69,12 @@ export const GET = withAuth(async (request: any) => {
                             image: true,
                             role: true,
                             rewardBalance: true,
-                            createdAt: true
+                            createdAt: true,
+                            vendor: {
+                                select: {
+                                    planTier: true
+                                }
+                            }
                         }
                     }
                 }
@@ -124,7 +134,12 @@ export const PUT = withAuth(async (request: any) => {
                         image: true,
                         role: true,
                         rewardBalance: true,
-                        createdAt: true
+                        createdAt: true,
+                        vendor: {
+                            select: {
+                                planTier: true
+                            }
+                        }
                     }
                 }
             }
@@ -157,7 +172,12 @@ export const PUT = withAuth(async (request: any) => {
                         image: true,
                         role: true,
                         rewardBalance: true,
-                        createdAt: true
+                        createdAt: true,
+                        vendor: {
+                            select: {
+                                planTier: true
+                            }
+                        }
                     }
                 }
             }

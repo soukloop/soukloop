@@ -20,6 +20,7 @@ export interface UserProfile {
         name: string | null
         image: string | null
         role: string
+        planTier?: string
         rewardBalance?: {
             currentBalance: number
         } | null
