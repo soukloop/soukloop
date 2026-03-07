@@ -5,6 +5,10 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ProductCard from "@/components/admin/ProductCard";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 interface FabricDetailPageProps {
   params: Promise<{ id: string }>;
@@ -55,6 +59,12 @@ type FabricMini = {
 export default async function FabricDetailPage({
   params,
 }: FabricDetailPageProps) {
+  const request = new NextRequest("http://localhost", { headers: await headers() });
+  const authResult = await verifyAdminAuth(request);
+  if (authResult.success && authResult.admin) {
+    await requirePermission(authResult.admin.id, "categories", "view");
+  }
+
   const { id } = await params;
 
   const fabric = (await prisma.material.findUnique({

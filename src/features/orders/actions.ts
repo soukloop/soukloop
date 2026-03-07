@@ -324,6 +324,65 @@ export async function updateOrderStatus(orderId: string, status: string, trackin
     }
 }
 
+export async function updateSellerOrderStatus(orderId: string, status: string, trackingNumber?: string, carrier?: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        const vendor = await prisma.vendor.findUnique({
+            where: { userId: session.user.id },
+            select: { id: true }
+        });
+
+        if (!vendor) {
+            return { success: false, error: "Only sellers can update this order" };
+        }
+
+        const existingOrder = await prisma.order.findUnique({
+            where: { id: orderId },
+            select: { vendorId: true }
+        });
+
+        if (!existingOrder || existingOrder.vendorId !== vendor.id) {
+            return { success: false, error: "Order not found or you don't have permission to update it" };
+        }
+
+        const validated = UpdateStatusSchema.parse({ id: orderId, status, trackingNumber, carrier });
+
+        const updatedOrder = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.update({
+                where: { id: orderId },
+                data: {
+                    status: validated.status as OrderStatus,
+                    ...(validated.trackingNumber && { trackingNumber: validated.trackingNumber }),
+                    ...(validated.carrier && { carrier: validated.carrier }),
+                },
+            });
+
+            await tx.orderHistory.create({
+                data: {
+                    orderId,
+                    status: validated.status,
+                    changedBy: session.user!.id,
+                    reason: "Status updated by Seller",
+                }
+            });
+
+            return order;
+        });
+
+        revalidatePath("/order-tracking");
+        revalidatePath(`/seller/dashboard`);
+
+        return { success: true, order: updatedOrder };
+    } catch (error: any) {
+        console.error("Failed to update seller order status:", error);
+        return { success: false, error: error.message || "Failed to update seller order status" };
+    }
+}
+
 export async function deleteOrder(orderId: string) {
     try {
         await checkAdmin();

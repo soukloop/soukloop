@@ -49,6 +49,8 @@ export default function UserProfileSection({ initialData }: UserProfileSectionPr
           isSubmitted={isSubmitted}
           isRejected={isRejected}
           filtersData={filters} // Passing dynamic filters data
+          occasions={filters.occasions || []}
+          materials={filters.materials || []}
         />
       </div>
     </div>

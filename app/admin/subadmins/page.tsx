@@ -13,7 +13,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useRouter } from 'next/navigation';
 import PromoteUserModal from '@/components/admin/PromoteUserModal';
 import EditPermissionsModal from '@/components/admin/EditPermissionsModal';
-import Image from 'next/image';
+import { UserAvatar } from '@/components/shared/user-avatar';
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
@@ -82,15 +82,12 @@ export default function SubAdminManagementPage() {
             header: 'Admin',
             render: (admin) => (
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 relative overflow-hidden rounded-full border-2 border-orange-200">
-                        <Image
-                            src={admin.image || "/admin-avatar.png"}
-                            alt={admin.name || 'Admin'}
-                            fill
-                            className="object-cover"
-                            sizes="40px"
-                        />
-                    </div>
+                    <UserAvatar
+                        src={admin.image}
+                        name={admin.name || "Admin"}
+                        fallbackType="image"
+                        className="size-10 border-2 border-orange-200"
+                    />
                     <div>
                         <p className="font-medium text-gray-900">{admin.name || 'Unnamed'}</p>
                         <p className="text-xs text-gray-500">{admin.email}</p>

@@ -123,7 +123,7 @@ export default function ProductGridSection({ title = "Featured Products", catego
         setIsLoading(true);
         let url = `/api/products?limit=6`;
         if (title === "Featured Products" && !category) {
-          url += `&sold=false&sortBy=viewCount&sortOrder=desc`;
+          url += `&sold=false&featured=true&sortBy=createdAt&sortOrder=desc`;
         } else if (category) {
           url += `&category=${category}`;
         }

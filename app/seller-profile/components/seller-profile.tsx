@@ -4,6 +4,7 @@ import { Star, X, Search, MapPin, Calendar } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import Image from "next/image";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 interface SellerProfileProps {
   vendor: {
@@ -43,7 +44,7 @@ export default function SellerProfile({ vendor }: SellerProfileProps) {
 
   // Fallbacks
   const displayName = vendor.businessName || vendor.slug || vendor.user.name || "Seller";
-  const displayImage = vendor.logo || vendor.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
+  const srcImage = vendor.logo || vendor.user.image;
   const displayBanner = vendor.banner || "/images/cover-image.png"; // You might want a default specific banner
   const description = vendor.description || `Welcome to ${displayName}'s store on SoukLoop!`;
 
@@ -61,12 +62,12 @@ export default function SellerProfile({ vendor }: SellerProfileProps) {
           {/* Main Layout */}
           <div className="flex flex-col items-start space-y-6 sm:flex-row sm:space-x-6 sm:space-y-0">
             {/* Profile Image */}
-            <div className="relative z-10 -mt-16 mb-6 size-32 overflow-hidden rounded-full border-4 border-white shadow-lg bg-gray-100">
-              <Image
-                src={displayImage}
-                alt={displayName}
-                fill
-                className="object-cover"
+            <div className="relative z-10 -mt-16 mb-6 size-32 rounded-full border-4 border-white shadow-lg bg-gray-100">
+              <UserAvatar
+                src={srcImage}
+                name={displayName}
+                fallbackType="initials"
+                className="size-full"
               />
             </div>
 

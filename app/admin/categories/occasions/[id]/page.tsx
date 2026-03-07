@@ -5,6 +5,10 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ProductCard from "@/components/admin/ProductCard";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 interface OccasionDetailPageProps {
   params: Promise<{ id: string }>;
@@ -50,6 +54,12 @@ type OccasionMini = {
 export default async function OccasionDetailPage({
   params,
 }: OccasionDetailPageProps) {
+  const request = new NextRequest("http://localhost", { headers: await headers() });
+  const authResult = await verifyAdminAuth(request);
+  if (authResult.success && authResult.admin) {
+    await requirePermission(authResult.admin.id, "categories", "view");
+  }
+
   const { id } = await params;
 
   const occasion = (await prisma.occasion.findUnique({
@@ -63,15 +73,11 @@ export default async function OccasionDetailPage({
         orderBy: { createdAt: "desc" },
         include: {
           images: { take: 1 },
-          // vendor: {
-          //   select: {
-          //     id: true,
-          //     businessName: true,
-          //     user: { select: { name: true, email: true } },
-          //   },
-          // },
-          // If your schema has this relation you can keep it,
-          // otherwise remove it (TypeScript will tell you).
+          vendor: {
+            include: {
+              user: { select: { name: true, email: true } },
+            },
+          },
           dressStyle: { select: { name: true } },
         },
       },

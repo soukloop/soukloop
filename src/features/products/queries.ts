@@ -10,14 +10,21 @@ export type FeaturedProduct = Prisma.ProductGetPayload<{
             }
         }
     }
-}>;
+}> & { isFeatured?: boolean };
 
 export async function getFeaturedProducts(limit = 9) {
-    return await prisma.product.findMany({
+    const products = await prisma.product.findMany({
         where: {
             isActive: true,
             hasPendingStyle: false,
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            boosts: {
+                some: {
+                    status: 'active',
+                    startDate: { lte: new Date() },
+                    endDate: { gte: new Date() }
+                }
+            }
         },
         include: {
             images: true,
@@ -25,13 +32,26 @@ export async function getFeaturedProducts(limit = 9) {
                 select: {
                     userId: true,
                 }
+            },
+            boosts: {
+                where: {
+                    status: 'active',
+                    startDate: { lte: new Date() },
+                    endDate: { gte: new Date() }
+                },
+                select: { id: true }
             }
         },
         orderBy: {
-            viewCount: 'desc'
+            createdAt: 'desc'
         },
         take: limit
     });
+
+    return products.map(p => ({
+        ...p,
+        isFeatured: (p.boosts?.length ?? 0) > 0
+    }));
 }
 
 export async function getBrands() {

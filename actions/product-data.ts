@@ -20,7 +20,9 @@ type ProductMini = {
   slug: string;
   price: number;
   comparePrice: number | null;
+  vendor: { userId: string } | null;
   images: { url: string }[];
+  boosts: { id: string }[];
 };
 
 /**
@@ -87,23 +89,38 @@ export async function getLatestProductsByDressStyle(
         slug: true,
         price: true,
         comparePrice: true,
+        vendor: {
+          select: {
+            userId: true,
+          },
+        },
         images: {
           take: 1,
           orderBy: { order: "asc" },
           select: { url: true },
+        },
+        boosts: {
+          where: {
+            status: "active",
+            startDate: { lte: new Date() },
+            endDate: { gte: new Date() },
+          },
+          select: { id: true },
         },
       },
       orderBy: { createdAt: "desc" },
       take: 3,
     })) as ProductMini[];
 
-    return products.map((p: ProductMini) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: p.price,
-      comparePrice: p.comparePrice,
-      image: p.images?.[0]?.url || "/placeholder.png",
+    return products.map((product: ProductMini) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      comparePrice: product.comparePrice,
+      image: product.images[0]?.url || "/placeholder.png",
+      isFeatured: (product.boosts?.length ?? 0) > 0,
+      vendorUserId: product.vendor?.userId,
     }));
   } catch (error) {
     console.error("Error fetching products by style:", error);

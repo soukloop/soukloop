@@ -1,7 +1,7 @@
 "use client";
 
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { AlertCircle, Filter, X } from "lucide-react";
-import { useState, useMemo, useTransition } from "react";
 import ProductCard from "@/components/product-card";
 import ProductFilters from "@/app/products/components/product-filters";
 import ApplicationStatusBox from "@/components/seller/ApplicationStatusBox";
@@ -15,6 +15,16 @@ import { deleteProductAction, updateProductStatusAction } from "@/src/features/s
 import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
+// Custom debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+    return debouncedValue;
+}
+
 interface ProfileProductsProps {
     userId: string;
     isSeller: boolean;
@@ -25,9 +35,11 @@ interface ProfileProductsProps {
     isRejected: boolean;
     filtersData: {
         categories: any[];
-        brands: string[];
+        brands: { id: string, name: string }[];
         dressStyles: any[];
     };
+    occasions?: any[];
+    materials?: any[];
 }
 
 export default function ProfileProducts({
@@ -38,7 +50,9 @@ export default function ProfileProducts({
     isApproved,
     isSubmitted,
     isRejected,
-    filtersData
+    filtersData,
+    occasions = [],
+    materials = []
 }: ProfileProductsProps) {
     const [activeTab, setActiveTab] = useState<"all" | "sold">("all");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -53,21 +67,92 @@ export default function ProfileProducts({
     const router = useRouter();
     const ITEMS_PER_PAGE = 6;
 
-    // Filter States
-    const [occasion, setOccasion] = useState("all");
-    const [gender, setGender] = useState("all");
-    const [condition, setCondition] = useState("all");
-    const [size, setSize] = useState("all");
-    const [fabric, setFabric] = useState("all");
-    const [brandQuery, setBrandQuery] = useState("");
-    const [dress, setDress] = useState("all");
-    const [priceRange, setPriceRange] = useState([0, 1000]);
-    const [onSale, setOnSale] = useState(false);
-    const [minRating, setMinRating] = useState("all");
-
     const searchParams = useSearchParams();
     const initialCategory = searchParams?.get("category") || "all";
     const [category, setCategory] = useState(initialCategory);
+
+    // Initialize state from URL params
+    const initialBrandQuery = searchParams?.get("brand") || "";
+    const initialOccasion = searchParams?.get("occasion") || "all";
+    const initialGender = searchParams?.get("gender") || "all";
+    const initialCondition = searchParams?.get("condition") || "all";
+    const initialSize = searchParams?.get("size") || "all";
+    const initialFabric = searchParams?.get("fabric") || "all";
+    const initialDress = searchParams?.get("dress") || "all";
+    const initialMinRating = searchParams?.get("minRating") || "all";
+    const initialOnSale = searchParams?.get("onSale") === "true";
+    const initialMinPrice = searchParams?.get("minPrice") ? Number(searchParams.get("minPrice")) : 0;
+    const initialMaxPrice = searchParams?.get("maxPrice") ? Number(searchParams.get("maxPrice")) : 1000;
+
+    // Local Filter States initialized from URL
+    const [occasionState, setOccasion] = useState(initialOccasion);
+    const [gender, setGender] = useState(initialGender);
+    const [condition, setCondition] = useState(initialCondition);
+    const [size, setSize] = useState(initialSize);
+    const [fabric, setFabric] = useState(initialFabric);
+    const [brandQuery, setBrandQuery] = useState(initialBrandQuery);
+    const [dress, setDress] = useState(initialDress);
+    const [priceRange, setPriceRange] = useState([initialMinPrice, initialMaxPrice]);
+    const [onSale, setOnSale] = useState(initialOnSale);
+    const [minRating, setMinRating] = useState(initialMinRating);
+
+    // Debounce values for API calls
+    const debouncedBrandQuery = useDebounce(brandQuery, 500);
+    const debouncedPriceRange = useDebounce(priceRange, 500);
+
+    // Track initial mount to prevent immediate URL replacement
+    const isMounted = React.useRef(false);
+
+    // Sync state to URL 
+    const updateURL = React.useCallback(() => {
+        if (!isMounted.current) {
+            isMounted.current = true;
+            return;
+        }
+
+        const params = new URLSearchParams(searchParams?.toString() || "");
+
+        const setOrDel = (key: string, val: string | number | boolean, defaultVal: any) => {
+            if (val !== defaultVal && val !== "" && val !== undefined) {
+                params.set(key, String(val));
+            } else {
+                params.delete(key);
+            }
+        };
+
+        setOrDel("brand", debouncedBrandQuery, "");
+        setOrDel("occasion", occasionState, "all");
+        setOrDel("gender", gender, "all");
+        setOrDel("condition", condition, "all");
+        setOrDel("size", size, "all");
+        setOrDel("fabric", fabric, "all");
+        setOrDel("dress", dress, "all");
+        setOrDel("minRating", minRating, "all");
+
+        if (onSale) params.set("onSale", "true");
+        else params.delete("onSale");
+
+        if (debouncedPriceRange[0] !== 0) params.set("minPrice", debouncedPriceRange[0].toString());
+        else params.delete("minPrice");
+
+        if (debouncedPriceRange[1] !== 1000) params.set("maxPrice", debouncedPriceRange[1].toString());
+        else params.delete("maxPrice");
+
+        const currentString = searchParams?.toString();
+        const newString = params.toString();
+
+        if (currentString !== newString) {
+            params.set("page", "1");
+            router.replace(`?${params.toString()}`, { scroll: false });
+        }
+    }, [
+        debouncedBrandQuery, occasionState, gender, condition, size, fabric,
+        dress, minRating, onSale, debouncedPriceRange, router, searchParams
+    ]);
+
+    React.useEffect(() => {
+        updateURL();
+    }, [updateURL]);
 
     // OPTIMIZATION: Server-side pagination (matches products page pattern)
     // Build filter params to send to API
@@ -80,20 +165,20 @@ export default function ProfileProducts({
         sold: activeTab === "sold",
         // Send all filters to API for server-side filtering
         category: category !== "all" ? category : undefined,
-        occasion: occasion !== "all" ? occasion : undefined,
+        occasion: occasionState !== "all" ? occasionState : undefined,
         gender: gender !== "all" ? gender : undefined,
         condition: condition !== "all" ? condition : undefined,
         size: size !== "all" ? size : undefined,
         fabric: fabric !== "all" ? fabric : undefined,
-        brandId: brandQuery || undefined,
+        brandId: debouncedBrandQuery || undefined,
         dress: dress !== "all" ? dress : undefined,
         onSale: onSale === true ? true : undefined,
-        minPrice: priceRange[0],
-        maxPrice: priceRange[1],
+        minPrice: debouncedPriceRange[0],
+        maxPrice: debouncedPriceRange[1],
         minRating: minRating !== "all" ? minRating : undefined,
     }), [
-        userId, currentPage, activeTab, category, occasion, gender, condition,
-        size, fabric, brandQuery, dress, onSale, priceRange, minRating
+        userId, currentPage, activeTab, category, occasionState, gender, condition,
+        size, fabric, debouncedBrandQuery, dress, onSale, debouncedPriceRange, minRating
     ]);
 
     // Fetch from backend with server-side filtering and pagination
@@ -179,7 +264,7 @@ export default function ProfileProducts({
                         <button onClick={() => setIsFilterOpen(false)}><X className="size-6" /></button>
                     </div>
                     <ProductFilters
-                        occasion={occasion} setOccasion={setOccasion}
+                        occasion={occasionState} setOccasion={setOccasion}
                         gender={gender} setGender={setGender}
                         condition={condition} setCondition={setCondition}
                         size={size} setSize={setSize}
@@ -192,10 +277,10 @@ export default function ProfileProducts({
                         categoryFromURL={category}
                         onCategoryChange={(cat) => { setCategory(cat); setCurrentPage(1); }}
                         categories={filtersData.categories}
-                        brands={filtersData.brands.map(b => ({ id: b, name: b }))}
+                        brands={filtersData.brands}
                         allDressStyles={filtersData.dressStyles}
-                        initialOccasions={[]}
-                        initialMaterials={[]}
+                        initialOccasions={occasions}
+                        initialMaterials={materials}
                     />
                 </aside>
 

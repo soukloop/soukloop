@@ -5,6 +5,8 @@ export type MegaMenuProduct = {
     price: number;
     comparePrice: number | null;
     image: string;
+    isFeatured?: boolean;
+    vendorUserId?: string;
 };
 
 export type DressStyle = {

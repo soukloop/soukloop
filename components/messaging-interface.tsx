@@ -9,7 +9,7 @@ import { Send, Search, ArrowLeft, Package, Flag, Calendar, Tag, ShoppingBag, Use
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/shared/user-avatar"
 import { useSocket } from "@/components/providers/socket-provider"
 import { toast } from "sonner"
 import { useVoiceRecorder, formatDuration } from "@/hooks/useVoiceRecorder"
@@ -1063,12 +1063,12 @@ export default function MessagingInterface({
                         ) : (
                             <div className="flex-1 p-4">
                                 <div className="mb-6 text-center">
-                                    <Avatar className="mx-auto mb-3 size-16">
-                                        <AvatarImage src={sellerInfo?.image || getUserImage(getOtherParticipant(selectedConversation)) || undefined} />
-                                        <AvatarFallback className="bg-[#E87A3F] text-white text-xl">
-                                            {getOtherParticipant(selectedConversation).name?.charAt(0) || "S"}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <UserAvatar
+                                        src={sellerInfo?.image || getUserImage(getOtherParticipant(selectedConversation))}
+                                        name={getOtherParticipant(selectedConversation).name || "Seller"}
+                                        className="mx-auto mb-3 size-16"
+                                        fallbackType="initials"
+                                    />
                                     <h4 className="font-semibold">{getOtherParticipant(selectedConversation).name || "Seller"}</h4>
                                 </div>
                                 <div className="space-y-2">
@@ -1124,12 +1124,12 @@ export default function MessagingInterface({
                     ) : (
                         <div className="p-4">
                             <div className="mb-6 text-center">
-                                <Avatar className="mx-auto mb-3 size-20">
-                                    <AvatarImage src={getOtherParticipant(selectedConversation).image || undefined} />
-                                    <AvatarFallback className="bg-[#E87A3F] text-white text-2xl">
-                                        {getOtherParticipant(selectedConversation).name?.charAt(0) || "U"}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <UserAvatar
+                                    src={getOtherParticipant(selectedConversation).image || undefined}
+                                    name={getOtherParticipant(selectedConversation).name || "User"}
+                                    className="mx-auto mb-3 size-20"
+                                    fallbackType="initials"
+                                />
                                 <h4 className="text-lg font-semibold">{getOtherParticipant(selectedConversation).name || "User"}</h4>
                                 <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-gray-100 text-xs text-gray-600">
                                     {getOtherParticipantRole(selectedConversation)}

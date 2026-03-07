@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
         const includeInactive = searchParams.get('includeInactive') === 'true';
         const includePending = searchParams.get('includePending') === 'true';
         const sold = searchParams.get('sold') || 'false';
+        const featured = searchParams.get('featured');
         const dressStyleId = searchParams.get('dressStyleId');
         const minRating = searchParams.get('minRating');
 
@@ -136,6 +137,16 @@ export async function GET(request: NextRequest) {
             if (sold === 'true') target.status = 'SOLD';
             else if (sold === 'false') target.status = 'ACTIVE';
 
+            // ONLY show featured products on the homepage if they have an active boost.
+            if (featured === 'true') {
+                target.boosts = {
+                    some: {
+                        status: 'active',
+                        startDate: { lte: new Date() },
+                        endDate: { gte: new Date() }
+                    }
+                };
+            }
             if (minRating) target.averageRating = { gte: parseFloat(minRating) };
         };
 

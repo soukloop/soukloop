@@ -6,6 +6,10 @@ import ReviewsTab from "@/components/admin/products/tabs/reviews-tab";
 import ReturnsTab from "@/components/admin/products/tabs/returns-tab";
 import DeliveryTab from "@/components/admin/products/tabs/delivery-tab";
 import ReportsTab from "@/components/admin/products/tabs/reports-tab";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +17,12 @@ export default async function ProductDetailPage(props: {
     params: Promise<{ id: string }>;
     searchParams: Promise<{ tab?: string }>;
 }) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'products', 'view');
+    }
+
     const searchParams = await props.searchParams;
     const params = await props.params;
 

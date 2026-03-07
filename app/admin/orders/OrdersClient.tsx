@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { deleteOrder } from "@/features/orders/actions";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { toast } from "sonner";
 
 interface OrdersClientProps {
@@ -52,13 +53,14 @@ export default function OrdersClient({ orders, total, page, limit }: OrdersClien
                 <div className="flex items-center gap-3">
                     <div className="flex -space-x-4 overflow-hidden p-1 shrink-0">
                         {order.productImages.slice(0, 2).map((img: string, idx: number) => (
-                            <div
+                            <UserAvatar
                                 key={idx}
-                                className="h-10 w-10 bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm relative shrink-0 ring-2 ring-white"
+                                src={img}
+                                name={order.productNames[idx] || "Product"}
+                                fallbackType="initials"
+                                className="h-10 w-10 rounded-lg border border-gray-200 shadow-sm shrink-0 ring-2 ring-white"
                                 style={{ zIndex: 10 - idx }}
-                            >
-                                <img src={img} className="object-cover w-full h-full" alt="" />
-                            </div>
+                            />
                         ))}
                     </div>
                     <div className="flex flex-col min-w-0">

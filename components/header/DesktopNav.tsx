@@ -15,6 +15,8 @@ import ProductCard from "@/components/product-card";
 import { CardSkeleton } from "@/components/ui/skeletons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 const STALE_TIME = 30 * 60 * 1000; // 30 minutes
 
@@ -26,7 +28,9 @@ export default function DesktopNav({ initialDressStyles }: DesktopNavProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { isWithlisted, toggleWishlist } = useWishlist();
+    const { addItem } = useCart();
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [animatingId, setAnimatingId] = useState<string | null>(null);
 
     // Core categories are ALWAYS present - hardcoded
     const CORE_CATEGORIES = ['women', 'men', 'kids'];
@@ -228,11 +232,23 @@ export default function DesktopNav({ initialDressStyles }: DesktopNavProps) {
                                                 slug: product.slug,
                                                 isWishlist: isWithlisted(product.id),
                                                 isActive: true,
-                                                status: "APPROVED"
+                                                status: "APPROVED",
+                                                isFeatured: product.isFeatured,
+                                                vendorUserId: product.vendorUserId
                                             }}
-                                            handleAddToCart={(p) => {
-                                                // Prevent default routing if wishlist is clicked? Handled inside ProductCard
-                                                // handleAddToCart is still dummy here as per original
+                                            animatingId={animatingId}
+                                            handleAddToCart={async (p) => {
+                                                setAnimatingId(p.id);
+                                                await addItem(p.id, 1, {
+                                                    id: p.id,
+                                                    name: p.title,
+                                                    price: parseFloat(p.price.replace("$", "")),
+                                                    images: [{ url: p.image }],
+                                                });
+                                                toast.success("Added to cart! 🛒");
+                                                setTimeout(() => {
+                                                    setAnimatingId(null);
+                                                }, 1200);
                                             }}
                                             toggleWishlist={toggleWishlist}
                                         />

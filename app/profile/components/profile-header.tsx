@@ -4,6 +4,7 @@ import { Camera, Edit, Loader2, Info } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import Link from "next/link";
 import { toggleFollowAction, updateProfileBannerAction } from "@/src/features/user/actions";
 import { toast } from "sonner";
@@ -162,13 +163,12 @@ export default function ProfileHeader({ user, profile, vendor, isOwner, isFollow
             </div>
 
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="relative -mt-12 mb-6 size-24 overflow-hidden rounded-full border-4 border-white shadow-lg sm:-mt-16 sm:size-32">
-                    <Image
-                        src={userImage}
-                        alt={userName}
-                        fill
-                        sizes="(max-width: 640px) 96px, 128px"
-                        className="object-cover object-center"
+                <div className="relative -mt-12 mb-6 size-24 rounded-full border-4 border-white shadow-lg sm:-mt-16 sm:size-32">
+                    <UserAvatar
+                        src={userImage !== "/icons/user-avatar.png" ? userImage : null}
+                        name={userName}
+                        fallbackType="image"
+                        className="size-full"
                     />
                 </div>
 

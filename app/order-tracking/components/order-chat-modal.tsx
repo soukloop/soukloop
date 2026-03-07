@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Loader2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/button";
@@ -70,20 +70,12 @@ export function OrderChatModal({ isOpen, onClose, orderItems, orderNumber }: Ord
                             key={item.id}
                             className="flex items-center gap-4 p-3 border border-gray-100 rounded-lg hover:border-orange-200 transition-colors"
                         >
-                            <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-gray-100 border border-gray-200">
-                                {item.productImage ? (
-                                    <Image
-                                        src={item.productImage}
-                                        alt={item.productName}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex size-full items-center justify-center bg-gray-100 text-[10px] text-gray-400">
-                                        No Img
-                                    </div>
-                                )}
-                            </div>
+                            <UserAvatar
+                                src={item.productImage}
+                                name={item.productName}
+                                fallbackType="initials"
+                                className="size-14 rounded-md border border-gray-200"
+                            />
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 line-clamp-2">
                                     {item.productName}

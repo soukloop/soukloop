@@ -11,10 +11,12 @@ import PermissionListener from '@/components/admin/PermissionListener';
 
 export default function AdminLayoutClient({
     children,
+    initialPermissions = {},
 }: {
     children: React.ReactNode;
+    initialPermissions?: Record<string, string[]>;
 }) {
-    const { isAuthChecking, isAuthenticated, adminUser, login, logout, hasPermission, isSuperAdmin, canAccessRoute } = useAdminAuth();
+    const { isAuthChecking, isAuthenticated, adminUser, login, logout, hasPermission, isSuperAdmin, canAccessRoute } = useAdminAuth(initialPermissions);
     const pathname = usePathname();
     const router = useRouter();
 

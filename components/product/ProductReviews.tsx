@@ -6,6 +6,7 @@ import { useReviews, useReviewAnalytics } from "@/hooks/useReviews";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Textarea } from "@/components/ui/textarea"; // Assuming we have this
 import { toast } from "sonner";
 import ProductSellerInfo from "./ProductSellerInfo";
@@ -142,9 +143,12 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                             <div key={review.id} className="group relative rounded-2xl border border-gray-100 bg-white p-6 transition-shadow hover:shadow-md">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex size-10 items-center justify-center rounded-full bg-gray-100 font-bold text-gray-500">
-                                            {review.user?.name?.charAt(0) || "U"}
-                                        </div>
+                                        <UserAvatar
+                                            src={review.user?.image}
+                                            name={review.user?.name || "Anonymous"}
+                                            fallbackType="initials"
+                                            className="size-10"
+                                        />
                                         <div>
                                             <p className="font-bold text-gray-900 flex items-center gap-1.5">
                                                 {review.user?.name || "Anonymous"}

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { OrderChatModal } from "./order-chat-modal";
 import { getOverallStatus } from "@/services/orders.service";
+import { updateSellerOrderStatus } from "@/features/orders/actions";
 
 interface OrderItem {
     id: string;
@@ -44,6 +45,7 @@ export function OrderCard({ order, isSeller }: { order: Order; isSeller: boolean
     const router = useRouter();
     const [showChatModal, setShowChatModal] = useState(false);
     const [isStartingChat, setIsStartingChat] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
 
     const formatDate = (date: string | Date) => {
         return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -79,6 +81,24 @@ export function OrderCard({ order, isSeller }: { order: Order; isSeller: boolean
         } else if (order.items.length > 1) {
             // Open selection modal for multiple items
             setShowChatModal(true);
+        }
+    };
+
+    const handleApprove = async () => {
+        setIsApproving(true);
+        try {
+            const res = await updateSellerOrderStatus(order.id, "PROCESSING");
+            if (res.success) {
+                toast.success("Order approved and moved to processing!");
+                router.refresh();
+            } else {
+                toast.error(res.error || "Failed to approve order.");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to approve order.");
+        } finally {
+            setIsApproving(false);
         }
     };
 
@@ -139,6 +159,17 @@ export function OrderCard({ order, isSeller }: { order: Order; isSeller: boolean
                     >
                         Track Order
                     </Link>
+                    {isSeller && order.status === "PENDING" && (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold shrink-0 bg-[#E87A3F] hover:bg-[#d66b35] text-white"
+                            onClick={handleApprove}
+                            disabled={isApproving}
+                        >
+                            {isApproving ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> ...</> : "Approve Order"}
+                        </Button>
+                    )}
                     {order.items.length > 0 && (
                         <Button
                             variant="outline"

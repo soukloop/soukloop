@@ -40,7 +40,7 @@ const ROUTE_TO_RESOURCE: Record<string, string> = {
     '/admin/subadmins': 'subadmins',
 };
 
-export function useAdminAuth(): UseAdminAuthReturn {
+export function useAdminAuth(initialPermissions: Record<string, string[]> = {}): UseAdminAuthReturn {
     const { data: session, status } = useSession();
     const router = useRouter();
 
@@ -57,8 +57,8 @@ export function useAdminAuth(): UseAdminAuthReturn {
             firstName: session.user.name?.split(' ')[0] || "",
             lastName: session.user.name?.split(' ').slice(1).join(' ') || "",
             role: session.user.role || Role.USER,
-            // Permissions are now simpler with Roles
-            permissions: {}, // Deprecated: legacy permission object
+            // Restore actual permissions from server data
+            permissions: initialPermissions,
             isActive: true,
             image: session.user.image,
             createdAt: new Date(),
@@ -71,17 +71,28 @@ export function useAdminAuth(): UseAdminAuthReturn {
         return session?.user?.role === Role.SUPER_ADMIN;
     }, [session?.user?.role]);
 
-    // Simplified permission check based on Roles
+    // Full permission check matching the original legacy format
     const hasPermission = useCallback((resource: string, action: string): boolean => {
         if (!session?.user) return false;
 
         const role = session.user.role;
 
+        // SuperAdmins always have full access
         if (role === Role.SUPER_ADMIN) return true;
-        if (role === Role.ADMIN) return true; // Admins generally have access
+
+        // Ensure regular admins only access what they explicitly have in the database
+        if (role === Role.ADMIN) {
+            // Dashboard is universally allowed for admins
+            if (resource === 'dashboard') return true;
+
+            const resourcePermissions = initialPermissions[resource];
+            if (!resourcePermissions) return false;
+
+            return resourcePermissions.includes(action);
+        }
 
         return false;
-    }, [session?.user]);
+    }, [session?.user, initialPermissions]);
 
     // Check route access
     const canAccessRoute = useCallback((route: string): boolean => {
