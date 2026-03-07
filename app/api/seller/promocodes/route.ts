@@ -42,32 +42,6 @@ export async function POST(request: NextRequest) {
         const vendor = await prisma.vendor.findUnique({ where: { userId: session.user.id } });
         if (!vendor) return NextResponse.json({ error: "Vendor profile not found" }, { status: 404 });
 
-        const planLimits = SUBSCRIPTION_PLANS[vendor.planTier];
-
-        if (planLimits.maxPromoCodes === 0) {
-            return NextResponse.json({
-                error: "Premium Feature Required",
-                details: "Creating promo codes is not available on the Basic plan. Please upgrade to the Starter or Pro plan.",
-                code: 'UPGRADE_REQUIRED'
-            }, { status: 403 });
-        }
-
-        if (planLimits.maxPromoCodes !== Infinity) {
-            // Count current total coupons for the vendor
-            // @ts-ignore
-            const couponCount = await prisma.coupon.count({
-                where: { vendorId: vendor.id }
-            });
-
-            if (couponCount >= planLimits.maxPromoCodes) {
-                return NextResponse.json({
-                    error: "Subscription limit reached",
-                    details: `You have reached the maximum limit of ${planLimits.maxPromoCodes} promo codes for the ${vendor.planTier} plan. Please upgrade to a higher tier to add more promo codes.`,
-                    code: 'UPGRADE_REQUIRED'
-                }, { status: 403 });
-            }
-        }
-
         const body = await request.json();
         const validation = CouponSchema.safeParse(body);
 

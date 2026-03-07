@@ -7,7 +7,7 @@ import { notifyOrderPlaced, notifySellersNewOrder } from '@/lib/notifications/te
 import { notifyPaymentSuccess } from '@/lib/notifications/templates/payment-templates';
 import { RewardService } from '@/features/rewards/service';
 import { REWARD_RULES, ACTION_TYPES, REFERENCE_TYPES } from '@/features/rewards/constants';
-import { handleSubscriptionCheckoutCompleted, handleSubscriptionChange, handleSubscriptionInvoicePaid } from '@/features/subscriptions/webhook-handlers';
+// Boost functionality handled inline or imported
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -32,17 +32,88 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
-      case 'invoice.paid': {
-        const invoice = event.data.object as Stripe.Invoice;
-        await handleSubscriptionInvoicePaid(invoice);
-        break;
-      }
-
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        if (session.mode === 'subscription') {
-          await handleSubscriptionCheckoutCompleted(session);
+        // Handle Product Boost Payments
+        const boostId = session.metadata?.boostId;
+        const vendorId = session.metadata?.vendorId;
+
+        if (boostId && vendorId) {
+
+          // Check if BoostTransaction already exists to ensure idempotency
+          const existingTransaction = await prisma.boostTransaction.findUnique({
+            where: { stripePaymentId: session.payment_intent as string }
+          });
+
+          if (!existingTransaction) {
+            await prisma.$transaction(async (tx) => {
+              // 1. Create Transaction record
+              await tx.boostTransaction.create({
+                data: {
+                  boostId,
+                  vendorId,
+                  stripePaymentId: session.payment_intent as string,
+                  amount: session.amount_total ? session.amount_total / 100 : 0,
+                  status: 'succeeded'
+                }
+              });
+
+              // 2. Get boost + linked product to check if product is already public
+              const boostRaw = await tx.productBoost.findUnique({
+                where: { id: boostId },
+                include: {
+                  product: {
+                    select: {
+                      isActive: true,
+                      status: true,
+                      dressStyle: { select: { status: true } }
+                    }
+                  }
+                }
+              });
+
+              // Check if product is visible: active AND dress style approved (or no dress style)
+              const dressStyleApproved = !boostRaw?.product?.dressStyle || boostRaw.product.dressStyle.status === 'approved';
+              const productIsLive = boostRaw?.product?.isActive && dressStyleApproved;
+
+              if (productIsLive) {
+                // Product is already public — start the timer NOW
+                const startDate = new Date();
+                let durationMs = 3 * 24 * 60 * 60 * 1000; // default 3 days
+                if (boostRaw?.packageType === '7_DAYS') durationMs = 7 * 24 * 60 * 60 * 1000;
+                else if (boostRaw?.packageType === '15_DAYS') durationMs = 15 * 24 * 60 * 60 * 1000;
+
+                await tx.productBoost.update({
+                  where: { id: boostId },
+                  data: {
+                    status: 'active',
+                    stripeSessionId: session.id,
+                    startDate,
+                    endDate: new Date(startDate.getTime() + durationMs)
+                  }
+                });
+
+                console.log(`[Boost] Product is live — boost timer started immediately for Boost ${boostId}`);
+              } else {
+                // Product is pending dress style approval — mark as PAID but don't start the timer.
+                // The timer will begin when the dress style is approved and the product goes live.
+                await tx.productBoost.update({
+                  where: { id: boostId },
+                  data: {
+                    status: 'paid',
+                    stripeSessionId: session.id,
+                    startDate: undefined,
+                    endDate: undefined
+                  }
+                });
+
+                console.log(`[Boost] Product pending dress style approval — boost timer deferred for Boost ${boostId}`);
+              }
+            });
+          }
+
+          console.log(`Successfully processed Product Boost ${boostId} for Vendor ${vendorId}`);
           break;
         }
 
@@ -334,13 +405,6 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const subscriptionEvent = event.data.object as Stripe.Subscription;
-        await handleSubscriptionChange(subscriptionEvent);
-        break;
-      }
 
       case 'checkout.session.expired': {
         const session = event.data.object as Stripe.Checkout.Session;

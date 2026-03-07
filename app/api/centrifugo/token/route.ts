@@ -27,7 +27,8 @@ export async function GET() {
                 subs: {
                     [`personal:${userId}`]: {},
                     "notifications": {},
-                    "product-stock-updates": {}
+                    "product-stock-updates": {},
+                    "conversation:*": {}
                 }
             },
             centrifugoSecret

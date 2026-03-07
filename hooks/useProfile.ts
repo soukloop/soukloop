@@ -20,7 +20,6 @@ export interface UserProfile {
         name: string | null
         image: string | null
         role: string
-        planTier?: string
         rewardBalance?: {
             currentBalance: number
         } | null
@@ -87,8 +86,13 @@ const fetcher = async (url: string) => {
 }
 
 // Main hook
-export function useProfile(userId?: string) {
+export function useProfile(userIdOrOptions?: string | { userId?: string; skipAddresses?: boolean }) {
     const { data: session, status } = useSession()
+
+    // Parse arguments
+    const userId = typeof userIdOrOptions === 'string' ? userIdOrOptions : userIdOrOptions?.userId;
+    const skipAddresses = typeof userIdOrOptions === 'object' ? !!userIdOrOptions?.skipAddresses : false;
+
     // If userId is provided, we assume the caller has permission (admin) to view it.
     // Otherwise, we check if the user is authenticated.
     const isAuthenticated = !!userId || status === 'authenticated'
@@ -102,9 +106,11 @@ export function useProfile(userId?: string) {
         ? `/api/admin/users/${userId}/profile`
         : (isAuthenticated ? '/api/profile' : null)
 
-    const addressesEndpoint = userId
-        ? `/api/admin/users/${userId}/addresses`
-        : (isAuthenticated ? '/api/addresses' : null)
+    const addressesEndpoint = skipAddresses
+        ? null
+        : userId
+            ? `/api/admin/users/${userId}/addresses`
+            : (isAuthenticated ? '/api/addresses' : null)
 
     // Fetch profile
     const {

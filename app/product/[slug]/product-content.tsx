@@ -88,7 +88,7 @@ export default function ProductContent({ slug }: { slug?: string }) {
     }, [product, productId, router]);
 
     const { getRatingBreakdown } = useReviewAnalytics(productId);
-    const { user } = useAuth();
+    const { user, isLoading: isAuthLoading } = useAuth();
 
     // Get vendor/seller info for recommendations
     const vendorUserId = (product as any)?.vendor?.userId;
@@ -193,28 +193,38 @@ export default function ProductContent({ slug }: { slug?: string }) {
     // Placeholder removed, used hook directly
 
 
+    // Tracking ref to prevent multiple calls per product view in the same session
+    const hasRecordedViewRef = useRef<{ [key: string]: boolean }>({});
+
     // Record Recently Viewed - MOVED TO PAGE LOAD
     // Increment View Count
     useEffect(() => {
-        // Only increment if productId exists and is not empty
-        if (productId) {
+        // Wait until auth is resolved
+        if (isAuthLoading) return;
+
+        // Only increment if productId exists, is not empty, product has loaded, and we haven't recorded it yet
+        if (productId && product && !hasRecordedViewRef.current[productId]) {
+            hasRecordedViewRef.current[productId] = true;
+
             // Record Local & API History
-            if (product) { // Ensure product loaded before history
-                // 1. LocalStorage
+            // 1. LocalStorage
+            try {
                 const recentlyViewedStr = localStorage.getItem("recentlyViewed") || "[]";
                 let recentlyViewed = JSON.parse(recentlyViewedStr);
                 recentlyViewed = recentlyViewed.filter((id: string) => id !== productId);
                 recentlyViewed.unshift(productId);
                 localStorage.setItem("recentlyViewed", JSON.stringify(recentlyViewed.slice(0, 12)));
+            } catch (e) {
+                console.error("Local storage error:", e);
+            }
 
-                // 2. API
-                if (user) {
-                    fetch("/api/recently-viewed", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ productId }),
-                    }).catch(err => console.error("Failed to sync recently viewed:", err));
-                }
+            // 2. API
+            if (user) {
+                fetch("/api/recently-viewed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ productId }),
+                }).catch(err => console.error("Failed to sync recently viewed:", err));
             }
 
             // View count increment
@@ -225,7 +235,7 @@ export default function ProductContent({ slug }: { slug?: string }) {
 
             return () => clearTimeout(timer);
         }
-    }, [productId, product, user]);
+    }, [productId, product, user, isAuthLoading]);
 
 
     return (

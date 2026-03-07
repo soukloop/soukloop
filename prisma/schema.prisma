@@ -112,16 +112,15 @@ model Vendor {
   reviewCount        Int                 @default(0) @map("review_count")
   walletBalance      Decimal             @default(0) @map("wallet_balance") @db.Decimal(10, 2)
   rewardBalance      Int                 @default(0) @map("reward_balance")
-  planTier           SubscriptionTier    @default(BASIC) @map("plan_tier")
   orders             Order[]
   payouts            Payout[]
   products           Product[]
-  subscriptions      Subscription[]
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  walletTransactions       WalletTransaction[]
-  bankAccounts             BankAccount[]
-  coupons                  Coupon[]
-  subscriptionTransactions SubscriptionTransaction[]
+  walletTransactions WalletTransaction[]
+  bankAccounts       BankAccount[]
+  coupons            Coupon[]
+  productBoosts      ProductBoost[]
+  boostTransactions  BoostTransaction[]
 
   @@index([createdAt])
   @@index([kycStatus, isActive]) // Optimization for Product Query Joins
@@ -207,6 +206,7 @@ model Product {
   reports           Report[]
   reviews           Review[]
   testimonials      Testimonial[]
+  boosts            ProductBoost[]
   status            String             @default("ACTIVE") // denormalized status: ACTIVE, SOLD, PROCESSING, INACTIVE
 
   @@unique([vendorId, slug])
@@ -425,6 +425,8 @@ model Review {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
   @@map("reviews")
 }
 
@@ -514,6 +516,8 @@ model Promotion {
   createdAt DateTime      @default(now()) @map("created_at")
   product   Product       @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
+  @@index([type, startDate, endDate])
+  @@index([listingId])
   @@map("promotions")
 }
 
@@ -697,6 +701,8 @@ model Favorite {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
   @@map("favorites")
 }
 
@@ -1097,48 +1103,43 @@ model Testimonial {
   @@map("testimonials")
 }
 
-enum SubscriptionTier {
-  BASIC
-  STARTER
-  PRO
+model ProductBoost {
+  id               String           @id @default(uuid())
+  productId        String           @map("product_id")
+  vendorId         String           @map("vendor_id")
+  packageType      String           @map("package_type") // e.g. "3_DAYS", "7_DAYS", "15_DAYS"
+  status           String           @default("pending") // pending, paid, active, expired
+  startDate        DateTime?        @map("start_date")   // null until payment confirmed
+  endDate          DateTime?        @map("end_date")     // null until payment confirmed
+  stripeSessionId  String?          @unique @map("stripe_session_id")
+  stripePaymentId  String?          @unique @map("stripe_payment_id")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  product          Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendor           Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  transaction      BoostTransaction?
+
+  @@index([productId])
+  @@index([vendorId])
+  @@index([status, endDate])
+  @@map("product_boosts")
 }
 
-model Subscription {
-  id                   String           @id @default(uuid())
-  vendorId             String           @map("vendor_id")
-  stripeCustomerId     String?          @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?          @unique @map("stripe_subscription_id")
-  stripePriceId        String?          @map("stripe_price_id")
-  tier                 SubscriptionTier @default(BASIC)
-  status               String           @default("active") // active, canceled, past_due, incomplete
-  currentPeriodStart   DateTime         @map("current_period_start")
-  currentPeriodEnd     DateTime         @map("current_period_end")
-  cancelAtPeriodEnd    Boolean          @default(false) @map("cancel_at_period_end")
-  createdAt            DateTime         @default(now()) @map("created_at")
-  updatedAt            DateTime         @updatedAt @map("updated_at")
+model BoostTransaction {
+  id               String       @id @default(uuid())
+  boostId          String       @unique @map("boost_id")
+  vendorId         String       @map("vendor_id")
+  stripePaymentId  String?      @unique @map("stripe_payment_id")
+  amount           Decimal      @db.Decimal(10, 2)
+  status           String       @default("succeeded") // succeeded, failed, pending
+  createdAt        DateTime     @default(now()) @map("created_at")
 
-  vendor               Vendor           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  transactions         SubscriptionTransaction[]
+  boost            ProductBoost @relation(fields: [boostId], references: [id], onDelete: Cascade)
+  vendor           Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([vendorId])
-  @@index([status])
-  @@map("subscriptions")
-}
-
-model SubscriptionTransaction {
-  id                   String       @id @default(uuid())
-  subscriptionId       String       @map("subscription_id")
-  vendorId             String       @map("vendor_id")
-  stripeInvoiceId      String?      @unique @map("stripe_invoice_id")
-  amount               Decimal      @db.Decimal(10, 2)
-  status               String       @default("succeeded") // succeeded, failed, pending
-  createdAt            DateTime     @default(now()) @map("created_at")
-
-  subscription         Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  vendor               Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
-  @@index([vendorId])
-  @@index([subscriptionId])
-  @@map("subscription_transactions")
+  @@index([boostId])
+  @@map("boost_transactions")
 }
 

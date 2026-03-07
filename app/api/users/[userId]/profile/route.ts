@@ -29,8 +29,7 @@ export async function GET(
                 },
                 vendor: {
                     select: {
-                        logo: true,
-                        planTier: true
+                        logo: true
                     }
                 }
             }
@@ -66,8 +65,7 @@ export async function GET(
             image: user.profile?.avatar || user.vendor?.logo || user.image, // Priority: Profile Avatar -> Vendor Logo -> Account Image
             createdAt: user.createdAt,
             productsCount,
-            activeAdsCount,
-            planTier: user.vendor?.planTier
+            activeAdsCount
         })
 
     } catch (error) {

@@ -42,7 +42,7 @@ export async function createBanner(data: BannerInput) {
             },
         });
 
-        revalidatePath("/admin/promotions");
+        revalidatePath("/admin/banners");
         revalidatePath("/");
         return { success: true, data: banner };
     } catch (error: any) {
@@ -70,7 +70,7 @@ export async function updateBanner(data: BannerInput) {
             },
         });
 
-        revalidatePath("/admin/promotions");
+        revalidatePath("/admin/banners");
         revalidatePath("/");
         return { success: true, data: banner };
     } catch (error: any) {
@@ -86,7 +86,7 @@ export async function deleteBanner(id: string) {
             where: { id },
         });
 
-        revalidatePath("/admin/promotions");
+        revalidatePath("/admin/banners");
         revalidatePath("/");
         return { success: true, message: "Banner deleted successfully" };
     } catch (error: any) {

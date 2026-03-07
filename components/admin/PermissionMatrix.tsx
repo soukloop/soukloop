@@ -13,7 +13,7 @@ export const PERMISSION_MATRIX: Record<string, { label: string; actions: string[
     reports: { label: '🚨 Reports', actions: ['view', 'take_action', 'dismiss'] },
     categories: { label: '📁 Categories', actions: ['view', 'edit'] },
     dress_styles: { label: '👗 Dress Styles', actions: ['view', 'add', 'approve', 'reject', 'suspend'] },
-    promotions: { label: '📢 Promotions', actions: ['view', 'create', 'edit', 'delete'] },
+    promotions: { label: '📢 Banners', actions: ['view', 'create', 'edit', 'delete'] },
     transactions: { label: '💰 Transactions', actions: ['view', 'process_payout'] },
     settings: { label: '⚙️ Settings', actions: ['view', 'edit'] },
     support: { label: '🎫 Support', actions: ['view', 'assign', 'respond'] },

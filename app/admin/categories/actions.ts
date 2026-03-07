@@ -167,52 +167,8 @@ export async function toggleColorStatus(id: string, isActive: boolean) {
     }
 }
 
-// --- States & Cities ---
-// State creation usually manual/seeded, but allowing update/delete is fine.
-// export async function createState(data: { name: string; abbreviation: string; country: string }) {
-//     try {
-//         await prisma.state.create({ data });
-//         revalidatePath('/admin/categories');
-//         return { success: true };
-//     } catch (error) {
-//         return { error: 'Failed to create state' };
-//     }
-// }
-
-// export async function deleteState(id: string) {
-//     try {
-//         await prisma.state.delete({ where: { id } });
-//         revalidatePath('/admin/categories');
-//         return { success: true };
-//     } catch (error) {
-//         return { error: 'Failed to delete state' };
-//     }
-// }
-
-// export async function createCity(data: { name: string; stateId: string }) {
-//     try {
-//         const existing = await prisma.city.findFirst({
-//             where: { name: data.name, stateId: data.stateId }
-//         });
-//         if (existing) return { error: 'City already exists in this state' };
-
-//         await prisma.city.create({ data });
-//         revalidatePath('/admin/categories');
-//         return { success: true };
-//     } catch (error) {
-//         return { error: 'Failed to create city' };
-//     }
-// }
-
-// export async function deleteCity(id: string) {
-//     try {
-//         await prisma.city.delete({ where: { id } });
-//         revalidatePath('/admin/categories');
-//         return { success: true };
-//     } catch (error) {
-//         return { error: 'Failed to delete city' };
-//     }
-// }
+// Note: State & City models are not in the Prisma schema.
+// Location data is stored directly as string fields on Product/Address models.
 
 
 import { notifySellerStyleApproved, notifySellerProductListed, notifyFollowersNewProduct } from '@/lib/notifications/templates/product-templates';
@@ -272,6 +228,32 @@ async function handleDressStyleApproval(styleId: string, styleName: string) {
                 // Notify Followers
                 await notifyFollowersNewProduct(sellerId, notifData)
                     .catch(e => console.error('[Approval] Failed to notify followers:', e));
+            }
+
+            // ✅ Activate any deferred 'paid' boosts for these newly-live products
+            // These boosts were paid for before the dress style was approved,
+            // so the timer was intentionally not started at payment time.
+            const productIds = products.map(p => p.id);
+            const deferredBoosts = await prisma.productBoost.findMany({
+                where: { productId: { in: productIds }, status: 'paid' }
+            });
+
+            for (const boost of deferredBoosts) {
+                const startDate = new Date();
+                let durationMs = 3 * 24 * 60 * 60 * 1000; // default 3 days
+                if (boost.packageType === '7_DAYS') durationMs = 7 * 24 * 60 * 60 * 1000;
+                else if (boost.packageType === '15_DAYS') durationMs = 15 * 24 * 60 * 60 * 1000;
+
+                await prisma.productBoost.update({
+                    where: { id: boost.id },
+                    data: {
+                        status: 'active',
+                        startDate,
+                        endDate: new Date(startDate.getTime() + durationMs)
+                    }
+                }).catch(e => console.error(`[Approval] Failed to activate deferred boost ${boost.id}:`, e));
+
+                console.log(`[Approval] Deferred boost ${boost.id} timer started for product ${boost.productId}`);
             }
         }
     } catch (error) {

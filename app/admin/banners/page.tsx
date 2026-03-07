@@ -3,11 +3,11 @@ import { PromotionsClient } from "@/features/promotions/components/PromotionsCli
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Promotions Management | Admin Dashboard",
+    title: "Banners Management | Admin Dashboard",
     description: "Manage promotional banners and campaigns.",
 };
 
-export default async function PromotionsPage() {
+export default async function BannersPage() {
     const banners = await getBanners();
 
     return (

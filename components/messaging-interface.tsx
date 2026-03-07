@@ -27,9 +27,8 @@ import { ChatConversation, ChatMessage, User, Product as PrismaProduct } from "@
 
 // API returns partial user info
 type PublicUser = Pick<User, "id" | "name" | "image" | "createdAt"> & {
-    vendor?: { logo: string | null, planTier?: string } | null
+    vendor?: { logo: string | null } | null
     profile?: { avatar: string | null } | null
-    planTier?: string;
 }
 
 // Helper to get the best available user image
@@ -930,10 +929,6 @@ export default function MessagingInterface({
                                 )}
                                 <p className="truncate text-xs text-gray-500 flex items-center gap-1">
                                     {getOtherParticipant(selectedConversation).name || "User"}
-                                    {(getOtherParticipant(selectedConversation).planTier || getOtherParticipant(selectedConversation).vendor?.planTier) &&
-                                        (['PRO', 'STARTER'].includes((getOtherParticipant(selectedConversation).planTier || getOtherParticipant(selectedConversation).vendor?.planTier)!)) && (
-                                            <PremiumBadge tier={getOtherParticipant(selectedConversation).planTier || getOtherParticipant(selectedConversation).vendor?.planTier} iconClassName="size-3.5" />
-                                        )}
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
                                         {getOtherParticipantRole(selectedConversation)}
                                     </span>

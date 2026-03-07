@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 import { prisma } from '@/lib/prisma'
 import { auth } from "@/auth"
 import { Role } from '@prisma/client'
@@ -21,7 +20,12 @@ export async function GET(
         where: { id },
         include: {
           images: { orderBy: { order: 'asc' } },
-          vendor: { select: { userId: true } }
+          vendor: { select: { userId: true } },
+          boosts: {
+            where: { status: 'active' },
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
         }
       });
 
@@ -30,7 +34,8 @@ export async function GET(
       }
 
       // Ownership check
-      const isOwner = session?.user?.id && product.vendor?.userId === session.user.id;
+      const p = product as any;
+      const isOwner = session?.user?.id && p.vendor?.userId === session.user.id;
       const isAdmin = session?.user?.role === Role.ADMIN;
       if (!isOwner && !isAdmin) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -68,7 +73,7 @@ export async function GET(
       reviews: {
         include: {
           user: {
-            select: { name: true, image: true, vendor: { select: { planTier: true } } }
+            select: { name: true, image: true }
           }
         },
         orderBy: { createdAt: 'desc' as const }
@@ -100,13 +105,21 @@ export async function GET(
       }
     };
 
-    let product = await (prisma.product as any).findUnique({
-      where: { id },
-      include: productIncludes
-    })
+    // Detect if the param is a database ID (UUID or cuid) or a human-readable slug.
+    // Prisma default IDs are cuid: starts with 'c' followed by 20-30 lowercase alphanumeric chars.
+    // UUIDs are the standard 8-4-4-4-12 hex format with dashes.
+    const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(id);
+    const isCuid = /^c[a-z0-9]{20,30}$/.test(id);
+    const isDatabaseId = isUUID || isCuid;
 
-    // If not found by ID, try finding by SLUG
-    if (!product) {
+    let product;
+
+    if (isDatabaseId) {
+      product = await (prisma.product as any).findUnique({
+        where: { id },
+        include: productIncludes
+      });
+    } else {
       product = await (prisma.product as any).findFirst({
         where: { slug: id },
         include: productIncludes
@@ -203,47 +216,19 @@ export async function PATCH(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    // New: Sold products cannot be edited
+    if (existingProduct.status === 'SOLD') {
+      return NextResponse.json({
+        error: "Forbidden: Sold products cannot be edited"
+      }, { status: 403 });
+    }
+
     // Admin can edit anything. Sellers can only edit their own.
     const isOwner = existingProduct.vendor.userId === userId;
     const isAdmin = role === Role.ADMIN;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden: You do not own this product" }, { status: 403 });
-    }
-
-    if (body.isDraft && existingProduct.vendor.planTier === 'BASIC') {
-      return NextResponse.json({
-        error: "Premium Feature Required",
-        details: "Saving product drafts is a Premium feature. Please upgrade to the Starter or Pro plan to save drafts.",
-        code: 'UPGRADE_REQUIRED'
-      }, { status: 403 });
-    }
-
-    // Subscription Limit Check when activating a product
-
-    // We only need to check limits if they are trying to activate a product that is currently inactive/draft
-    const isActivating = (body.status === 'ACTIVE' || (!body.isDraft && existingProduct.status === 'DRAFT'));
-    const isAlreadyActive = existingProduct.status === 'ACTIVE';
-
-    if (isActivating && !isAlreadyActive) {
-      const planLimits = SUBSCRIPTION_PLANS[existingProduct.vendor.planTier];
-
-      if (planLimits.maxActiveListings !== Infinity) {
-        const productCount = await prisma.product.count({
-          where: {
-            vendorId: existingProduct.vendor.id,
-            status: 'ACTIVE'
-          }
-        });
-
-        if (productCount >= planLimits.maxActiveListings) {
-          return NextResponse.json({
-            error: "Subscription limit reached",
-            details: `You have reached the maximum limit of ${planLimits.maxActiveListings} active products for the ${existingProduct.vendor.planTier} plan. Please upgrade to a higher tier to publish this product.`,
-            code: 'UPGRADE_REQUIRED'
-          }, { status: 403 });
-        }
-      }
     }
 
     const updateData: any = {

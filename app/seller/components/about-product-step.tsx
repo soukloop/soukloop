@@ -1,7 +1,25 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, ChevronRight, X, Star, Sparkles, Info, Zap, Clock } from "lucide-react";
+
+// Helper to format dates and calculate remaining days
+const getRemainingDays = (endDate: string) => {
+    const end = new Date(endDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+};
+
+const formatBoostName = (pkg: string) => {
+    switch (pkg) {
+        case '3_DAYS': return '3 Day Boost';
+        case '7_DAYS': return 'Weekly Spotlight (7 Days)';
+        case '15_DAYS': return 'Premium Exposure (15 Days)';
+        default: return pkg.replace('_', ' ');
+    }
+};
 
 // Types
 import { ProductData } from "./types";
@@ -9,20 +27,17 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSelect } from "@/components/ui/FormSelect";
+import { Switch } from "@/components/ui/switch";
 
 interface AboutProductStepProps {
     data: ProductData;
     onUpdate: (updates: Partial<ProductData>) => void;
-    isBasicSeller?: boolean;
 }
 
 export default function AboutProductStep({
     data,
     onUpdate,
-    isBasicSeller,
 }: AboutProductStepProps) {
-    // Dropdown state moved to FormSelect internal Popover
-
     // Tag State logic
     const [tagInput, setTagInput] = useState("");
     const tagsArray = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -243,6 +258,115 @@ export default function AboutProductStep({
                     />
                 </div>
                 <p className="mt-1 text-xs text-gray-400">Press Enter to add a tag</p>
+            </div>
+
+            {/* ═══════════ Boost This Listing ═══════════ */}
+            <div className="mb-4">
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm hover:border-orange-200 transition-colors">
+                    <div className="mb-5 flex items-center gap-4">
+                        <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-orange-600 shadow-sm">
+                            <Zap className="size-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900">
+                                {data.activeBoost ? 'Active Listing Boost' : 'Boost Your Listing'}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                {data.activeBoost
+                                    ? 'Your product is currently being featured at the top of search results.'
+                                    : 'Get more visibility by featuring your product at the top of search results.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {data.activeBoost ? (
+                        // Active Boost Status Card
+                        <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 p-5 border border-orange-100 shadow-inner">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-2.5 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
+                                            Active
+                                        </span>
+                                        <h4 className="font-bold text-gray-900">
+                                            {formatBoostName(data.activeBoost.packageType)}
+                                        </h4>
+                                    </div>
+                                    <p className="text-xs text-orange-800/70">
+                                        Expiring on {new Date(data.activeBoost.endDate).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-orange-100/50">
+                                    <Clock className="size-5 text-orange-600" />
+                                    <div className="leading-none">
+                                        <div className="text-lg font-black text-gray-900">
+                                            {getRemainingDays(data.activeBoost.endDate)} Days
+                                        </div>
+                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                            Remaining
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-orange-100/50 flex items-center gap-2 text-xs font-semibold text-orange-700">
+                                <Sparkles className="size-3.5" />
+                                <span>No action needed. Your listing remains featured while you edit.</span>
+                            </div>
+                        </div>
+                    ) : (
+                        // Package Picker
+                        <>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                {[
+                                    { id: 'NONE', days: 0, label: 'Free', price: 'No Boost' },
+                                    { id: '3_DAYS', days: 3, label: '3 Days', price: '$2.99' },
+                                    { id: '7_DAYS', days: 7, label: '7 Days', price: '$5.99', recommended: true },
+                                    { id: '15_DAYS', days: 15, label: '15 Days', price: '$9.99' }
+                                ].map((pkg) => {
+                                    const isSelected = data.boostPackage === pkg.id || (!data.boostPackage && pkg.id === 'NONE');
+                                    return (
+                                        <div
+                                            key={pkg.id}
+                                            onClick={() => onUpdate({ boostPackage: pkg.id as any, isFeatured: pkg.id !== 'NONE' })}
+                                            className={`relative cursor-pointer rounded-xl border-2 p-3 sm:p-4 transition-all ${isSelected
+                                                ? 'border-orange-500 bg-orange-50 shadow-sm'
+                                                : 'border-gray-100 bg-white hover:border-orange-200'
+                                                }`}
+                                        >
+                                            {pkg.recommended && (
+                                                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider shadow-sm">
+                                                    Popular
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col items-center text-center justify-center h-full gap-1">
+                                                <span className={`text-xs sm:text-sm font-semibold uppercase tracking-wide ${isSelected ? 'text-orange-900' : 'text-gray-500'}`}>
+                                                    {pkg.label}
+                                                </span>
+                                                <span className={`text-base sm:text-lg font-bold ${isSelected ? 'text-orange-600' : 'text-gray-900'}`}>
+                                                    {pkg.price}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {data.boostPackage && data.boostPackage !== 'NONE' && (
+                                <div className="mt-5 rounded-xl bg-orange-50/50 p-4 text-sm text-orange-800 space-y-2 border border-orange-100">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="size-4.5 text-orange-500" />
+                                        <span>Your product will appear <span className="font-semibold text-gray-900">at the top</span> with a <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-700">★ Featured</span> badge.</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2 border-t border-orange-100/50">
+                                        <span className="text-orange-600">💳</span>
+                                        <span>You will be prompted to pay after publishing your listing.</span>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

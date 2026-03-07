@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MONTHS } from '@/lib/admin/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,10 +23,15 @@ export default function DashboardHeader({
         router.push(`/admin?${params.toString()}`);
     };
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const currentYear = new Date().getFullYear();
 
     // Filter months if current year is selected
-    const displayedMonths = selectedYear === currentYear
+    const displayedMonths = mounted && selectedYear === currentYear
         ? MONTHS.filter(m => m.value <= new Date().getMonth())
         : MONTHS;
 

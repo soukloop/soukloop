@@ -1,4 +1,4 @@
-import { getAdminTransactions, getAdminPayouts, getAdminSubscriptions } from "@/src/features/admin/transactions/actions";
+import { getAdminTransactions, getAdminPayouts } from "@/src/features/admin/transactions/actions";
 import TransactionsClient from "./TransactionsClient";
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export default async function TransactionsPage(props: {
     const searchParams = await props.searchParams;
     const page = Number(searchParams.page) || 1;
     const limit = Number(searchParams.limit) || 15;
-    const type = (searchParams.type as 'transactions' | 'payouts' | 'subscriptions') || 'transactions';
+    const type = (searchParams.type as 'transactions' | 'payouts') || 'transactions';
     const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
     const status = typeof searchParams.status === 'string' ? searchParams.status : undefined;
     const method = typeof searchParams.method === 'string' ? searchParams.method : undefined;
@@ -40,17 +40,6 @@ export default async function TransactionsPage(props: {
             method
         });
         data = result.payouts;
-        totalCount = result.totalCount;
-        stats = result.stats;
-        totalPages = result.totalPages;
-    } else {
-        const result = await getAdminSubscriptions({
-            page,
-            limit,
-            search,
-            status
-        });
-        data = result.subscriptions;
         totalCount = result.totalCount;
         stats = result.stats;
         totalPages = result.totalPages;

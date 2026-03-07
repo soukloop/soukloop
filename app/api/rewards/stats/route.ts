@@ -82,18 +82,29 @@ export async function GET(request: NextRequest) {
             }
         })
 
-        // Get expiring points summary
+        // Get expiring points summary WITHOUT pulling all rows into memory
         const thirtyDaysFromNow = new Date()
         thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
 
-        const expiringPoints = await prisma.rewardPoint.findMany({
-            where: {
-                points: { gt: 0 },
-                expiresAt: {
-                    lte: thirtyDaysFromNow,
-                    gte: new Date()
-                }
-            },
+        const expiringWhere = {
+            points: { gt: 0 },
+            expiresAt: {
+                lte: thirtyDaysFromNow,
+                gte: new Date()
+            }
+        };
+
+        const expiringAgg = await prisma.rewardPoint.aggregate({
+            where: expiringWhere,
+            _sum: { points: true },
+            _count: { id: true }
+        });
+
+        // Only fetch a limited sample of expiring points for the UI
+        const expiringPointsList = await prisma.rewardPoint.findMany({
+            where: expiringWhere,
+            take: 20,
+            orderBy: { expiresAt: 'asc' },
             include: {
                 user: {
                     select: {
@@ -103,9 +114,10 @@ export async function GET(request: NextRequest) {
                     }
                 }
             }
-        })
+        });
 
-        const expiringTotal = expiringPoints.reduce((sum, p) => sum + p.points, 0)
+        const expiringTotal = expiringAgg._sum.points || 0;
+        const expiringCount = expiringAgg._count.id || 0;
 
         return NextResponse.json({
             topUsers,
@@ -118,9 +130,9 @@ export async function GET(request: NextRequest) {
             actionTypeStats,
             recentTransactions,
             expiringPoints: {
-                count: expiringPoints.length,
+                count: expiringCount,
                 total: expiringTotal,
-                items: expiringPoints
+                items: expiringPointsList
             }
         })
 

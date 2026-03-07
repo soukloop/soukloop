@@ -379,6 +379,8 @@ export default function SearchResults({
                       hasPendingStyle: product.hasPendingStyle,
                       isActive: product.isActive,
                       status: product.status,
+                      isFeatured: product.isFeatured,
+                      vendor: product.vendor,
                     }}
                     animatingId={animatingId}
                     handleAddToCart={() => handleAddToCart(product)}

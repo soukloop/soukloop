@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ProductWithRelations } from "@/types";
-import { PremiumBadge } from "@/components/ui/premium-badge";
-
 interface ProductSellerInfoProps {
     vendor: ProductWithRelations['vendor'];
 }
@@ -35,9 +32,6 @@ export default function ProductSellerInfo({ vendor }: ProductSellerInfoProps) {
                     <div className="min-w-0">
                         <p className="text-lg sm:text-xl font-bold text-gray-900 leading-tight truncate flex items-center gap-1.5">
                             {sellerName}
-                            {((vendor.planTier as any) === 'STARTER' || (vendor.planTier as any) === 'PRO') && (
-                                <PremiumBadge tier={vendor.planTier} className="size-5" />
-                            )}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
                             <div className="flex text-yellow-400">

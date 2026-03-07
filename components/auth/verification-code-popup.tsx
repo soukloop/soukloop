@@ -136,7 +136,7 @@ export default function VerificationCodePopup({
           // Auto-Login Implementation
           if (password) {
             const signInResult = await signIn("credentials", {
-              email: email,
+              email: email?.toLowerCase().trim(),
               password: password,
               redirect: false,
             });

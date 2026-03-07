@@ -25,6 +25,7 @@ import DesktopNav from "./header/DesktopNav";
 import SearchBar from "./header/SearchBar";
 import { useQuery } from "@tanstack/react-query";
 import type { GroupedDressStyles } from "@/types/product";
+import { useGlobalCounts } from "@/hooks/useGlobalCounts";
 
 const DRESS_STYLES_CACHE_KEY = ['dress-styles'];
 const STALE_TIME = 30 * 60 * 1000; // 30 minutes
@@ -40,6 +41,7 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
   const [isTop, setIsTop] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
   const { user, refreshSession } = useAuth();
+  const { counts } = useGlobalCounts();
 
 
   const dressStyles = initialDressStyles;
@@ -276,7 +278,7 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
 
             {/* Desktop Icons */}
             <div className="hidden items-center space-x-2 sm:flex">
-              <CartWidget />
+              <CartWidget initialCartCount={counts.cartCount} />
 
               {/* Wishlist Button - Only for logged-in users */}
               {user && (
@@ -284,30 +286,48 @@ export default function EcommerceHeader({ initialDressStyles }: EcommerceHeaderP
                   <Button
                     variant="outline"
                     size="icon"
-                    className="size-12 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+                    className="size-12 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors relative"
                   >
                     <Heart className="size-6 text-[#ff4500] fill-[#ff4500]" />
+                    {counts.favoritesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-[#E87A3F] border border-white text-[10px] font-bold text-white">
+                        {counts.favoritesCount > 99 ? "99+" : counts.favoritesCount}
+                      </span>
+                    )}
                   </Button>
                 </Link>
               )}
 
-              <UserMenu />
+              <UserMenu
+                hasUnreadGeneral={counts.notificationCount > 0}
+                hasUnreadOrders={false} // Would require finer grain API if needed
+                hasUnreadMessages={false}
+              />
             </div>
 
             {/* Mobile Icons */}
             <div className="flex items-center gap-2 sm:hidden">
-              <CartWidget />
+              <CartWidget initialCartCount={counts.cartCount} />
 
               {/* Wishlist Button - Only for logged-in users */}
               {user && (
                 <Link href="/edit-profile?section=wishlist">
-                  <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
+                  <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
                     <Heart className="size-5 text-[#ff4500] fill-[#ff4500]" />
+                    {counts.favoritesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#E87A3F] border border-white text-[9px] font-bold text-white">
+                        {counts.favoritesCount > 99 ? "99+" : counts.favoritesCount}
+                      </span>
+                    )}
                   </button>
                 </Link>
               )}
 
-              <UserMenu />
+              <UserMenu
+                hasUnreadGeneral={counts.notificationCount > 0}
+                hasUnreadOrders={false}
+                hasUnreadMessages={false}
+              />
             </div>
           </div>
         </div>

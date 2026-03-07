@@ -10,14 +10,22 @@ import { useProfile } from "@/hooks/useProfile";
 import { useSellerAuth } from "@/hooks/useSellerAuth";
 import { useSellerVerification } from "@/hooks/useSellerVerification";
 import { useRouter } from "next/navigation";
-import { useNotifications } from "@/hooks/useNotifications";
 import { isAtLeastSeller, isAtLeastAdmin, hasRole } from "@/lib/roles";
-import { PremiumBadge } from "@/components/ui/premium-badge";
 
-export default function UserMenu() {
+interface UserMenuProps {
+    hasUnreadGeneral?: boolean;
+    hasUnreadMessages?: boolean;
+    hasUnreadOrders?: boolean;
+}
+
+export default function UserMenu({
+    hasUnreadGeneral = false,
+    hasUnreadMessages = false,
+    hasUnreadOrders = false
+}: UserMenuProps) {
     const router = useRouter();
     const { user, logout, isLoading } = useAuth();
-    const { profile } = useProfile();
+    const { profile } = useProfile({ skipAddresses: true });
     const { isSeller } = useSellerAuth();
     const { hasApplication } = useSellerVerification();
     const [showProfile, setShowProfile] = useState(false);
@@ -26,14 +34,6 @@ export default function UserMenu() {
 
     const displayUser = profile?.user || user;
     const userAvatar = profile?.avatar || displayUser?.image || "/icons/user-avatar.png";
-
-    const { unreadCount, getUnreadNotifications } = useNotifications();
-    const unreadNotifications = getUnreadNotifications();
-
-    // Check specific categories for unread items
-    const hasUnreadMessages = unreadNotifications.some(n => n.type === 'NEW_MESSAGE');
-    const hasUnreadOrders = unreadNotifications.some(n => n.type.startsWith('ORDER_'));
-    const hasUnreadGeneral = unreadCount > 0; // For main bell or generic notifications
 
     const commonMenuItems = [
         { icon: Settings, label: "Edit Profile", href: "/edit-profile" },
@@ -66,14 +66,7 @@ export default function UserMenu() {
 
     // 2. Add Seller items if user is at least a seller
     if (isAtLeastSeller(displayUser?.role as any)) {
-        const planTier = (displayUser as any)?.planTier || (user as any)?.planTier;
-        const filteredSellerItems = sellerMenuItems.filter(item => {
-            if (item.label === "Dashboard" && (!planTier || planTier === 'BASIC')) {
-                return false;
-            }
-            return true;
-        });
-        menuItems = [...menuItems, ...filteredSellerItems];
+        menuItems = [...menuItems, ...sellerMenuItems];
     }
 
     // 3. Add Common items
@@ -130,23 +123,6 @@ export default function UserMenu() {
                                 className="absolute right-0 z-[9999] mt-2 flex max-h-[85vh] w-[280px] flex-col overflow-y-auto custom-scrollbar rounded-lg border border-gray-100 bg-white shadow-lg"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {/* Display plan badge if applicable */}
-                                {(() => {
-                                    const planTier = (user as any).planTier;
-                                    if (planTier && ['STARTER', 'PRO'].includes(planTier)) {
-                                        return (
-                                            <div className="px-3 py-2 border-b border-gray-100 bg-orange-50/50">
-                                                <div className="flex items-center gap-2">
-                                                    <PremiumBadge tier={planTier} size="sm" />
-                                                    <span className="text-xs font-bold text-orange-700 uppercase tracking-wider">
-                                                        {planTier} Seller
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })()}
                                 {/* Profile Section */}
                                 <div className="shrink-0 border-b border-gray-100 p-2">
                                     <div className="flex items-center gap-3">
@@ -161,9 +137,6 @@ export default function UserMenu() {
                                         <div>
                                             <h3 className="text-base font-medium text-gray-900 flex items-center gap-1.5">
                                                 {displayUser?.name || "Guest"}
-                                                {((displayUser as any)?.planTier === 'STARTER' || (displayUser as any)?.planTier === 'PRO') && (
-                                                    <PremiumBadge tier={(displayUser as any).planTier} className="size-5" />
-                                                )}
                                             </h3>
                                             {displayUser?.email && (
                                                 <p className="text-xs text-gray-400">
@@ -284,7 +257,6 @@ export default function UserMenu() {
                                         <div>
                                             <h3 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
                                                 {user?.username || "Guest"}
-                                                {(user as any)?.planTier === 'PRO' && <PremiumBadge tier={(user as any).planTier} className="size-4" />}
                                             </h3>
                                             <Link href="/profile">
                                                 <p className="text-xs text-gray-500">View profile</p>

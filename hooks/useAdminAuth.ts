@@ -31,7 +31,7 @@ const ROUTE_TO_RESOURCE: Record<string, string> = {
     '/admin/products': 'products',
     '/admin/reports': 'reports',
     '/admin/categories': 'categories',
-    '/admin/promotions': 'promotions',
+    '/admin/banners': 'promotions',
     '/admin/refunds': 'refunds',
     '/admin/transactions': 'transactions',
     '/admin/settings': 'settings',

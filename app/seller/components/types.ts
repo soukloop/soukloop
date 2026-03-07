@@ -51,6 +51,15 @@ export interface ProductData {
     videoUploadUrl?: string | null;
     videoUploadError?: string | null;
     videoUploadProgress?: number;
+
+    // Step 5: Featured/Boost
+    isFeatured: boolean;
+    boostPackage?: 'NONE' | '3_DAYS' | '7_DAYS' | '15_DAYS';
+    activeBoost?: {
+        packageType: string;
+        startDate: string;
+        endDate: string;
+    } | null;
 }
 
 export const initialProductData: ProductData = {
@@ -88,4 +97,6 @@ export const initialProductData: ProductData = {
     videoUploadUrl: null,
     videoUploadError: null,
     videoUploadProgress: 0,
+    isFeatured: false,
+    boostPackage: 'NONE',
 };

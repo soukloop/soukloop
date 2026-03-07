@@ -106,64 +106,72 @@ export async function fetchMetricCardsInsecure(period: 'daily' | 'weekly'): Prom
     const dateRanges = getDateRanges(period);
 
     try {
-        const [
-            totalUsersCount,
-            currentUsers,
-            previousUsers,
-            totalOrdersCount,
-            currentOrders,
-            previousOrders,
-            revenueAgg,
-            earningsAgg,
-            totalActiveSellers,
-            currentActiveSellers,
-            previousActiveSellers
-        ] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } } }),
-            prisma.user.count({ where: { createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } } }),
-
-            prisma.customerOrder.count(),
-            prisma.customerOrder.count({ where: { createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } } }),
-            prisma.customerOrder.count({ where: { createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } } }),
-
-            prisma.order.aggregate({
-                _sum: { total: true },
-                where: { status: { in: ['PAID', 'DELIVERED'] }, createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } }
-            }),
-            prisma.order.aggregate({
-                _sum: { platformFee: true },
-                where: { status: { in: ['PAID', 'DELIVERED'] }, createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } }
-            }),
-
-            prisma.vendor.count({ where: { isActive: true } }),
-            prisma.vendor.count({ where: { isActive: true, createdAt: { gte: dateRanges.current.start, lte: dateRanges.current.end } } }),
-            prisma.vendor.count({ where: { isActive: true, createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } } }),
+        const [usersRaw, ordersRaw, sellersRaw] = await Promise.all([
+            // Combine total, current period, and previous period counts for Users
+            prisma.$queryRaw<any[]>`
+                SELECT 
+                    COUNT(*) as "total",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.current.start} AND "createdAt" <= ${dateRanges.current.end} THEN 1 ELSE 0 END) as "current",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.previous.start} AND "createdAt" <= ${dateRanges.previous.end} THEN 1 ELSE 0 END) as "previous"
+                FROM "users"
+            `,
+            // Combine total, current, previous counts, PLUS sum revenue and platform fees for Orders
+            prisma.$queryRaw<any[]>`
+                SELECT 
+                    COUNT(*) as "total",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.current.start} AND "createdAt" <= ${dateRanges.current.end} THEN 1 ELSE 0 END) as "current_count",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.previous.start} AND "createdAt" <= ${dateRanges.previous.end} THEN 1 ELSE 0 END) as "previous_count",
+                    SUM(CASE WHEN "status" IN ('PAID', 'DELIVERED') AND "createdAt" >= ${dateRanges.current.start} AND "createdAt" <= ${dateRanges.current.end} THEN "total" ELSE 0 END) as "current_revenue",
+                    SUM(CASE WHEN "status" IN ('PAID', 'DELIVERED') AND "createdAt" >= ${dateRanges.previous.start} AND "createdAt" <= ${dateRanges.previous.end} THEN "total" ELSE 0 END) as "previous_revenue",
+                    SUM(CASE WHEN "status" IN ('PAID', 'DELIVERED') AND "createdAt" >= ${dateRanges.current.start} AND "createdAt" <= ${dateRanges.current.end} THEN "platform_fee" ELSE 0 END) as "current_earnings",
+                    SUM(CASE WHEN "status" IN ('PAID', 'DELIVERED') AND "createdAt" >= ${dateRanges.previous.start} AND "createdAt" <= ${dateRanges.previous.end} THEN "platform_fee" ELSE 0 END) as "previous_earnings"
+                FROM "orders"
+            `,
+            // Combine active sellers, current joined, and previous joined
+            prisma.$queryRaw<any[]>`
+                SELECT 
+                    COUNT(*) as "total",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.current.start} AND "createdAt" <= ${dateRanges.current.end} THEN 1 ELSE 0 END) as "current",
+                    SUM(CASE WHEN "createdAt" >= ${dateRanges.previous.start} AND "createdAt" <= ${dateRanges.previous.end} THEN 1 ELSE 0 END) as "previous"
+                FROM "vendors"
+                WHERE "isActive" = true
+            `
         ]);
 
-        const [previousRevenueAgg, previousEarningsAgg] = await Promise.all([
-            prisma.order.aggregate({
-                _sum: { total: true },
-                where: { status: { in: ['PAID', 'DELIVERED'] }, createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } }
-            }),
-            prisma.order.aggregate({
-                _sum: { platformFee: true },
-                where: { status: { in: ['PAID', 'DELIVERED'] }, createdAt: { gte: dateRanges.previous.start, lte: dateRanges.previous.end } }
-            })
-        ]);
+        const uStats = {
+            total: Number(usersRaw[0]?.total || 0),
+            current: Number(usersRaw[0]?.current || 0),
+            previous: Number(usersRaw[0]?.previous || 0)
+        };
 
-        const userChange = calculatePercentageChange(currentUsers, previousUsers);
-        const orderChange = calculatePercentageChange(currentOrders, previousOrders);
-        const revenueChange = calculatePercentageChange(revenueAgg._sum.total || 0, previousRevenueAgg._sum.total || 0);
-        const earningsChange = calculatePercentageChange(earningsAgg._sum.platformFee || 0, previousEarningsAgg._sum.platformFee || 0);
-        const sellerChange = calculatePercentageChange(currentActiveSellers, previousActiveSellers);
+        const oStats = {
+            total: Number(ordersRaw[0]?.total || 0),
+            currentCount: Number(ordersRaw[0]?.current_count || 0),
+            previousCount: Number(ordersRaw[0]?.previous_count || 0),
+            currentRevenue: Number(ordersRaw[0]?.current_revenue || 0),
+            previousRevenue: Number(ordersRaw[0]?.previous_revenue || 0),
+            currentEarnings: Number(ordersRaw[0]?.current_earnings || 0),
+            previousEarnings: Number(ordersRaw[0]?.previous_earnings || 0)
+        };
+
+        const sStats = {
+            total: Number(sellersRaw[0]?.total || 0),
+            current: Number(sellersRaw[0]?.current || 0),
+            previous: Number(sellersRaw[0]?.previous || 0)
+        };
+
+        const userChange = calculatePercentageChange(uStats.current, uStats.previous);
+        const orderChange = calculatePercentageChange(oStats.currentCount, oStats.previousCount);
+        const revenueChange = calculatePercentageChange(oStats.currentRevenue, oStats.previousRevenue);
+        const earningsChange = calculatePercentageChange(oStats.currentEarnings, oStats.previousEarnings);
+        const sellerChange = calculatePercentageChange(sStats.current, sStats.previous);
 
         return {
-            totalUsers: { value: totalUsersCount, previousValue: totalUsersCount - (currentUsers - previousUsers), percentageChange: userChange.percentage, trend: userChange.trend },
-            totalOrders: { value: totalOrdersCount, previousValue: totalOrdersCount - (currentOrders - previousOrders), percentageChange: orderChange.percentage, trend: orderChange.trend },
-            revenueThisMonth: { value: revenueAgg._sum.total || 0, previousValue: previousRevenueAgg._sum.total || 0, percentageChange: revenueChange.percentage, trend: revenueChange.trend },
-            platformEarnings: { value: earningsAgg._sum.platformFee || 0, previousValue: previousEarningsAgg._sum.platformFee || 0, percentageChange: earningsChange.percentage, trend: earningsChange.trend },
-            activeSellers: { value: totalActiveSellers, previousValue: totalActiveSellers - (currentActiveSellers - previousActiveSellers), percentageChange: sellerChange.percentage, trend: sellerChange.trend },
+            totalUsers: { value: uStats.total, previousValue: uStats.total - (uStats.current - uStats.previous), percentageChange: userChange.percentage, trend: userChange.trend },
+            totalOrders: { value: oStats.total, previousValue: oStats.total - (oStats.currentCount - oStats.previousCount), percentageChange: orderChange.percentage, trend: orderChange.trend },
+            revenueThisMonth: { value: oStats.currentRevenue, previousValue: oStats.previousRevenue, percentageChange: revenueChange.percentage, trend: revenueChange.trend },
+            platformEarnings: { value: oStats.currentEarnings, previousValue: oStats.previousEarnings, percentageChange: earningsChange.percentage, trend: earningsChange.trend },
+            activeSellers: { value: sStats.total, previousValue: sStats.total - (sStats.current - sStats.previous), percentageChange: sellerChange.percentage, trend: sellerChange.trend },
             period,
             comparisonText: period === 'daily' ? 'from yesterday' : 'from last week'
         };
@@ -223,16 +231,13 @@ export async function getPaginatedTopStyles(type: 'selling' | 'listed', page: nu
                 c.name as "category",
                 SUM(oi.price * oi.quantity) as "totalValue",
                 SUM(oi.quantity) as "totalCount",
-                (SELECT pi.url 
-                 FROM "products" p2 
-                 JOIN "product_images" pi ON pi."productId" = p2.id 
-                 WHERE p2."dress_style_id" = ds.id AND pi."isPrimary" = true 
-                 LIMIT 1) as "imageUrl"
+                MAX(pi.url) as "imageUrl"
             FROM "order_items" oi
             JOIN "orders" o ON oi."orderId" = o.id
             JOIN "products" p ON oi."productId" = p.id
             JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
             LEFT JOIN "categories" c ON ds."category_id" = c.id
+            LEFT JOIN "product_images" pi ON pi."productId" = p.id AND pi."isPrimary" = true
             WHERE o."status" IN ('PAID', 'DELIVERED')
             GROUP BY ds.id, ds.name, c.name
             ORDER BY "totalValue" DESC
@@ -267,14 +272,11 @@ export async function getPaginatedTopStyles(type: 'selling' | 'listed', page: nu
                 ds.name as "name",
                 c.name as "category",
                 COUNT(p.id) as "totalCount",
-                (SELECT pi.url 
-                 FROM "products" p2 
-                 JOIN "product_images" pi ON pi."productId" = p2.id 
-                 WHERE p2."dress_style_id" = ds.id AND pi."isPrimary" = true 
-                 LIMIT 1) as "imageUrl"
+                MAX(pi.url) as "imageUrl"
             FROM "products" p
             JOIN "dress_styles" ds ON p."dress_style_id" = ds.id
             LEFT JOIN "categories" c ON ds."category_id" = c.id
+            LEFT JOIN "product_images" pi ON pi."productId" = p.id AND pi."isPrimary" = true
             WHERE p."isActive" = true
             GROUP BY ds.id, ds.name, c.name
             ORDER BY "totalCount" DESC
