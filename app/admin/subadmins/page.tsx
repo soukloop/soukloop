@@ -76,7 +76,7 @@ export default function SubAdminManagementPage() {
     }, [isAuthChecking, isAuthenticated, isSuperAdmin, router]);
 
     // Table columns
-    const columns: Column<SubAdmin>[] = [
+    const columns: Column<EnrichedSubAdmin>[] = [
         {
             key: 'name',
             header: 'Admin',
@@ -152,7 +152,7 @@ export default function SubAdminManagementPage() {
     ];
 
     // Row actions
-    const getActions = (admin: SubAdmin) => {
+    const getActions = (admin: EnrichedSubAdmin) => {
         const actions = [];
         // Check if this row is the current user
         const isSelf = adminUser?.id === admin.id;
@@ -285,14 +285,14 @@ export default function SubAdminManagementPage() {
             {/* Data Table */}
             <DataTable
                 data={enrichedAdmins}
-                columns={columns as any}
+                columns={columns}
                 pageSize={10}
                 isLoading={isLoading}
                 searchable
                 searchPlaceholder="Search admins..."
-                searchKeys={['name', 'email', 'displayRole'] as (keyof EnrichedSubAdmin)[]}
-                filterOptions={filterOptions as any}
-                actions={getActions as any}
+                searchKeys={['name', 'email', 'displayRole']}
+                filterOptions={filterOptions}
+                actions={getActions}
             />
 
             {/* Promote Modal */}

@@ -380,7 +380,6 @@ export default function SearchResults({
                       isActive: product.isActive,
                       status: product.status,
                       isFeatured: product.isFeatured,
-                      vendor: product.vendor,
                     }}
                     animatingId={animatingId}
                     handleAddToCart={() => handleAddToCart(product)}

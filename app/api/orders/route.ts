@@ -5,7 +5,6 @@ import { auth } from '@/auth'
 import { RewardService } from '@/features/rewards/service'
 import { REWARD_RULES, ACTION_TYPES, REFERENCE_TYPES } from '@/features/rewards/constants'
 import { notifyOrderPlaced, notifySellersNewOrder } from '@/lib/notifications/templates/order-templates'
-import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 
 export const dynamic = 'force-dynamic'
 

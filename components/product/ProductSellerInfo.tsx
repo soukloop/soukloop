@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { ProductWithRelations } from "@/types";
+import { Button } from "@/components/ui/button";
 interface ProductSellerInfoProps {
     vendor: ProductWithRelations['vendor'];
 }
