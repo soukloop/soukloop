@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import Image from "next/image";
 
 type AppStartupLoaderProps = {
   children: ReactNode;
   durationMs?: number;
+  gifSrc?: string;
 };
 
 export default function AppStartupLoader({
   children,
   durationMs = 3500,
+  gifSrc = "/loader.gif",
 }: AppStartupLoaderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -27,13 +28,13 @@ export default function AppStartupLoader({
   if (isLoading) {
     return (
       <div className="fixed inset-0 z-[9999] flex min-h-screen items-center justify-center bg-white">
-        <Image
-          src="/loop.png"
+        <img
+          src={gifSrc}
           alt="Soukloop loading"
-          width={150}
-          height={150}
-          className="slow-spin"
-          priority
+          className="h-auto w-[220px] max-w-[70vw]"
+          onError={(event) => {
+            event.currentTarget.src = "/loop.png";
+          }}
         />
       </div>
     );

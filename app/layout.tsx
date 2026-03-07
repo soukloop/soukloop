@@ -14,7 +14,7 @@ import GoogleOneTap from "@/components/auth/GoogleOneTap";
 import { auth } from "@/auth";
 import SiteHeader from "@/components/site-header";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
-// import AppStartupLoader from "@/components/layout/AppStartupLoader";
+import AppStartupLoader from "@/components/layout/AppStartupLoader";
 import { SessionInvalidationListener } from "@/components/auth/SessionInvalidationListener";
 import { RoleChangeListener } from "@/components/auth/RoleChangeListener";
 import { AccountStatusListener } from "@/components/auth/AccountStatusListener";
@@ -47,12 +47,12 @@ export default async function RootLayout({
           <AccountStatusListener />
           <AuthParamsListener />
           <GoogleOneTap clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""} />
-          {/* <AppStartupLoader durationMs={3500}> */}
+          <AppStartupLoader durationMs={3500}>
             <ConditionalHeader>
               <SiteHeader />
             </ConditionalHeader>
             {children}
-          {/* </AppStartupLoader> */}
+          </AppStartupLoader>
         </Providers>
       </body>
     </html>
