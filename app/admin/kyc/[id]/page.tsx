@@ -6,6 +6,7 @@ import { CheckCircle2, XCircle, FileText, MapPin, User, Loader2, User2, Shopping
 import useSWR from 'swr'
 import { toast } from 'sonner'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import { UserAvatar } from '@/components/shared/user-avatar'
 
 const fetcher = async (url: string) => {
     const res = await fetch(url)
@@ -198,15 +199,14 @@ export default function KYCReviewPage({ params }: { params: Promise<{ id: string
                 </h2>
                 <div className="flex gap-6">
                     {/* Profile Photo */}
-                    {verification.user.profile?.avatar && (
-                        <div className="flex-shrink-0">
-                            <img
-                                src={verification.user.profile.avatar}
-                                alt={verification.user.name || 'User'}
-                                className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
-                            />
-                        </div>
-                    )}
+                    <div className="flex-shrink-0">
+                        <UserAvatar
+                            src={verification.user.profile?.avatar || verification.user.image}
+                            name={verification.user.name || verification.user.profile?.firstName || "User"}
+                            fallbackType="initials"
+                            className="size-24 border-2 border-gray-200"
+                        />
+                    </div>
 
                     {/* Profile Details */}
                     <div className="flex-1 grid grid-cols-2 gap-6">

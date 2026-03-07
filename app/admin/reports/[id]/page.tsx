@@ -6,10 +6,20 @@ import { ArrowLeft, User, Package, ShieldAlert, Calendar, Mail, Store } from "lu
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ReportActions from "./report-actions";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
 export default async function ReportDetailPage(props: { params: Promise<{ id: string }> }) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'reports', 'view');
+    }
     const params = await props.params;
     const report = await prisma.report.findUnique({
         where: { id: params.id },
@@ -170,9 +180,12 @@ export default async function ReportDetailPage(props: { params: Promise<{ id: st
                                     </h3>
                                     <div className="flex items-center justify-between p-4 rounded-xl border bg-gray-50/50">
                                         <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                                <User className="h-5 w-5 text-orange-600" />
-                                            </div>
+                                            <UserAvatar
+                                                src={report.product.vendor.user.profile?.avatar || report.product.vendor.user.image}
+                                                name={report.product.vendor.user.profile?.firstName || report.product.vendor.user.name || "Seller"}
+                                                fallbackType="initials"
+                                                className="size-10 shrink-0"
+                                            />
                                             <div>
                                                 <p className="font-semibold text-gray-900">
                                                     {report.product.vendor.user.profile?.firstName} {report.product.vendor.user.profile?.lastName || report.product.vendor.user.name}
@@ -202,15 +215,12 @@ export default async function ReportDetailPage(props: { params: Promise<{ id: st
                                     <section className="bg-white rounded-2xl border overflow-hidden shadow-sm group-hover:border-blue-200 group-hover:shadow-md transition-all duration-200 p-6">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-6">
-                                                <div className="h-20 w-20 rounded-full border-2 border-white shadow-sm overflow-hidden bg-gray-100 group-hover:scale-105 transition-transform">
-                                                    {report.reportedUser.profile?.avatar ? (
-                                                        <img src={report.reportedUser.profile.avatar} className="h-full w-full object-cover" />
-                                                    ) : (
-                                                        <div className="h-full w-full flex items-center justify-center bg-slate-50">
-                                                            <User className="h-10 w-10 text-gray-300" />
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <UserAvatar
+                                                    src={report.reportedUser.profile?.avatar || report.reportedUser.image}
+                                                    name={report.reportedUser.profile?.firstName || report.reportedUser.name || "User"}
+                                                    fallbackType="initials"
+                                                    className="size-20 border-2 border-white shadow-sm group-hover:scale-105 transition-transform shrink-0"
+                                                />
                                                 <div>
                                                     <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                                                         {report.reportedUser.profile?.firstName} {report.reportedUser.profile?.lastName || report.reportedUser.name}
@@ -246,13 +256,12 @@ export default async function ReportDetailPage(props: { params: Promise<{ id: st
                                 Reported By
                             </h3>
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                                    {report.reporter.profile?.avatar ? (
-                                        <img src={report.reporter.profile.avatar} className="h-full w-full rounded-full object-cover" />
-                                    ) : (
-                                        <User className="h-5 w-5 text-slate-400" />
-                                    )}
-                                </div>
+                                <UserAvatar
+                                    src={report.reporter.profile?.avatar || report.reporter.image}
+                                    name={report.reporter.profile?.firstName || report.reporter.name || "Reporter"}
+                                    fallbackType="initials"
+                                    className="size-10 shrink-0"
+                                />
                                 <div className="min-w-0">
                                     <p className="font-semibold text-gray-900 line-clamp-1">
                                         {report.reporter.profile?.firstName} {report.reporter.profile?.lastName || report.reporter.name}
@@ -271,7 +280,6 @@ export default async function ReportDetailPage(props: { params: Promise<{ id: st
                                 reportId={report.id}
                                 productId={report.productId}
                                 reportedUserId={report.reportedUserId}
-                                sellerId={report.product?.vendor?.userId}
                                 status={report.status}
                             />
                         </section>

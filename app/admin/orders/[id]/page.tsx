@@ -8,10 +8,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/ui/copy-button";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
 export default async function OrderDetailPage(props: { params: Promise<{ id: string }> }) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'orders', 'view');
+    }
+
     const params = await props.params;
     let order;
 
@@ -230,15 +241,12 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                         </h2>
                         <div className="space-y-6">
                             <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-orange-100 overflow-hidden relative border border-orange-50 flex-shrink-0">
-                                    {(order.user?.profile?.avatar || order.user?.image) ? (
-                                        <Image src={order.user.profile?.avatar || order.user.image!} alt={order.user.name || "User"} fill className="object-cover" />
-                                    ) : (
-                                        <div className="h-full w-full flex items-center justify-center text-orange-600 font-bold text-lg">
-                                            {order.user?.name?.[0] || 'U'}
-                                        </div>
-                                    )}
-                                </div>
+                                <UserAvatar
+                                    src={order.user?.profile?.avatar || order.user?.image}
+                                    name={order.user?.name || "Guest"}
+                                    fallbackType="initials"
+                                    className="size-12 rounded-2xl border border-orange-50 shrink-0"
+                                />
                                 <div className="min-w-0">
                                     <p className="text-sm font-bold text-gray-900 truncate">{order.user?.name || "Guest"}</p>
                                     <p className="text-xs text-gray-400 truncate mt-0.5">{order.user?.email}</p>
@@ -284,15 +292,12 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                                 if (!v) return null;
                                 return (
                                     <div key={v.id || idx} className={`flex items-center gap-4 ${idx > 0 ? 'pt-4 border-t border-gray-50' : ''}`}>
-                                        <div className="h-12 w-12 rounded-2xl bg-gray-100 overflow-hidden relative border border-gray-100 flex-shrink-0">
-                                            {v.logo ? (
-                                                <Image src={v.logo} alt={v.slug} fill className="object-cover" />
-                                            ) : (
-                                                <div className="h-full w-full flex items-center justify-center text-gray-400 font-bold text-lg">
-                                                    {v.slug?.[0].toUpperCase() || 'V'}
-                                                </div>
-                                            )}
-                                        </div>
+                                        <UserAvatar
+                                            src={v.logo}
+                                            name={v.slug || v.user?.name || "Vendor"}
+                                            fallbackType="initials"
+                                            className="size-12 rounded-2xl border border-gray-100 shrink-0"
+                                        />
                                         <div className="min-w-0">
                                             <p className="text-sm font-bold text-gray-900 truncate">{v.slug}</p>
                                             <p className="text-xs text-gray-500 truncate mt-0.5">{v.user?.name}</p>

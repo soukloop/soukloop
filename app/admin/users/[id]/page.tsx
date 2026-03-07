@@ -7,10 +7,20 @@ import ProductsTab from "@/components/admin/users/tabs/products-tab";
 import ChatTab from "@/components/admin/users/tabs/chat-tab";
 import ReportsTab from "@/components/admin/users/tabs/reports-tab";
 import DashboardTab from "@/components/admin/users/tabs/dashboard-tab";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 export const dynamic = 'force-dynamic';
 
 export default async function UniversalAdminUserPage(props: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'users', 'view');
+    }
+
     const params = await props.params;
     const searchParams = await props.searchParams;
     const tab = searchParams.tab || "overview";

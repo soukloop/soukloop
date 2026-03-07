@@ -84,6 +84,11 @@ export async function getLatestProductsByDressStyle(styleSlug: string): Promise<
                 slug: true,
                 price: true,
                 comparePrice: true,
+                vendor: {
+                    select: {
+                        userId: true
+                    }
+                },
                 images: {
                     take: 1,
                     orderBy: {
@@ -92,6 +97,14 @@ export async function getLatestProductsByDressStyle(styleSlug: string): Promise<
                     select: {
                         url: true
                     }
+                },
+                boosts: {
+                    where: {
+                        status: 'active',
+                        startDate: { lte: new Date() },
+                        endDate: { gte: new Date() }
+                    },
+                    select: { id: true }
                 }
             },
             orderBy: {
@@ -106,7 +119,9 @@ export async function getLatestProductsByDressStyle(styleSlug: string): Promise<
             slug: p.slug,
             price: p.price,
             comparePrice: p.comparePrice,
-            image: p.images[0]?.url || "/placeholder.png"
+            image: p.images[0]?.url || "/placeholder.png",
+            isFeatured: (p.boosts?.length ?? 0) > 0,
+            vendorUserId: p.vendor?.userId
         }));
 
     } catch (error) {

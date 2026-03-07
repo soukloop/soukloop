@@ -5,6 +5,10 @@ import Link from "next/link";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { getCategoryById, getProductsByCategory, getDressStylesByCategory } from "@/lib/admin/categories-service";
 import CategoryProducts from "./components/CategoryProducts";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 interface CategoryDetailPageProps {
     params: Promise<{ id: string }>;
@@ -12,6 +16,12 @@ interface CategoryDetailPageProps {
 }
 
 export default async function CategoryDetailPage({ params, searchParams }: CategoryDetailPageProps) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'categories', 'view');
+    }
     const { id } = await params;
     const search = await searchParams;
 

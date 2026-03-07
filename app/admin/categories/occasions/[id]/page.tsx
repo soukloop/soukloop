@@ -6,12 +6,22 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ProductCard from "@/components/admin/ProductCard";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 interface OccasionDetailPageProps {
     params: Promise<{ id: string }>;
 }
 
 export default async function OccasionDetailPage({ params }: OccasionDetailPageProps) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'categories', 'view');
+    }
+
     const { id } = await params;
 
     const occasion = await prisma.occasion.findUnique({

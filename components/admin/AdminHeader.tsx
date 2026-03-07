@@ -4,14 +4,9 @@ import { Bell, ChevronDown, LogOut, Menu, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { AdminUser } from '@/lib/admin/types';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 interface AdminHeaderProps {
     adminUser: AdminUser | null;
@@ -31,7 +26,7 @@ export default function AdminHeader({
 
     return (
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-white px-4 lg:px-6">
-            {/* Left side - Mobile menu & Search */}
+            {/* Left side - Mobile menu */}
             <div className="flex items-center gap-4">
                 {isMobile && (
                     <button
@@ -41,16 +36,6 @@ export default function AdminHeader({
                         <Menu className="h-5 w-5 text-gray-600" />
                     </button>
                 )}
-
-                {/* Search Bar */}
-                <div className="relative hidden sm:block">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="h-10 w-64 rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                    />
-                </div>
             </div>
 
             {/* Right side - Notifications & Profile */}
@@ -72,17 +57,11 @@ export default function AdminHeader({
                 <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild id="admin-user-menu-trigger">
                         <Button variant="ghost" className="flex items-center gap-2 px-2">
-
-                            <div className="h-8 w-8 rounded-full overflow-hidden relative">
-                                <Image
-                                    src={adminUser?.image || "/admin-avatar.png"}
-                                    alt="Admin"
-                                    fill
-                                    className="object-cover"
-                                    sizes="32px"
-                                    priority
-                                />
-                            </div>
+                            <UserAvatar
+                                src={adminUser?.image || null}
+                                name={adminUser?.email || "Admin Profile"}
+                                className="w-8 h-8"
+                            />
                             <div className="hidden text-left sm:block">
                                 <p className="text-sm font-medium text-gray-900">
                                     {adminUser?.email || 'Admin'}

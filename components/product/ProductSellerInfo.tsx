@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
+import { UserAvatar } from "@/components/shared/user-avatar";
+import { Button } from "@/components/ui/button";
 import { ProductWithRelations } from "@/types";
 interface ProductSellerInfoProps {
     vendor: ProductWithRelations['vendor'];
@@ -17,17 +19,12 @@ export default function ProductSellerInfo({ vendor }: ProductSellerInfoProps) {
         <div className="mt-16 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center space-x-4">
-                    {avatarUrl ? (
-                        <img
-                            src={avatarUrl}
-                            alt={sellerName}
-                            className="size-12 sm:size-14 shrink-0 rounded-full object-cover ring-2 ring-gray-100"
-                        />
-                    ) : (
-                        <div className="flex size-12 sm:size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E87A3F] to-[#d96d34] font-black text-white text-lg sm:text-xl">
-                            {sellerName.charAt(0).toUpperCase()}
-                        </div>
-                    )}
+                    <UserAvatar
+                        src={avatarUrl}
+                        name={sellerName}
+                        fallbackType="initials"
+                        className="size-12 sm:size-14 ring-2 ring-gray-100"
+                    />
 
                     <div className="min-w-0">
                         <p className="text-lg sm:text-xl font-bold text-gray-900 leading-tight truncate flex items-center gap-1.5">

@@ -3,164 +3,263 @@
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
 import { Button } from "@/components/ui/button";
-import { Zap, Sparkles, TrendingUp, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Zap,
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
+  Search,
+  BadgeCheck,
+  MousePointerClick,
+} from "lucide-react";
 import Link from "next/link";
 import { useProfile } from "@/hooks/useProfile";
 
+const PACKAGES = [
+  {
+    id: "3_DAYS",
+    days: 3,
+    label: "Quick Boost",
+    price: "$2.99",
+    priceNote: "one-time",
+    description: "Great for weekend sales or clearing specific items fast.",
+    features: [
+      "Top of search results",
+      "Featured badge on listing",
+      "3 full days of boosted visibility",
+    ],
+    accent: {
+      border: "border-blue-200",
+      badge: "text-blue-700 bg-blue-100",
+      check: "text-blue-500",
+    },
+  },
+  {
+    id: "7_DAYS",
+    days: 7,
+    label: "Weekly Spotlight",
+    price: "$5.99",
+    priceNote: "one-time",
+    description: "Our most popular pick. A full week of premium placement.",
+    features: [
+      "Top of search results",
+      "Featured badge on listing",
+      "7 full days of boosted visibility",
+      "Optimal buyer engagement window",
+    ],
+    popular: true,
+    accent: {
+      border: "border-[#E87A3F]",
+      badge: "text-white bg-gradient-to-r from-[#E87A3F] to-amber-500",
+      check: "text-[#E87A3F]",
+    },
+  },
+  {
+    id: "15_DAYS",
+    days: 15,
+    label: "Maximum Reach",
+    price: "$9.99",
+    priceNote: "one-time",
+    description: "Best value for high-margin items needing sustained exposure.",
+    features: [
+      "Top of search results",
+      "Featured badge on listing",
+      "15 full days of boosted visibility",
+      "Highest return on investment",
+    ],
+    accent: {
+      border: "border-emerald-200",
+      badge: "text-emerald-700 bg-emerald-100",
+      check: "text-emerald-500",
+    },
+  },
+];
+
+const HOW_IT_WORKS = [
+  {
+    icon: MousePointerClick,
+    step: "1",
+    title: "Post Your Product",
+    description:
+      "List your item on Soukloop. After publishing, select a Boost package directly.",
+  },
+  {
+    icon: Zap,
+    step: "2",
+    title: "Activate Your Boost",
+    description:
+      "Choose 3, 7, or 15 days. Complete a simple one-time payment via Stripe.",
+  },
+  {
+    icon: Search,
+    step: "3",
+    title: "Get Seen Instantly",
+    description:
+      "Your listing jumps to the top of search results with a Featured badge — immediately.",
+  },
+];
+
 export default function BoostPricingPage() {
   const { profile } = useProfile({ skipAddresses: true });
-  const isSeller = profile?.user?.role === "SELLER";
-
-  const packages = [
-    {
-      id: '3_DAYS',
-      days: 3,
-      label: 'Quick Boost',
-      price: '$2.99',
-      description: 'Perfect for weekend sales or clearing out specific inventory items quickly.',
-      features: [
-        'Appears at the top of search',
-        'Featured badge included',
-        '3 full days of visibility',
-      ],
-      color: 'from-blue-400 to-indigo-500',
-      buttonProps: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-    },
-    {
-      id: '7_DAYS',
-      days: 7,
-      label: 'Weekly Spotlight',
-      price: '$5.99',
-      description: 'Our most popular option. Get consistent, week-long visibility for your best items.',
-      features: [
-        'Appears at the top of search',
-        'Featured badge included',
-        '7 full days of visibility',
-        'Optimal engagement window',
-      ],
-      popular: true,
-      color: 'from-orange-400 to-amber-500',
-      buttonProps: 'bg-[#E87A3F] text-white hover:bg-[#d66b33] shadow-md shadow-orange-200'
-    },
-    {
-      id: '15_DAYS',
-      days: 15,
-      label: 'Maximum Reach',
-      price: '$9.99',
-      description: 'Best value for high-margin items that need sustained exposure to find the right buyer.',
-      features: [
-        'Appears at the top of search',
-        'Featured badge included',
-        '15 full days of visibility',
-        'Highest return on investment',
-      ],
-      color: 'from-emerald-400 to-teal-500',
-      buttonProps: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-    }
-  ];
+  const role = profile?.user?.role;
+  // Sellers + all admin variants get "Post a Product"; buyers/guests get "Become a Seller"
+  const canPost = role && role !== "BUYER";
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-gray-50 font-sans">
       <EcommerceHeader />
 
-      <main className="flex-1 pt-24 pb-16 sm:pt-32 sm:pb-24">
-        {/* Hero Section */}
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700 mb-6 border border-orange-200 shadow-sm">
-            <Sparkles className="h-4 w-4" />
-            <span>Introducing Product Boosts</span>
+      <main className="flex-1 pt-24 pb-20 sm:pt-32 sm:pb-28">
+
+        {/* ── Hero ─────────────────────────────────────────── */}
+        <section className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8 mb-20 sm:mb-28">
+          <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-semibold text-orange-700 mb-6 border border-orange-200 shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Product Boost — Pay Once, Sell Faster</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl mb-6">
-            Get Your Products <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Noticed Faster</span>
+
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl mb-5 leading-tight">
+            Put Your Listing{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E87A3F] to-amber-500">
+              At The Top
+            </span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-gray-600 leading-relaxed mb-10">
-            Stand out from the crowd. Boosted products appear at the very top of search results with a special featured badge, driving more views and sales to your listings.
+
+          <p className="mx-auto max-w-xl text-lg text-gray-500 leading-relaxed">
+            Boosted products appear at the very top of search with a{" "}
+            <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md text-sm">
+              <BadgeCheck className="h-3.5 w-3.5" /> Featured
+            </span>{" "}
+            badge — no subscription, just a simple one-time payment per
+            listing.
           </p>
-        </div>
+        </section>
 
-        {/* Benefits Section */}
-        <div className="mx-auto max-w-5xl px-4 mb-16 sm:mb-24 sm:px-6 lg:px-8">
-          <div className="grid gap-8 sm:grid-cols-3">
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-orange-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600 mb-4 shadow-sm">
-                <TrendingUp className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">More Views, More Sales</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Boosted items receive up to 5x more impressions than standard listings.</p>
-            </div>
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-amber-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 mb-4 shadow-sm">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">Featured Badge</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Your product will stand out with a dedicated badge that builds buyer trust.</p>
-            </div>
-            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-green-100">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 mb-4 shadow-sm">
-                <Zap className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">Pay Per Listing</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">No expensive monthly subscriptions. Only pay to boost the specific products you choose.</p>
-            </div>
+
+
+        {/* ── Pricing Cards ────────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mb-20 sm:mb-28">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-3">
+              Choose Your Boost
+            </h2>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Three simple, transparent packages. No recurring charges.
+              Cancel anytime your product sells.
+            </p>
           </div>
-        </div>
 
-        {/* Pricing Cards */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-3 lg:gap-12 items-start max-w-5xl mx-auto">
-            {packages.map((pkg) => (
+          <div className="grid gap-8 lg:grid-cols-3 lg:gap-10 items-start max-w-5xl mx-auto">
+            {PACKAGES.map((pkg) => (
               <div
                 key={pkg.id}
-                className={`relative flex flex-col bg-white rounded-3xl p-8 shadow-sm border-2 transition-transform hover:-translate-y-1 hover:shadow-lg ${pkg.popular ? 'border-[#E87A3F] shadow-xl shadow-orange-100/50 scale-105 z-10' : 'border-gray-100'
+                className={`relative flex flex-col bg-white rounded-3xl p-8 border-2 transition-all hover:-translate-y-1 hover:shadow-xl
+                  ${pkg.popular
+                    ? `${pkg.accent.border} shadow-xl shadow-orange-100/60 scale-[1.03] z-10`
+                    : `${pkg.accent.border} shadow-sm`
                   }`}
               >
+                {/* Popular badge */}
                 {pkg.popular && (
                   <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                    <span className="bg-gradient-to-r from-[#E87A3F] to-amber-500 text-white text-xs font-bold uppercase tracking-wider py-1.5 px-4 rounded-full shadow-md">
+                    <span
+                      className={`${pkg.accent.badge} text-xs font-bold uppercase tracking-wider py-1.5 px-5 rounded-full shadow-md`}
+                    >
                       Most Popular Choice
                     </span>
                   </div>
                 )}
 
+                {/* Duration pill */}
+                <div className="mb-5">
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full ${pkg.accent.badge}`}
+                  >
+                    <Zap className="h-3 w-3" />
+                    {pkg.days} Days
+                  </span>
+                </div>
+
+                {/* Label + description */}
                 <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.label}</h3>
-                  <p className="text-sm text-gray-500 h-10">{pkg.description}</p>
+                  <h3 className="text-xl font-extrabold text-gray-900 mb-2">
+                    {pkg.label}
+                  </h3>
+                  <p className="text-sm text-gray-500 min-h-[2.5rem] leading-relaxed">
+                    {pkg.description}
+                  </p>
                 </div>
 
-                <div className="mb-6 flex items-baseline text-5xl font-extrabold text-gray-900">
-                  {pkg.price}
+                {/* Price */}
+                <div className="mb-7 flex items-end gap-1.5">
+                  <span className="text-5xl font-black text-gray-900 leading-none">
+                    {pkg.price}
+                  </span>
+                  <span className="text-sm text-gray-400 mb-1">
+                    {pkg.priceNote}
+                  </span>
                 </div>
 
-                <ul className="mb-8 space-y-4 flex-1">
+                {/* Features */}
+                <ul className="space-y-3">
                   {pkg.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <CheckCircle2 className={`h-5 w-5 shrink-0 mr-3 ${pkg.popular ? 'text-[#E87A3F]' : 'text-gray-400'}`} />
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle2
+                        className={`h-4.5 w-4.5 shrink-0 mt-0.5 ${pkg.accent.check}`}
+                      />
                       <span className="text-sm text-gray-600">{feature}</span>
                     </li>
                   ))}
                 </ul>
-
-                <Link href={isSeller ? "/seller/manage-listings" : "/become-a-seller"} className="w-full mt-auto">
-                  <Button className={`w-full py-6 text-sm font-bold uppercase tracking-wide rounded-xl ${pkg.buttonProps}`}>
-                    {isSeller ? 'Boost a Product Now' : 'Become a Seller First'}
-                  </Button>
-                </Link>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Bottom CTA */}
-        <div className="mx-auto max-w-4xl px-4 mt-24 text-center sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to accelerate your sales?</h2>
-          <p className="text-gray-500 mb-8 max-w-xl mx-auto">You can select a Boost Package during product creation or apply it anytime from your Seller Dashboard.</p>
-          <Link href={isSeller ? "/seller/post-new-product" : "/signup"}>
-            <Button className="bg-gray-900 text-white hover:bg-gray-800 rounded-full px-8 py-6 text-base font-semibold transition-all hover:scale-105 active:scale-95 shadow-md group">
-              {isSeller ? 'Create a New Listing' : 'Get Started'}
+        {/* ── How It Works ─────────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mb-24 sm:mb-32">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-3">
+              How It Works
+            </h2>
+            <p className="text-gray-500 max-w-md mx-auto">
+              From listing to top-of-search in three easy steps.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-3">
+            {HOW_IT_WORKS.map(({ icon: Icon, step, title, description }) => (
+              <div
+                key={step}
+                className="relative flex flex-col items-center text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all"
+              >
+                {/* Step number */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-black shadow-md">
+                  {step}
+                </div>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 text-orange-600 mb-5 mt-2 shadow-sm">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-2">
+                  {title}
+                </h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Smart Bottom CTA ─────────────────────────────── */}
+        <section className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 text-center">
+          <Link href={canPost ? "/seller/post-new-product" : "/become-a-seller"}>
+            <Button className="bg-gradient-to-r from-[#E87A3F] to-amber-500 hover:from-[#d96d34] hover:to-amber-600 text-white rounded-full px-9 py-6 text-base font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-200 group">
+              {canPost ? "Post a Product" : "Become a Seller"}
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
           </Link>
-        </div>
+        </section>
       </main>
 
       <FooterSection />

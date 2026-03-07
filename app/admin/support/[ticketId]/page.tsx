@@ -1,18 +1,22 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import TicketDetailClient from "./TicketDetailClient"; // Client component for interactivity
+import TicketDetailClient from "./TicketDetailClient";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 export default async function TicketDetailPage({ params }: { params: Promise<{ ticketId: string }> }) {
     const { ticketId } = await params;
-    const session = await auth();
 
-    const userRole = session?.user?.role;
-    if (
-        userRole !== "ADMIN" &&
-        userRole !== "SUPER_ADMIN"
-    ) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.success) {
         return <div>Unauthorized</div>;
+    }
+    if (authResult.admin) {
+        await requirePermission(authResult.admin.id, 'support', 'view');
     }
 
 

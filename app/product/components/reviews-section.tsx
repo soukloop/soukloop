@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Star, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { useReviews, useReviewStatus } from "@/hooks/useReviews";
 import { useAuth } from "@/hooks/useAuth";
@@ -137,9 +138,12 @@ export default function ReviewsSection({ productId }: ReviewsSectionProps) {
                         <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-full bg-orange-100 text-[#E87A3F] font-bold">
-                                        {review.user?.name?.charAt(0).toUpperCase() || <User className="size-5" />}
-                                    </div>
+                                    <UserAvatar
+                                        src={review.user?.image}
+                                        name={review.user?.name || "Anonymous"}
+                                        fallbackType="initials"
+                                        className="size-10"
+                                    />
                                     <div>
                                         <h4 className="font-bold text-gray-900">
                                             {review.user?.name || "Anonymous"}

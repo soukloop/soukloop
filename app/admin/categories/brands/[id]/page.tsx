@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getBrandById, getProductsByBrand } from "@/lib/admin/brands-service";
 import BrandProducts from "./components/BrandProducts";
+import { requirePermission } from "@/lib/admin/permissions";
+import { verifyAdminAuth } from "@/lib/admin/auth-utils";
+import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 
 interface BrandDetailPageProps {
     params: Promise<{ id: string }>;
@@ -11,6 +15,12 @@ interface BrandDetailPageProps {
 }
 
 export default async function BrandDetailPage({ params, searchParams }: BrandDetailPageProps) {
+    const request = new NextRequest('http://localhost', { headers: await headers() });
+    const authResult = await verifyAdminAuth(request);
+    if (authResult.success && authResult.admin) {
+        await requirePermission(authResult.admin.id, 'categories', 'view');
+    }
+
     const { id } = await params;
     const search = await searchParams;
 

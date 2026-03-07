@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { isAtLeastAdmin } from "@/lib/roles";
 import { useWishlist } from "@/hooks/use-wishlist";
 import WishlistButton from "@/components/ui/wishlist-button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 
 export default function ProductContent({ slug }: { slug?: string }) {
     const params = useParams();
@@ -654,17 +655,12 @@ export default function ProductContent({ slug }: { slug?: string }) {
                         <div className="mt-16 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex items-center space-x-4">
-                                    {(vendor?.user?.profile?.avatar || vendor?.user?.image || vendor?.logo) ? (
-                                        <img
-                                            src={vendor.user?.profile?.avatar || vendor.user?.image || vendor.logo}
-                                            alt={sellerName}
-                                            className="size-12 sm:size-14 shrink-0 rounded-full object-cover ring-2 ring-gray-100"
-                                        />
-                                    ) : (
-                                        <div className="flex size-12 sm:size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E87A3F] to-[#d96d34] font-black text-white text-lg sm:text-xl">
-                                            {sellerName.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
+                                    <UserAvatar
+                                        src={vendor?.user?.profile?.avatar || vendor?.user?.image || vendor?.logo || undefined}
+                                        name={sellerName}
+                                        fallbackType="initials"
+                                        className="size-12 sm:size-14 ring-2 ring-gray-100"
+                                    />
                                     <div className="min-w-0">
                                         <p className="text-lg sm:text-xl font-bold text-gray-900 leading-tight truncate">{sellerName}</p>
                                         <div className="mt-1 flex items-center gap-2">

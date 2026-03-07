@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { User as UserIcon, ChevronRight, LogOut, X, Settings, Bell, RotateCcw, Package, Truck, Gift, MessageCircle, Heart, LayoutDashboard, PlusCircle, List, Wallet, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -126,14 +127,12 @@ export default function UserMenu({
                                 {/* Profile Section */}
                                 <div className="shrink-0 border-b border-gray-100 p-2">
                                     <div className="flex items-center gap-3">
-                                        <div className="relative size-12 overflow-hidden rounded-full">
-                                            <Image
-                                                src={userAvatar}
-                                                alt="User avatar"
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        </div>
+                                        <UserAvatar
+                                            src={userAvatar !== "/icons/user-avatar.png" ? userAvatar : null}
+                                            name={displayUser?.name || "Guest"}
+                                            fallbackType="initials"
+                                            className="size-12"
+                                        />
                                         <div>
                                             <h3 className="text-base font-medium text-gray-900 flex items-center gap-1.5">
                                                 {displayUser?.name || "Guest"}
@@ -245,15 +244,12 @@ export default function UserMenu({
                                 {/* Mobile Profile Section */}
                                 <div className="shrink-0 border-b border-gray-100 p-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="relative size-10 overflow-hidden rounded-full">
-                                            <Image
-                                                src={userAvatar}
-                                                alt="User avatar"
-                                                fill
-                                                sizes="40px"
-                                                className="object-cover"
-                                            />
-                                        </div>
+                                        <UserAvatar
+                                            src={userAvatar !== "/icons/user-avatar.png" ? userAvatar : null}
+                                            name={displayUser?.name || "Guest"}
+                                            fallbackType="initials"
+                                            className="size-10"
+                                        />
                                         <div>
                                             <h3 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
                                                 {user?.username || "Guest"}

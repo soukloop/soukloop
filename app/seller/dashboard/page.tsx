@@ -93,20 +93,17 @@ export default async function SellerDashboard({ searchParams }: PageProps) {
         async () => {
             return Promise.all([
                 // Visitors
-                prisma.analyticsView.groupBy({
-                    by: ['viewerId'],
+                // Visitors (Including Guests)
+                prisma.analyticsView.count({
                     where: {
                         product: { vendorId: vendor.id },
-                        viewedAt: { gte: currentStart },
-                        viewerId: { not: null }
+                        viewedAt: { gte: currentStart }
                     }
                 }),
-                prisma.analyticsView.groupBy({
-                    by: ['viewerId'],
+                prisma.analyticsView.count({
                     where: {
                         product: { vendorId: vendor.id },
-                        viewedAt: { gte: previousStart, lte: previousEnd },
-                        viewerId: { not: null }
+                        viewedAt: { gte: previousStart, lte: previousEnd }
                     }
                 }),
                 // Orders
@@ -157,7 +154,7 @@ export default async function SellerDashboard({ searchParams }: PageProps) {
     )();
 
     // Format Metrics
-    const visitorStats = calculatePercentageChange(currentVisitors.length, previousVisitors.length);
+    const visitorStats = calculatePercentageChange(currentVisitors as number, previousVisitors as number);
     const orderStats = calculatePercentageChange(currentOrders, previousOrders);
     const earningsStats = calculatePercentageChange(currentEarningsAgg._sum.netPayout || 0, previousEarningsAgg._sum.netPayout || 0);
     const pendingStats = calculatePercentageChange(currentPending, previousPending);
@@ -165,7 +162,7 @@ export default async function SellerDashboard({ searchParams }: PageProps) {
     const comparisonText = period === "weekly" ? "from last week" : "from yesterday";
 
     const metrics = [
-        { title: "Total Visitor", value: currentVisitors.length.toLocaleString(), stats: visitorStats, icon: "users", bgColor: "bg-[#F3E8FF]", iconColor: "text-[#8B5CF6]" },
+        { title: "Total Visitor", value: (currentVisitors as number).toLocaleString(), stats: visitorStats, icon: "users", bgColor: "bg-[#F3E8FF]", iconColor: "text-[#8B5CF6]" },
         { title: "Total Order", value: currentOrders.toLocaleString(), stats: orderStats, icon: "package", bgColor: "bg-[#FFF7ED]", iconColor: "text-[#F97316]" },
         { title: "Net Earnings", value: `$${(currentEarningsAgg._sum.netPayout || 0).toLocaleString()}`, stats: earningsStats, icon: "bar-chart", bgColor: "bg-[#ECFDF5]", iconColor: "text-[#10B981]" },
         { title: "Total Pending", value: currentPending.toLocaleString(), stats: pendingStats, icon: "clock", bgColor: "bg-[#FFF1F2]", iconColor: "text-[#F43F5E]" },

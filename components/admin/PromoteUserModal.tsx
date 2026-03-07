@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Shield, User, Check } from 'lucide-react';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { UserAvatar } from '@/components/shared/user-avatar';
 import { toast } from 'sonner';
 
 interface UserResult {
@@ -117,9 +118,12 @@ export default function PromoteUserModal({ isOpen, onClose, onSuccess }: Promote
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                                <User className="h-4 w-4 text-gray-500" />
-                                            </div>
+                                            <UserAvatar
+                                                src={user.image}
+                                                name={user.name || "User"}
+                                                fallbackType="icon"
+                                                className="size-8"
+                                            />
                                             <div>
                                                 <p className="font-medium text-sm text-gray-900">{user.name || 'Unnamed'}</p>
                                                 <p className="text-xs text-gray-500">{user.email}</p>

@@ -10,6 +10,7 @@ import { MessageBubble } from "@/components/chat/MessageBubble"
 import { ChatListSkeleton, ConversationSkeleton } from "@/components/chat/ChatSkeletons"
 import { useSocket } from "@/components/providers/socket-provider"
 import { useRef } from "react"
+import { UserAvatar } from "@/components/shared/user-avatar"
 
 interface UserParticipant {
     id: string
@@ -276,11 +277,12 @@ export default function ChatsTab({ userId }: ChatsTabProps) {
                                         {getRole(selectedConv)}
                                     </p>
                                 </div>
-                                <div className="size-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border">
-                                    {getUserImage(getOtherParticipant(selectedConv)) ? (
-                                        <img src={getUserImage(getOtherParticipant(selectedConv))} className="size-full object-cover" alt="" />
-                                    ) : <User className="size-5 text-gray-400" />}
-                                </div>
+                                <UserAvatar
+                                    src={getUserImage(getOtherParticipant(selectedConv))}
+                                    name={getOtherParticipant(selectedConv).name || "Unknown User"}
+                                    fallbackType="icon"
+                                    className="size-9 border shrink-0"
+                                />
                             </Link>
                         </div>
 

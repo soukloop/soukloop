@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -69,10 +69,12 @@ export default async function UserProfileHeader({ userId, currentTab = "overview
 
                     {/* User Info Block */}
                     <div className="flex items-center gap-5">
-                        <Avatar className="h-20 w-20 border-2 border-white shadow-sm rounded-full bg-slate-50">
-                            <AvatarImage src={user.profile?.avatar || user.image || ""} alt={fullName} className="object-cover" />
-                            <AvatarFallback className="text-xl bg-orange-100 text-orange-600 font-medium">{initials}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar
+                            src={user.profile?.avatar || user.image}
+                            name={fullName}
+                            fallbackType="initials"
+                            className="h-20 w-20 border-2 border-white shadow-sm bg-slate-50"
+                        />
 
                         <div className="space-y-1.5">
                             <div className="flex items-center gap-3">
