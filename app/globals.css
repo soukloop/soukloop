@@ -102,3 +102,11 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #d96d34;
 }
+
+@keyframes slowspin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.slow-spin {
+  animation: slowspin 1.2s linear infinite;
+}
