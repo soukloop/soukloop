@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 interface ProductDetailsStepProps {
     data: ProductData;
     onUpdate: (updates: Partial<ProductData>) => void;
-    isBasicSeller?: boolean;
 }
 
 interface DressStyleOption {
@@ -26,7 +25,7 @@ interface DressStyleOption {
 // Controls which "Add" modal is currently open
 type AddModalType = "brand" | "material" | "occasion" | null;
 
-export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: ProductDetailsStepProps) {
+export default function ProductDetailsStep({ data, onUpdate }: ProductDetailsStepProps) {
     const router = useRouter();
     const [dressStyles, setDressStyles] = useState<DressStyleOption[]>([]);
     const [isLoadingStyles, setIsLoadingStyles] = useState(false);
@@ -221,13 +220,8 @@ export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: Pr
                 actionItem={{
                     label: "Add new brand",
                     onClick: (query) => {
-                        if (isBasicSeller) {
-                            router.push("/pricing");
-                            return;
-                        }
                         openAddModal("brand", query);
-                    },
-                    premium: isBasicSeller
+                    }
                 }}
                 hideDefaultAddOption={true}
             />
@@ -288,13 +282,8 @@ export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: Pr
                 actionItem={{
                     label: "Add new fabric",
                     onClick: (query) => {
-                        if (isBasicSeller) {
-                            router.push("/pricing");
-                            return;
-                        }
                         openAddModal("material", query);
-                    },
-                    premium: isBasicSeller
+                    }
                 }}
                 hideDefaultAddOption={true}
             />
@@ -329,14 +318,9 @@ export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: Pr
                         actionItem={{
                             label: "Request new style",
                             onClick: (query) => {
-                                if (isBasicSeller) {
-                                    router.push("/pricing");
-                                    return;
-                                }
                                 setRequestedStyleName(query);
                                 setShowRequestModal(true);
-                            },
-                            premium: isBasicSeller
+                            }
                         }}
                         hideDefaultAddOption={true}
                         renderOption={(opt) => {
@@ -378,13 +362,8 @@ export default function ProductDetailsStep({ data, onUpdate, isBasicSeller }: Pr
                 actionItem={{
                     label: "Add new occasion",
                     onClick: (query) => {
-                        if (isBasicSeller) {
-                            router.push("/pricing");
-                            return;
-                        }
                         openAddModal("occasion", query);
-                    },
-                    premium: isBasicSeller
+                    }
                 }}
                 hideDefaultAddOption={true}
             />

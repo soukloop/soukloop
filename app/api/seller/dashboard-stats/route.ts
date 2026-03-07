@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from "@/auth";
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { isAtLeastSeller } from '@/lib/roles';
 
 // Types for the response
@@ -182,35 +183,38 @@ export async function GET(request: NextRequest) {
         const productIds = sellerProducts.map((p) => p.id);
 
         // ============ TOTAL VISITORS ============
-        // Count unique viewers of seller's products
-        const [currentVisitors, previousVisitors] = await Promise.all([
-            prisma.analyticsView.groupBy({
-                by: ['viewerId'],
-                where: {
-                    productId: { in: productIds },
-                    viewedAt: {
-                        gte: dateRanges.current.start,
-                        lte: dateRanges.current.end,
-                    },
-                    viewerId: { not: null },
-                },
-            }),
-            prisma.analyticsView.groupBy({
-                by: ['viewerId'],
-                where: {
-                    productId: { in: productIds },
-                    viewedAt: {
-                        gte: dateRanges.previous.start,
-                        lte: dateRanges.previous.end,
-                    },
-                    viewerId: { not: null },
-                },
-            }),
-        ]);
+        // Count unique viewers of seller's products using raw SQL to avoid OOM
+        let currentVisitorsCount = 0;
+        let previousVisitorsCount = 0;
+
+        if (productIds.length > 0) {
+            const productIdsString = Prisma.sql`${Prisma.join(productIds)}`;
+
+            const currentRes = await prisma.$queryRaw<{ count: number }[]>`
+                SELECT COUNT(DISTINCT "viewerId")::int as count
+                FROM "AnalyticsView"
+                WHERE "productId" IN (${productIdsString})
+                AND "viewerId" IS NOT NULL
+                AND "viewedAt" >= ${dateRanges.current.start}
+                AND "viewedAt" <= ${dateRanges.current.end}
+            `;
+
+            const previousRes = await prisma.$queryRaw<{ count: number }[]>`
+                SELECT COUNT(DISTINCT "viewerId")::int as count
+                FROM "AnalyticsView"
+                WHERE "productId" IN (${productIdsString})
+                AND "viewerId" IS NOT NULL
+                AND "viewedAt" >= ${dateRanges.previous.start}
+                AND "viewedAt" <= ${dateRanges.previous.end}
+            `;
+
+            currentVisitorsCount = currentRes[0]?.count || 0;
+            previousVisitorsCount = previousRes[0]?.count || 0;
+        }
 
         const visitorChange = calculatePercentageChange(
-            currentVisitors.length,
-            previousVisitors.length
+            currentVisitorsCount,
+            previousVisitorsCount
         );
 
         // ============ TOTAL ORDERS ============
@@ -329,8 +333,8 @@ export async function GET(request: NextRequest) {
         // Build response
         const response: DashboardStatsResponse = {
             totalVisitors: {
-                value: currentVisitors.length,
-                previousValue: previousVisitors.length,
+                value: currentVisitorsCount,
+                previousValue: previousVisitorsCount,
                 percentageChange: visitorChange.percentage,
                 trend: visitorChange.trend,
             },

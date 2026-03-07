@@ -144,7 +144,6 @@ function formatApplicant(app: any) {
         status: 'Pending',
         joinedDate: (app.submittedAt || app.createdAt).toISOString().split('T')[0],
         avatar: app.user.profile?.avatar || app.user.image || null,
-        planTier: 'BASIC',
         isApplicant: true
     };
 }
@@ -162,7 +161,6 @@ function formatVendor(vendor: any) {
             : (vendor.kycStatus === 'APPROVED' ? 'Active' : vendor.kycStatus === 'PENDING' ? 'Pending' : 'Suspended'),
         joinedDate: vendor.createdAt.toISOString().split('T')[0],
         avatar: vendor.user.profile?.avatar || vendor.user.image || null,
-        planTier: vendor.planTier,
         isApplicant: false
     };
 }

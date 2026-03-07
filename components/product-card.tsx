@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { MoreVertical, PenLine, Trash2, EyeOff, CheckCircle } from "lucide-react";
+import { MoreVertical, PenLine, Trash2, EyeOff, CheckCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,9 +41,12 @@ interface Product {
     quantity?: number;
     slug?: string;
     pendingOrderCount?: number;
-    vendor?: {
-        planTier?: string;
-    };
+    isFeatured?: boolean;
+    activeBoost?: {
+        packageType: string;
+        startDate: string;
+        endDate: string;
+    } | null;
 }
 
 interface ProductCardProps {
@@ -55,6 +58,7 @@ interface ProductCardProps {
     priority?: boolean;
     // Manage Props
     onEdit?: (product: Product) => void;
+    onBoost?: (product: Product) => void;
     onDelete?: (id: string) => void;
     onDeactivate?: (id: string) => void;
     onMarkSold?: (id: string) => void;
@@ -77,6 +81,7 @@ export default function ProductCard({
     compact = false,
     priority = false,
     onEdit,
+    onBoost,
     onDelete,
     onDeactivate,
     onMarkSold,
@@ -172,11 +177,12 @@ export default function ProductCard({
                 {isManageMode && (
                     <div className="absolute right-2 top-2 z-30 flex gap-1.5 sm:gap-2">
                         <button
+                            disabled={isSold}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onEdit?.(product);
+                                if (!isSold) onEdit?.(product);
                             }}
-                            className="flex size-7 sm:size-8 items-center justify-center rounded-full bg-white shadow-sm transition-transform hover:scale-105 hover:bg-gray-50 active:scale-95 border border-gray-100"
+                            className={`flex size-7 sm:size-8 items-center justify-center rounded-full bg-white shadow-sm transition-transform hover:scale-105 hover:bg-gray-50 active:scale-95 border border-gray-100 ${isSold ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                         >
                             <PenLine className="size-3.5 sm:size-4 text-[#E87A3F]" />
                         </button>
@@ -310,9 +316,16 @@ export default function ProductCard({
                 )}
 
                 {/* NEW Badge - Only for active products */}
-                {showNewBadge && product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && (
+                {showNewBadge && product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && !product.isFeatured && (
                     <div className="absolute top-2 left-2 bg-[#E87A3F] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                         NEW
+                    </div>
+                )}
+
+                {/* ★ FEATURED Badge - Premium amber badge for featured/sponsored products */}
+                {product.isFeatured && !isSold && !isDraft && product.status !== 'BLOCKED' && product.status !== 'INACTIVE' && (
+                    <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md z-10 flex items-center gap-0.5 shadow-sm">
+                        ★ Featured
                     </div>
                 )}
 
@@ -354,9 +367,6 @@ export default function ProductCard({
                 {/* Title */}
                 <h3 className={`font-bold text-gray-900 line-clamp-1 flex items-center gap-1 ${compact ? "text-xs sm:text-sm" : "text-sm sm:text-base"}`}>
                     {product.title}
-                    {product.vendor?.planTier && (product.vendor.planTier === 'PRO' || product.vendor.planTier === 'STARTER') && (
-                        <PremiumBadge tier={product.vendor.planTier} className="inline-flex" iconClassName="size-3.5" />
-                    )}
                 </h3>
 
                 {/* Category.Size Row */}
@@ -425,15 +435,46 @@ export default function ProductCard({
                     )}
 
                     {isManageMode ? (
-                        <div className="w-full">
+                        <div className="flex w-full gap-2 font-sans">
                             <Button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onEdit?.(product);
                                 }}
-                                className={`relative flex w-full items-center justify-center rounded-lg font-bold text-white shadow-sm transition-all active:scale-95 ${compact ? "py-1.5 text-[10px] sm:text-xs" : "py-2 sm:py-3 text-xs sm:text-sm"} bg-gray-900 hover:bg-black`}
+                                disabled={isSold}
+                                className={`relative flex-1 flex items-center justify-center rounded-lg font-bold text-white shadow-sm transition-all active:scale-95 ${compact ? "h-9 text-[10px] sm:text-xs" : "h-11 sm:h-12 text-xs sm:text-sm"} ${isSold ? "bg-gray-300 cursor-not-allowed" : "bg-gray-900 hover:bg-black"}`}
                             >
                                 Manage
+                            </Button>
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onBoost?.(product);
+                                }}
+                                disabled={isSold || !!product.activeBoost}
+                                className={cn(
+                                    "relative flex-1 flex items-center justify-center rounded-lg font-black transition-all active:scale-95 border-2",
+                                    compact ? "h-9 text-[10px] sm:text-xs" : "h-11 sm:h-12 text-xs sm:text-sm",
+                                    product.activeBoost
+                                        ? "bg-amber-50 border-amber-200 text-amber-600 cursor-default"
+                                        : isSold
+                                            ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                                            : "bg-white border-[#E87A3F] text-[#E87A3F] hover:bg-orange-50"
+                                )}
+                            >
+                                {product.activeBoost ? (
+                                    <span className="flex items-center gap-1">
+                                        <Zap className="size-3 sm:size-3.5 fill-amber-500" />
+                                        {(() => {
+                                            const end = new Date(product.activeBoost.endDate);
+                                            const now = new Date();
+                                            const diffDays = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                            return `${diffDays > 0 ? diffDays : 0}d Left`;
+                                        })()}
+                                    </span>
+                                ) : (
+                                    "Boost"
+                                )}
                             </Button>
                         </div>
                     ) : isDraft ? (

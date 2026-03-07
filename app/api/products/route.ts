@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SUBSCRIPTION_PLANS } from '@/config/subscriptions';
 import { handleApiError } from '@/lib/api-wrapper';
 import { ProductSchema } from '@/lib/validations';
 import { auth } from '@/auth'
@@ -182,74 +181,144 @@ export async function GET(request: NextRequest) {
         // OPTIMIZATION: DTO SELECT PATTERN
         // We only fetch minimal data for the grid (thumbnail + hover image)
         // This removes ~80% of the JSON payload size
-        const productsQuery = prisma.product.findMany({
-            where,
-            select: {
-                id: true,
-                name: true,
-                slug: true,
-                price: true,
-                comparePrice: true,
-                category: true,
-                size: true,
-                brand: true,
-                condition: true,
-                gender: true,
-                fabric: true,
-                occasion: true,
-                dress: true,
-                isOnSale: true,
-                hasPendingStyle: true,
-                vendorId: true,
-                createdAt: true,
-                isActive: true,
-                status: true,
-                // Include relational data for proper display
-                material: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true
-                    }
-                },
-                occasionRel: {
-                    select: {
-                        id: true,
-                        name: true,
-                        slug: true
-                    }
-                },
-                vendor: {
-                    select: {
-                        id: true,
-                        userId: true,
-                        kycStatus: true,
-                        isActive: true,
-                        planTier: true
-                    }
-                },
-                images: {
-                    take: 2, // Only need Primary + Hover
-                    select: {
-                        url: true,
-                        isPrimary: true
-                    }
+        const now = new Date();
+
+        // Select shape shared between featured + regular queries
+        const productSelect = {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            comparePrice: true,
+            category: true,
+            size: true,
+            brand: true,
+            condition: true,
+            gender: true,
+            fabric: true,
+            occasion: true,
+            dress: true,
+            isOnSale: true,
+            hasPendingStyle: true,
+            vendorId: true,
+            createdAt: true,
+            isActive: true,
+            status: true,
+            // Include relational data for proper display
+            material: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true
                 }
             },
+            occasionRel: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true
+                }
+            },
+            vendor: {
+                select: {
+                    id: true,
+                    userId: true,
+                    kycStatus: true,
+                    isActive: true
+                }
+            },
+            images: {
+                take: 2, // Only need Primary + Hover
+                select: {
+                    url: true,
+                    isPrimary: true
+                }
+            },
+            // Include active FEATURED promotions using the new ProductBoost model
+            boosts: {
+                where: {
+                    status: 'active',
+                    startDate: { lte: now },
+                    endDate: { gte: now }
+                },
+                select: {
+                    id: true,
+                    packageType: true,
+                    endDate: true
+                }
+            }
+        };
+
+        // ── Accelerated Featured Randomization Strategy ──
+        // Only load featured products on Page 1 to prevent duplication on deep scrolling
+        let featuredProducts: any[] = [];
+        let featuredIds: string[] = [];
+
+        if (page === 1) {
+            // Build WHERE clause matching exact filters, but strictly requiring an ACTIVE Boost
+            const featuredWhere = structuredClone(where);
+
+            // Fix: Replaces the broken legacy 'promotions' query with the new 'ProductBoost' table
+            if (featuredWhere.OR) {
+                featuredWhere.OR.forEach((branch: any) => {
+                    branch.boosts = { some: { status: 'active', startDate: { lte: now }, endDate: { gte: now } } };
+                });
+            } else {
+                featuredWhere.boosts = { some: { status: 'active', startDate: { lte: now }, endDate: { gte: now } } };
+            }
+
+            // We pull heavily matching products, randomize in memory, then slice 10.
+            // (Standard approach since Prisma lacks native random ordering)
+            const availableFeatured = await prisma.product.findMany({
+                where: featuredWhere,
+                select: productSelect,
+                take: 100 // Pool to randomize from
+            });
+
+            // Shuffle array using Fisher-Yates and take 10
+            for (let i = availableFeatured.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [availableFeatured[i], availableFeatured[j]] = [availableFeatured[j], availableFeatured[i]];
+            }
+
+            featuredProducts = availableFeatured.slice(0, 10);
+            featuredIds = featuredProducts.map(p => p.id);
+        }
+
+        // Regular products (exclude featured to avoid duplicates)
+        const regularWhere = featuredIds.length > 0
+            ? { ...where, id: { notIn: featuredIds } }
+            : where;
+
+        const regularTake = page === 1
+            ? Math.max(0, limit - featuredIds.length)
+            : limit;
+
+        // Adjust skip for page 2+ to account for featured products shown on page 1
+        const regularSkip = page === 1 ? 0 : skip - featuredIds.length;
+
+        const productsQuery = prisma.product.findMany({
+            where: regularWhere,
+            select: productSelect,
             orderBy: {
                 [orderByField]: orderByOrder
             },
-            take: limit,
-            skip: skip,
+            take: regularTake,
+            skip: Math.max(0, regularSkip),
         });
 
         // OPTIMIZATION: PARALLEL EXECUTION
         // Hybrid Strategy: Parallel Count + Fetch
         // Run count and data fetch at the same time to reduce total request duration
-        const [products, total] = await Promise.all([
+        const [regularProducts, total] = await Promise.all([
             productsQuery,
             prisma.product.count({ where })
         ]);
+
+        // Merge: Featured first (page 1 only), then regular
+        const products = page === 1
+            ? [...featuredProducts, ...regularProducts]
+            : regularProducts;
 
         // If User is owner, we might want to fetch pending order stats for these products
         // This is a "N+1" avoidance optimization. We do a separate aggregation if needed, or mapping.
@@ -288,7 +357,9 @@ export async function GET(request: NextRequest) {
         const mappedProducts = productsWithCounts.map(product => ({
             ...product,
             // Map images to expected format for frontend (array of objects with url)
-            images: product.images
+            images: product.images,
+            // Flag featured products for the frontend badge using the new Boost model
+            isFeatured: (product.boosts?.length ?? 0) > 0,
         }));
 
         return NextResponse.json({
@@ -375,37 +446,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
         }
 
-        // Feature Gating: Enforce Product Limits based on Plan Tier
-        if (isDraft && vendor.planTier === 'BASIC') {
-            return NextResponse.json({
-                error: "Premium Feature Required",
-                details: "Saving product drafts is a Premium feature. Please upgrade to the Starter or Pro plan to save drafts.",
-                code: 'UPGRADE_REQUIRED'
-            }, { status: 403 });
-        }
-
-        if (!isDraft) {
-            const planLimits = SUBSCRIPTION_PLANS[vendor.planTier];
-
-            // Only enforce if the limit is not infinity
-            if (planLimits.maxActiveListings !== Infinity) {
-                const productCount = await prisma.product.count({
-                    where: {
-                        vendorId: vendor.id,
-                        status: 'ACTIVE' // Count currently active products
-                    }
-                });
-
-                if (productCount >= planLimits.maxActiveListings) {
-                    return NextResponse.json({
-                        error: "Subscription limit reached",
-                        details: `You have reached the maximum limit of ${planLimits.maxActiveListings} active products for the ${vendor.planTier} plan. Please upgrade to a higher tier to add more products.`,
-                        code: 'UPGRADE_REQUIRED'
-                    }, { status: 403 });
-                }
-            }
-        }
-
         // Check if dress style is pending
         let hasPendingStyle = false;
         if (dressStyleId) {
@@ -477,6 +517,15 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // ===== FEATURED PROMOTION (if requested) =====
+        let featuredResult: { isFeatured: boolean; paymentRequired?: boolean } = { isFeatured: false };
+
+        if (!isDraft && body.isFeatured) {
+            // Product boosting is a separate paid package now
+            // We return a flag to the frontend to trigger the Boost modal/flow
+            featuredResult = { isFeatured: false, paymentRequired: true };
+        }
+
         // ===== SEND NOTIFICATIONS (fire-and-forget) =====
         if (!isDraft) {
             const sellerId = vendor.userId
@@ -509,7 +558,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json(product, { status: 201 })
+        return NextResponse.json({ ...product, ...featuredResult }, { status: 201 })
 
     } catch (error) {
         return handleApiError(error);

@@ -1,437 +1,169 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import Image from "next/image";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Check, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EcommerceHeader from "@/components/ecommerce-header";
 import FooterSection from "@/components/footer-section";
-import { createSubscriptionCheckout } from "@/features/subscriptions/actions";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Zap, Sparkles, TrendingUp, ArrowRight, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { useProfile } from "@/hooks/useProfile";
-import { PricingCards } from "@/components/subscription/PricingCards";
-import { useMemo } from "react";
 
-export default function PricingPage() {
-  const [showPaymentOptionModal, setShowPaymentOptionModal] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [isMounted, setIsMounted] = useState(false);
-  const { profile } = useProfile();
+export default function BoostPricingPage() {
+  const { profile } = useProfile({ skipAddresses: true });
+  const isSeller = profile?.user?.role === "SELLER";
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const currentTier = useMemo(() => {
-    if (!isMounted) return null;
-    const user = profile?.user as any;
-    return user?.vendor?.planTier || user?.planTier || (typeof window !== 'undefined' ? (window as any).__USER_PLAN_TIER__ : 'BASIC');
-  }, [profile, isMounted]);
-
-  const handleCheckout = (priceId?: string) => {
-    startTransition(() => {
-      createSubscriptionCheckout(priceId).catch(err => {
-        toast.error("Checkout Unavailable", {
-          description: err.message || "Failed to start checkout. Ensure you are an approved seller."
-        });
-      });
-    });
-  };
-
-  const paymentMethods = [
+  const packages = [
     {
-      id: "mastercard",
-      name: "Master Card",
-      icon: "/icons/mastercard-icon.png",
+      id: '3_DAYS',
+      days: 3,
+      label: 'Quick Boost',
+      price: '$2.99',
+      description: 'Perfect for weekend sales or clearing out specific inventory items quickly.',
+      features: [
+        'Appears at the top of search',
+        'Featured badge included',
+        '3 full days of visibility',
+      ],
+      color: 'from-blue-400 to-indigo-500',
+      buttonProps: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
     },
-    { id: "applepay", name: "Apple Pay", icon: "/icons/apple-pay-icon.png" },
     {
-      id: "crypto wallet",
-      name: "Crypto Wallet",
-      icon: "icons/bitcoin-final.png",
+      id: '7_DAYS',
+      days: 7,
+      label: 'Weekly Spotlight',
+      price: '$5.99',
+      description: 'Our most popular option. Get consistent, week-long visibility for your best items.',
+      features: [
+        'Appears at the top of search',
+        'Featured badge included',
+        '7 full days of visibility',
+        'Optimal engagement window',
+      ],
+      popular: true,
+      color: 'from-orange-400 to-amber-500',
+      buttonProps: 'bg-[#E87A3F] text-white hover:bg-[#d66b33] shadow-md shadow-orange-200'
     },
-    { id: "paypal", name: "PayPal", icon: "icons/paypal-final.png" },
+    {
+      id: '15_DAYS',
+      days: 15,
+      label: 'Maximum Reach',
+      price: '$9.99',
+      description: 'Best value for high-margin items that need sustained exposure to find the right buyer.',
+      features: [
+        'Appears at the top of search',
+        'Featured badge included',
+        '15 full days of visibility',
+        'Highest return on investment',
+      ],
+      color: 'from-emerald-400 to-teal-500',
+      buttonProps: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+    }
   ];
 
-  const [selectedMethod, setSelectedMethod] = useState("mastercard");
-
-  const [formData, setFormData] = useState({
-    nameOnCard: "",
-    cardNumber: "",
-    expireDate: "",
-    cvc: "",
-  });
-
-  // Handlers
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const [isPrimary, setIsPrimary] = useState(true);
-
-  const handleConfirmPayment = () => {
-    setShowVerificationModal(true);
-  };
-
-  const [verificationCode, setVerificationCode] = useState([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ]);
-
-  const handleCodeChange = (index: number, value: string) => {
-    if (/^[0-9]?$/.test(value)) {
-      const newCode = [...verificationCode];
-      newCode[index] = value;
-      setVerificationCode(newCode);
-
-      // ✅ Auto move to next input
-      if (value && index < 5) {
-        const nextInput =
-          document.querySelectorAll<HTMLInputElement>("input[type='text']")[
-          index + 1
-          ];
-        nextInput?.focus();
-      }
-
-      // ✅ Move back if deleted
-      if (!value && index > 0) {
-        const prevInput =
-          document.querySelectorAll<HTMLInputElement>("input[type='text']")[
-          index - 1
-          ];
-        prevInput?.focus();
-      }
-    }
-  };
-
-  const handleVerificationConfirm = () => {
-    setShowVerificationModal(false);
-    setShowSuccessModal(true);
-  };
-
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-
-  const [countdown, setCountdown] = useState(59);
-
   return (
-    <div className="min-h-screen bg-white sm:mt-[-9rem] mt-[-6.2rem]">
+    <div className="flex min-h-[100dvh] flex-col bg-gray-50 font-sans">
       <EcommerceHeader />
 
-      {/* Main Pricing Section */}
-      <main className="container mx-auto px-4 py-16 pb-[100px] sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-12 text-center">
-          <h1 className="mb-6 text-3xl font-bold text-gray-900 sm:text-4xl md:text-5xl">
-            Pricing plans
+      <main className="flex-1 pt-24 pb-16 sm:pt-32 sm:pb-24">
+        {/* Hero Section */}
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700 mb-6 border border-orange-200 shadow-sm">
+            <Sparkles className="h-4 w-4" />
+            <span>Introducing Product Boosts</span>
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl mb-6">
+            Get Your Products <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Noticed Faster</span>
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-base text-gray-600 sm:text-lg">
-            Choose the plan that suits your business needs. Switch plans or cancel any time.
+          <p className="mx-auto max-w-2xl text-lg text-gray-600 leading-relaxed mb-10">
+            Stand out from the crowd. Boosted products appear at the very top of search results with a special featured badge, driving more views and sales to your listings.
           </p>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="mb-24">
-          <PricingCards
-            currentTier={currentTier || "BASIC"}
-            onSelect={handleCheckout}
-            isPending={isPending}
-          />
+        {/* Benefits Section */}
+        <div className="mx-auto max-w-5xl px-4 mb-16 sm:mb-24 sm:px-6 lg:px-8">
+          <div className="grid gap-8 sm:grid-cols-3">
+            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-orange-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600 mb-4 shadow-sm">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-2">More Views, More Sales</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">Boosted items receive up to 5x more impressions than standard listings.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-amber-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 mb-4 shadow-sm">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-2">Featured Badge</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">Your product will stand out with a dedicated badge that builds buyer trust.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 transition-all hover:shadow-md hover:border-green-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 mb-4 shadow-sm">
+                <Zap className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-2">Pay Per Listing</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">No expensive monthly subscriptions. Only pay to boost the specific products you choose.</p>
+            </div>
+          </div>
         </div>
 
-        {/* Feature Comparison Table */}
-        <div className="mx-auto max-w-6xl px-4 lg:px-0">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Compare features</h2>
-          <div className="overflow-x-auto">
-            <Table className="w-full table-fixed">
-              <TableHeader>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="w-[28%] font-semibold text-gray-900 px-6">Features</TableHead>
-                  <TableHead className="w-[24%] font-semibold text-gray-900 px-6 text-center">Basic plan</TableHead>
-                  <TableHead className="w-[24%] font-semibold text-orange-950 bg-orange-50 px-6 text-center">Starter plan</TableHead>
-                  <TableHead className="w-[24%] font-semibold text-white bg-orange-500 rounded-t-2xl text-center px-6">Pro plan</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Active Listings</TableCell>
-                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">3</TableCell>
-                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">30</TableCell>
-                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Unlimited</TableCell>
-                </TableRow>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Commission Rate</TableCell>
-                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">12%</TableCell>
-                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">10%</TableCell>
-                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">8%</TableCell>
-                </TableRow>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Active Promo Codes</TableCell>
-                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
-                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">5</TableCell>
-                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Unlimited</TableCell>
-                </TableRow>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Payout Schedule</TableCell>
-                  <TableCell className="text-gray-600 border-b border-gray-100 px-6 py-5 text-center">Standard</TableCell>
-                  <TableCell className="bg-orange-50 text-orange-900 px-6 py-5 text-center">Weekly</TableCell>
-                  <TableCell className="bg-orange-500 font-medium text-white px-6 py-5 text-center">Weekly</TableCell>
-                </TableRow>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium border-b border-gray-100 px-6 py-5">Seller Stats</TableCell>
-                  <TableCell className="border-b border-gray-100 px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
-                  <TableCell className="bg-orange-50 text-center px-6 py-5"><Check className="size-5 text-orange-500 mx-auto" /></TableCell>
-                  <TableCell className="bg-orange-500 text-center px-6 py-5"><Check className="size-5 text-white mx-auto" /></TableCell>
-                </TableRow>
-                <TableRow className="border-none hover:bg-transparent">
-                  <TableCell className="font-medium px-6 py-5">Premium Badge</TableCell>
-                  <TableCell className="px-6 py-5 text-center"><span className="text-gray-400">—</span></TableCell>
-                  <TableCell className="bg-orange-50 text-center px-6 py-5"><Check className="size-5 text-orange-500 mx-auto" /></TableCell>
-                  <TableCell className="bg-orange-500 rounded-b-2xl text-center px-6 py-5"><Check className="size-5 text-white mx-auto" /></TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+        {/* Pricing Cards */}
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 lg:grid-cols-3 lg:gap-12 items-start max-w-5xl mx-auto">
+            {packages.map((pkg) => (
+              <div
+                key={pkg.id}
+                className={`relative flex flex-col bg-white rounded-3xl p-8 shadow-sm border-2 transition-transform hover:-translate-y-1 hover:shadow-lg ${pkg.popular ? 'border-[#E87A3F] shadow-xl shadow-orange-100/50 scale-105 z-10' : 'border-gray-100'
+                  }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                    <span className="bg-gradient-to-r from-[#E87A3F] to-amber-500 text-white text-xs font-bold uppercase tracking-wider py-1.5 px-4 rounded-full shadow-md">
+                      Most Popular Choice
+                    </span>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.label}</h3>
+                  <p className="text-sm text-gray-500 h-10">{pkg.description}</p>
+                </div>
+
+                <div className="mb-6 flex items-baseline text-5xl font-extrabold text-gray-900">
+                  {pkg.price}
+                </div>
+
+                <ul className="mb-8 space-y-4 flex-1">
+                  {pkg.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start">
+                      <CheckCircle2 className={`h-5 w-5 shrink-0 mr-3 ${pkg.popular ? 'text-[#E87A3F]' : 'text-gray-400'}`} />
+                      <span className="text-sm text-gray-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link href={isSeller ? "/seller/manage-listings" : "/become-a-seller"} className="w-full mt-auto">
+                  <Button className={`w-full py-6 text-sm font-bold uppercase tracking-wide rounded-xl ${pkg.buttonProps}`}>
+                    {isSeller ? 'Boost a Product Now' : 'Become a Seller First'}
+                  </Button>
+                </Link>
+              </div>
+            ))}
           </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mx-auto max-w-4xl px-4 mt-24 text-center sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to accelerate your sales?</h2>
+          <p className="text-gray-500 mb-8 max-w-xl mx-auto">You can select a Boost Package during product creation or apply it anytime from your Seller Dashboard.</p>
+          <Link href={isSeller ? "/seller/post-new-product" : "/signup"}>
+            <Button className="bg-gray-900 text-white hover:bg-gray-800 rounded-full px-8 py-6 text-base font-semibold transition-all hover:scale-105 active:scale-95 shadow-md group">
+              {isSeller ? 'Create a New Listing' : 'Get Started'}
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
         </div>
       </main>
 
-      {showPaymentOptionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 sm:p-8">
-            {/* Close Button */}
-            <button
-              onClick={() => setShowPaymentOptionModal(false)}
-              className="absolute right-4 top-4 text-gray-500 hover:text-gray-800"
-            >
-              ✕
-            </button>
-
-            <div className="mb-0 w-full rounded-2xl border-0 bg-white shadow-none">
-              <h1 className="mb-6 text-xl font-semibold text-gray-900 sm:mb-8 sm:text-2xl">
-                Payment Option
-              </h1>
-
-              {/* Payment Methods */}
-              <div className="mb-6 grid grid-cols-2 gap-4 sm:mb-8 sm:grid-cols-4">
-                {paymentMethods.map((method) => (
-                  <div
-                    key={method.id}
-                    onClick={() => setSelectedMethod(method.id)}
-                    className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all sm:p-6 ${selectedMethod === method.id
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                      }`}
-                  >
-                    <div className="flex flex-col items-center space-y-3 text-center">
-                      <div className="flex size-8 items-center justify-center">
-                        <Image
-                          src={method.icon || "/placeholder.svg"}
-                          alt={method.name}
-                          width={32}
-                          height={32}
-                          className="object-contain"
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">
-                        {method.name}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Card Info */}
-              <div className="mb-6 space-y-6">
-                <div>
-                  <Label
-                    htmlFor="nameOnCard"
-                    className="mb-2 block text-sm font-medium text-gray-900"
-                  >
-                    Name on Card <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="nameOnCard"
-                    value={formData.nameOnCard}
-                    onChange={(e) =>
-                      handleInputChange("nameOnCard", e.target.value)
-                    }
-                    required
-                    className="h-12 w-full rounded-lg border border-gray-200 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="cardNumber"
-                    className="mb-2 block text-sm font-medium text-gray-900"
-                  >
-                    Card Number <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={(e) =>
-                      handleInputChange("cardNumber", e.target.value)
-                    }
-                    required
-                    className="h-12 w-full rounded-lg border border-gray-200 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <Label
-                      htmlFor="expireDate"
-                      className="mb-2 block text-sm font-medium text-gray-900"
-                    >
-                      Expire Date <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="expireDate"
-                      placeholder="MM/YY"
-                      value={formData.expireDate}
-                      onChange={(e) =>
-                        handleInputChange("expireDate", e.target.value)
-                      }
-                      required
-                      className="h-12 w-full rounded-lg border border-gray-200 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="cvc"
-                      className="mb-2 block text-sm font-medium text-gray-900"
-                    >
-                      CVC <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="cvc"
-                      value={formData.cvc}
-                      onChange={(e) => handleInputChange("cvc", e.target.value)}
-                      required
-                      className="h-12 w-full rounded-lg border border-gray-200 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Primary Payment Switch */}
-              <div className="mb-4 flex items-center space-x-3">
-                <Switch
-                  id="primary-payment"
-                  checked={isPrimary}
-                  onCheckedChange={setIsPrimary}
-                  className="data-[state=checked]:bg-orange-500"
-                />
-                <Label
-                  htmlFor="primary-payment"
-                  className="text-sm font-medium text-gray-900"
-                >
-                  Set as Primary Payment Method
-                </Label>
-              </div>
-
-              {/* Info Note */}
-              <div className="mb-6 sm:mb-8">
-                <p className="flex items-start text-sm text-gray-600">
-                  <span className="mr-2 text-orange-500">•</span>
-                  We will send you order details to your email after successful
-                  payment.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col justify-end gap-4 sm:flex-row">
-                <Button
-                  variant="outline"
-                  className="h-12 w-full rounded-lg border-orange-200 bg-orange-50 text-orange-500 hover:border-orange-300 hover:bg-orange-100 sm:h-14 sm:w-[297px]"
-                  onClick={() => setShowPaymentOptionModal(false)}
-                >
-                  Discard
-                </Button>
-
-                <Button
-                  onClick={handleConfirmPayment}
-                  disabled={
-                    !selectedMethod ||
-                    !formData.nameOnCard ||
-                    !formData.cardNumber ||
-                    !formData.expireDate ||
-                    !formData.cvc
-                  }
-                  className={`h-12 w-full rounded-lg text-white sm:h-14 sm:w-[297px] transition-colors ${!selectedMethod ||
-                    !formData.nameOnCard ||
-                    !formData.cardNumber ||
-                    !formData.expireDate ||
-                    !formData.cvc
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-orange-500 hover:bg-orange-600"
-                    }`}
-                >
-                  Confirm Payment Option
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showVerificationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="flex w-full max-w-sm sm:max-w-md lg:max-w-lg flex-col max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-4 sm:p-6 lg:p-8">
-            {/* Header */}
-            <h2 className="mb-2 text-lg font-bold text-black sm:mb-4 sm:text-xl lg:text-2xl">
-              Enter 6-Digit Code
-            </h2>
-            <p className="mb-4 text-xs text-gray-600 sm:mb-6 sm:text-sm lg:text-sm">
-              Enter the 6-digit code sent to info*****gmail.com
-            </p>
-
-            {/* Code Inputs */}
-            <div className="mb-4 flex justify-center gap-2 sm:gap-3 lg:gap-4">
-              {verificationCode.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`code-${index}`}
-                  type="text"
-                  value={digit}
-                  onChange={(e) => handleCodeChange(index, e.target.value)}
-                  className="size-10 sm:size-12 lg:size-12 rounded-xl border-2 border-gray-200 text-center text-base sm:text-lg lg:text-2xl font-semibold focus:border-orange-500 focus:outline-none"
-                  maxLength={1}
-                />
-              ))}
-            </div>
-
-            {/* Countdown */}
-            <p className="mb-4 text-center text-xs sm:text-sm lg:text-base text-gray-500">
-              Resend code in 00:{countdown.toString().padStart(2, "0")}
-            </p>
-
-            {/* Confirm Button */}
-            <Button
-              className="mx-auto h-11 sm:h-12 lg:h-14 w-full sm:w-[300px] lg:w-[436px] rounded-full bg-orange-500 text-sm sm:text-base lg:text-lg font-semibold text-white hover:bg-orange-600"
-              onClick={() => {
-                setShowPaymentOptionModal(false);
-                handleVerificationConfirm();
-              }}
-            >
-              Confirm
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-10" style={{ backgroundColor: "#f9f9f9" }}>
-        <FooterSection />
-      </div>
+      <FooterSection />
     </div>
   );
 }

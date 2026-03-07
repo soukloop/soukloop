@@ -46,7 +46,7 @@ export const GET = withAuth(async (request: any) => {
                         createdAt: true,
                         vendor: {
                             select: {
-                                planTier: true
+                                userId: true
                             }
                         }
                     }
@@ -72,7 +72,7 @@ export const GET = withAuth(async (request: any) => {
                             createdAt: true,
                             vendor: {
                                 select: {
-                                    planTier: true
+                                    userId: true
                                 }
                             }
                         }
@@ -137,7 +137,7 @@ export const PUT = withAuth(async (request: any) => {
                         createdAt: true,
                         vendor: {
                             select: {
-                                planTier: true
+                                userId: true
                             }
                         }
                     }
@@ -175,7 +175,7 @@ export const PUT = withAuth(async (request: any) => {
                         createdAt: true,
                         vendor: {
                             select: {
-                                planTier: true
+                                userId: true
                             }
                         }
                     }

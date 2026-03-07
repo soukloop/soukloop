@@ -23,7 +23,7 @@ const createAdminUserSchema = z.object({
     role: z.enum(['ADMIN'])
 })
 
-async function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
         const authCheck = await checkAdminPermission(request);
         if (!authCheck.success) {

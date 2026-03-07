@@ -32,7 +32,7 @@ export function useAuth(): AuthState & AuthActions {
   // Login function using NextAuth signIn
   const loginUser = async (data: LoginDto) => {
     const result = await signIn('credentials', {
-      email: data.email,
+      email: data.email.toLowerCase().trim(),
       password: data.password,
       redirect: false
     })
@@ -49,7 +49,7 @@ export function useAuth(): AuthState & AuthActions {
   // Register function - uses Server Action
   const registerUser = async (data: CreateUserDto) => {
     const result = await registerUserAction({
-      email: data.email,
+      email: data.email.toLowerCase().trim(),
       username: data.username,
       password: data.password
     });
@@ -66,7 +66,7 @@ export function useAuth(): AuthState & AuthActions {
 
     // After successful registration, automatically sign in
     await signIn('credentials', {
-      email: data.email,
+      email: data.email.toLowerCase().trim(),
       password: data.password,
       redirect: false
     })

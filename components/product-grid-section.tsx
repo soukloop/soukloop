@@ -30,6 +30,7 @@ interface APIProduct {
   vendorId?: string;
   hasPendingStyle?: boolean;
   slug?: string;
+  isFeatured?: boolean;
   vendor?: {
     userId: string;
   }
@@ -55,6 +56,7 @@ interface DisplayProduct {
   vendorId?: string;
   vendorUserId?: string;
   hasPendingStyle?: boolean;
+  isFeatured?: boolean;
 }
 
 function formatDaysAgo(dateString: string): string {
@@ -93,6 +95,7 @@ export default function ProductGridSection({ title = "Featured Products", catego
     vendorId: p.vendorId,
     vendorUserId: p.vendor?.userId,
     hasPendingStyle: p.hasPendingStyle,
+    isFeatured: p.isFeatured,
   })) : [];
 
   const [products, setProducts] = useState<DisplayProduct[]>(transformedInitialProducts);
@@ -162,6 +165,7 @@ export default function ProductGridSection({ title = "Featured Products", catego
             vendorId: p.vendorId,
             vendorUserId: p.vendor?.userId,
             hasPendingStyle: p.hasPendingStyle,
+            isFeatured: p.isFeatured,
           }));
           setProducts(formatted);
         }

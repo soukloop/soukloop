@@ -24,7 +24,7 @@ const updateSubAdminSchema = z.object({
     name: z.string().min(2).max(100).optional(),
     password: z.string().min(8).optional(),
     isActive: z.boolean().optional(),
-    role: z.enum(['ADMIN']).optional(),
+    role: z.enum(['ADMIN', 'SELLER', 'USER']).optional(),
     permissions: z.array(z.object({
         resource: z.string(),
         action: z.string()
@@ -144,18 +144,32 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
             updateData.password = await bcrypt.hash(password, 12);
         }
 
-        // Update the admin user
-        const updatedAdmin = await prisma.user.update({
-            where: { id },
-            data: updateData,
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                isActive: true
-            }
-        });
+        // Update the admin user profile if any fields changed
+        let updatedAdmin;
+        if (Object.keys(updateData).length > 0) {
+            updatedAdmin = await prisma.user.update({
+                where: { id },
+                data: updateData,
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    isActive: true
+                }
+            });
+        } else {
+            updatedAdmin = await prisma.user.findUnique({
+                where: { id },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    isActive: true
+                }
+            });
+        }
 
         // Update permissions if provided
         if (permissions) {

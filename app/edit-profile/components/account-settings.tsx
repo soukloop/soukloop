@@ -75,29 +75,24 @@ export default function AccountSettings() {
   // Actually, we should use the user object to check the tier.
   // Wait, I need to get the user from useProfile or useAuth.
   const { profile } = useProfile();
-  const planTier = useMemo(() => {
-    return (profile?.user as any)?.planTier || (profile?.user as any)?.vendor?.planTier || (typeof window !== 'undefined' ? (window as any).__USER_PLAN_TIER__ : 'BASIC');
-  }, [profile]);
 
   const filteredTabs = useMemo(() => {
-    const isPremium = planTier === 'STARTER' || planTier === 'PRO';
     return [
       { id: 'edit-profile', label: 'Edit Profile', icon: Edit },
       { id: 'my-orders', label: 'My Orders', icon: Package },
       { id: 'wishlist', label: 'Wishlist', icon: Heart },
       { id: 'address', label: 'Address Book', icon: MapPin },
       ...(isSeller ? [{ id: 'payment', label: 'Payments', icon: CreditCard }] : []),
-      ...(isSeller && isPremium ? [{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }] : []),
+      ...(isSeller ? [{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }] : []),
     ];
-  }, [isSeller, planTier]);
+  }, [isSeller]);
 
   // Mandatory Redirect for restricted sections
   useEffect(() => {
-    const isPremium = planTier === 'STARTER' || planTier === 'PRO';
-    if (activeSection === 'promo-codes' && (!isSeller || !isPremium)) {
+    if (activeSection === 'promo-codes' && !isSeller) {
       handleSectionChange('edit-profile');
     }
-  }, [activeSection, isSeller, planTier]);
+  }, [activeSection, isSeller]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,7 +193,7 @@ export default function AccountSettings() {
         {activeSection === 'wishlist' && <WishlistSection />}
 
         {/* Promo Codes */}
-        {activeSection === 'promo-codes' && isSeller && (planTier === 'STARTER' || planTier === 'PRO') && (
+        {activeSection === 'promo-codes' && isSeller && (
           <div className="flex justify-center px-4 sm:px-6">
             <div className="w-full max-w-6xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
               <div>

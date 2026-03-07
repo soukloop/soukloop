@@ -8,8 +8,12 @@ import Image from "next/image";
 import { useCart as useCartHook } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function CartWidget() {
-    const { cart, isLoading: isCartLoading, isSyncing, removeItem, getTotalItems, getCartSubtotal } = useCartHook();
+export default function CartWidget({
+    initialCartCount = 0
+}: {
+    initialCartCount?: number
+}) {
+    const { cart, isLoading: isCartLoading, isSyncing, removeItem, getCartSubtotal } = useCartHook();
     const [isCartOpen, setIsCartOpen] = useState(false);
     const cartRef = useRef<HTMLDivElement>(null);
     const { user } = useAuth();
@@ -38,7 +42,9 @@ export default function CartWidget() {
         };
     }, [isCartOpen]);
 
-    const cartCount = getTotalItems();
+    // When cart data loads from Context, it will override the initial lightweight count
+    const contextCartCount = cart?.items?.reduce((total: number, item: any) => total + (item.quantity || 1), 0) || 0;
+    const cartCount = contextCartCount > 0 ? contextCartCount : initialCartCount;
     const subtotal = getCartSubtotal() / 100;
 
     return (

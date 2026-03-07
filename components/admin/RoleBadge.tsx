@@ -10,7 +10,7 @@ export default function RoleBadge({ role, className = '' }: RoleBadgeProps) {
 
     let styles = 'bg-gray-100 text-gray-800 hover:bg-gray-200'; // Default
 
-    if (roleLower === 'admin' || roleLower === 'super_admin') {
+    if (roleLower === 'admin' || roleLower === 'super_admin' || roleLower === 'super admin') {
         styles = 'bg-black text-white hover:bg-gray-800 border-transparent';
     } else if (roleLower === 'seller') {
         styles = 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200';

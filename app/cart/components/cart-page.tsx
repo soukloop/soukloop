@@ -74,7 +74,7 @@ export default function CartPage({
     isAllSelected
   } = useCart();
 
-  const { profile } = useProfile();
+  const { profile } = useProfile({ skipAddresses: true });
   const userPoints = profile?.user?.rewardBalance?.currentBalance || 0;
   const pointValue = 0.01; // $0.01 per point
   const pointsDiscountDollars = isRedeemingPoints ? userPoints * pointValue : 0;

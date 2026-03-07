@@ -3,13 +3,13 @@ import { z } from 'zod';
 // --- Auth Schemas ---
 
 export const RegisterSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.string().email('Invalid email address').transform(v => v.toLowerCase().trim()),
     username: z.string().min(3, 'Username must be at least 3 characters'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export const LoginSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.string().email('Invalid email address').transform(v => v.toLowerCase().trim()),
     password: z.string().min(1, 'Password is required'),
 });
 
@@ -17,7 +17,7 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const ForgotPasswordSchema = z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.string().email('Invalid email address').transform(v => v.toLowerCase().trim()),
 });
 
 export const ResetPasswordSchema = z.object({

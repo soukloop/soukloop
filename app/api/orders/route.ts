@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
         vendorId: true,
         name: true,
         status: true,
-        vendor: { select: { planTier: true } }
+        vendor: { select: { userId: true } }
       }
     })
 
@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const vendorGroups: Record<string, { items: typeof items, planTier: string }> = {}
+    const vendorGroups: Record<string, { items: typeof items }> = {}
 
     for (const item of items) {
       const product = productMap.get(item.productId) as any
@@ -307,7 +307,7 @@ export async function POST(request: NextRequest) {
 
       const vendorId = product.vendorId
       if (!vendorGroups[vendorId]) {
-        vendorGroups[vendorId] = { items: [], planTier: product.vendor.planTier }
+        vendorGroups[vendorId] = { items: [] }
       }
       vendorGroups[vendorId].items.push({ ...item, actualPrice: product.price })
     }
@@ -402,7 +402,6 @@ export async function POST(request: NextRequest) {
 
       await Promise.all(vendorEntries.map(async ([vendorId, groupData], i) => {
         const vendorItems = groupData.items
-        const vendorPlanTier = groupData.planTier
 
         const subtotal = vendorItems.reduce((sum: number, item: any) =>
           sum + (Number(item.actualPrice) * item.quantity), 0
@@ -414,10 +413,8 @@ export async function POST(request: NextRequest) {
 
         const total = subtotal + shipping + tax
 
-        // Calculate dynamic commission based on vendor's plan tier
-        const planKey = (vendorPlanTier as any) || 'BASIC';
-        const planConfig = (SUBSCRIPTION_PLANS as any)[planKey] || SUBSCRIPTION_PLANS.BASIC;
-        const commissionBps = planConfig.commissionBps ?? 1200;
+        // Fixed 12% commission for all vendors
+        const commissionBps = 1200;
         const COMMISSION_RATE = commissionBps / 10000; // e.g. 1200 -> 0.12
         const platformFee = subtotal * COMMISSION_RATE
 

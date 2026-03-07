@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import DataTable, { Column, FilterOption } from '@/components/admin/DataTable';
 import { Button } from '@/components/ui/button';
 import { Plus, Shield, ShieldOff, Trash2, Edit, User, Key, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/admin/StatusBadge';
+import RoleBadge from '@/components/admin/RoleBadge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useRouter } from 'next/navigation';
 import PromoteUserModal from '@/components/admin/PromoteUserModal';
 import EditPermissionsModal from '@/components/admin/EditPermissionsModal';
+import Image from 'next/image';
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
@@ -19,13 +21,18 @@ interface SubAdmin {
     id: string;
     email: string;
     name: string | null;
-    role: string;
+    image?: string | null;
+    role: 'ADMIN' | 'SUPER_ADMIN' | 'SELLER' | 'USER';
     isActive: boolean;
     isDeletable: boolean;
     createdAt: string;
+    updatedAt: string;
     createdByName: string | null;
-    permissionCount: number;
     permissions: Record<string, string[]>;
+}
+
+interface EnrichedSubAdmin extends SubAdmin {
+    displayRole: string;
 }
 
 export default function SubAdminManagementPage() {
@@ -42,6 +49,24 @@ export default function SubAdminManagementPage() {
     const [selectedAdmin, setSelectedAdmin] = useState<SubAdmin | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Enrich data for table display and filtering
+    const enrichedAdmins = useMemo<EnrichedSubAdmin[]>(() => {
+        const safeData = Array.isArray(subAdmins) ? subAdmins : [];
+        return safeData.map(admin => {
+            let displayRole = 'Custom Admin';
+            if (admin.role === 'SUPER_ADMIN') {
+                displayRole = 'Super Admin';
+            } else {
+                const assignedRolePerm = admin.permissions?.['SYSTEM_ROLE']?.[0];
+                if (assignedRolePerm) displayRole = assignedRolePerm;
+            }
+            return {
+                ...admin,
+                displayRole
+            };
+        });
+    }, [subAdmins]);
+
     // Redirect if not SuperAdmin
     useEffect(() => {
         if (!isAuthChecking && isAuthenticated && !isSuperAdmin) {
@@ -57,12 +82,14 @@ export default function SubAdminManagementPage() {
             header: 'Admin',
             render: (admin) => (
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center border-2 border-orange-300">
-                        {admin.role === 'SUPER_ADMIN' ? (
-                            <Shield className="h-5 w-5 text-orange-600" />
-                        ) : (
-                            <User className="h-5 w-5 text-orange-500" />
-                        )}
+                    <div className="h-10 w-10 relative overflow-hidden rounded-full border-2 border-orange-200">
+                        <Image
+                            src={admin.image || "/admin-avatar.png"}
+                            alt={admin.name || 'Admin'}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                        />
                     </div>
                     <div>
                         <p className="font-medium text-gray-900">{admin.name || 'Unnamed'}</p>
@@ -72,27 +99,10 @@ export default function SubAdminManagementPage() {
             )
         },
         {
-            key: 'role',
-            header: 'Role',
+            key: 'displayRole',
+            header: 'Admin Role',
             render: (admin) => (
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${admin.role === 'SUPER_ADMIN'
-                    ? 'bg-purple-100 text-purple-800 ring-1 ring-purple-200'
-                    : 'bg-blue-100 text-blue-800 ring-1 ring-blue-200'
-                    }`}>
-                    {admin.role === 'SUPER_ADMIN' ? '👑 Super Admin' : admin.role}
-                </span>
-            )
-        },
-        {
-            key: 'permissionCount',
-            header: 'Permissions',
-            render: (admin) => (
-                <div className="flex items-center gap-2">
-                    <Key className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-600">
-                        {admin.role === 'SUPER_ADMIN' ? 'All Access' : `${admin.permissionCount} actions`}
-                    </span>
-                </div>
+                <RoleBadge role={admin.displayRole} />
             )
         },
         {
@@ -106,27 +116,29 @@ export default function SubAdminManagementPage() {
             )
         },
         {
-            key: 'createdAt',
-            header: 'Created',
+            key: 'updatedAt',
+            header: 'Last Updated',
             render: (admin) => (
                 <div>
-                    <p className="text-gray-600">{new Date(admin.createdAt).toLocaleDateString()}</p>
-                    {admin.createdByName && (
-                        <p className="text-xs text-gray-400">by {admin.createdByName}</p>
-                    )}
+                    <p className="text-gray-600">
+                        {admin.updatedAt ? new Date(admin.updatedAt).toLocaleDateString() : new Date(admin.createdAt).toLocaleDateString()}
+                    </p>
                 </div>
             )
         }
     ];
 
     // Filter options
-    const filterOptions: FilterOption<SubAdmin>[] = [
+    const filterOptions: FilterOption<EnrichedSubAdmin>[] = [
         {
-            key: 'role',
+            key: 'displayRole',
             label: 'Role',
             options: [
-                { label: 'Super Admin', value: 'SUPER_ADMIN' },
-                { label: 'Admin', value: 'ADMIN' }
+                { label: 'Super Admin', value: 'Super Admin' },
+                { label: 'Manager', value: 'Manager' },
+                { label: 'Content Moderator', value: 'Content Moderator' },
+                { label: 'Customer Support', value: 'Customer Support' },
+                { label: 'Finance Manager', value: 'Finance Manager' }
             ]
         },
         {
@@ -272,15 +284,15 @@ export default function SubAdminManagementPage() {
 
             {/* Data Table */}
             <DataTable
-                data={safeSubAdmins}
-                columns={columns}
+                data={enrichedAdmins}
+                columns={columns as any}
                 pageSize={10}
                 isLoading={isLoading}
                 searchable
                 searchPlaceholder="Search admins..."
-                searchKeys={['name', 'email'] as (keyof SubAdmin)[]}
-                filterOptions={filterOptions}
-                actions={getActions}
+                searchKeys={['name', 'email', 'displayRole'] as (keyof EnrichedSubAdmin)[]}
+                filterOptions={filterOptions as any}
+                actions={getActions as any}
             />
 
             {/* Promote Modal */}

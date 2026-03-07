@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
             select: { reviews: true }
           }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        take: 100 // Prevent OOM by capping payload
       })
 
       return NextResponse.json(products)
@@ -72,7 +73,8 @@ export async function GET(request: NextRequest) {
         include: {
           profile: true
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        take: 100 // Prevent OOM by capping payload
       });
 
       // Map to frontend User type
@@ -96,6 +98,15 @@ export async function GET(request: NextRequest) {
       const id = searchParams.get('id')
       const userIdParam = searchParams.get('userId')
 
+      if (!id && !userIdParam) {
+        // PREVENT UNPAGINATED BULK FETCH (OOM Risk)
+        // The admin sellers page uses getPaginatedSellers() server action.
+        return NextResponse.json(
+          { error: "Bulk fetching vendors via this route is deprecated to prevent memory leaks. Use getPaginatedSellers Server Action instead." },
+          { status: 400 }
+        );
+      }
+
       let vendors: any[] = []; // Explicitly allow mixed types
 
       if (id || userIdParam) {
@@ -109,10 +120,12 @@ export async function GET(request: NextRequest) {
           where,
           include: {
             products: {
-              orderBy: { createdAt: 'desc' }
+              orderBy: { createdAt: 'desc' },
+              take: 50 // Cap relation load
             },
             orders: {
               orderBy: { createdAt: 'desc' },
+              take: 50, // Cap relation load
               include: {
                 items: true,
                 user: { select: { name: true, email: true } }
@@ -129,11 +142,13 @@ export async function GET(request: NextRequest) {
                 profile: true,
                 userVerifications: {
                   orderBy: { createdAt: 'desc' },
+                  take: 5,
                   include: { sellerAddress: true }
                 },
                 addresses: true,
                 customerOrders: {
                   orderBy: { createdAt: 'desc' },
+                  take: 50,
                   include: {
                     vendorOrders: {
                       include: {
@@ -161,10 +176,12 @@ export async function GET(request: NextRequest) {
                   addresses: true,
                   userVerifications: {
                     orderBy: { createdAt: 'desc' },
+                    take: 5,
                     include: { sellerAddress: true }
                   },
                   customerOrders: {
                     orderBy: { createdAt: 'desc' },
+                    take: 50,
                     include: {
                       vendorOrders: {
                         include: {
@@ -195,76 +212,13 @@ export async function GET(request: NextRequest) {
             }];
           }
         }
-      } else {
-        // Fetch list for table
-        vendors = await prisma.vendor.findMany({
-          where: kycStatus ? { kycStatus: kycStatus as KycStatus } : {},
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-                role: true,
-                createdAt: true,
-                profile: true,
-                userVerifications: {
-                  orderBy: { createdAt: 'desc' },
-                  include: { sellerAddress: true }
-                }
-              }
-            },
-            _count: {
-              select: { products: true }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        })
       }
-
-      // 2. Fetch pending verifications who don't have a vendor record yet
-      // This catches new applicants who haven't been "enabled" as vendors yet
-      const pendingVerifications = await prisma.userVerification.findMany({
-        where: {
-          status: 'submitted',
-          user: {
-            vendor: null // Only those who don't have a vendor profile yet
-          }
-        },
-        include: {
-          user: {
-            include: {
-              profile: true,
-              addresses: true
-            }
-          }
-        },
-        orderBy: { submittedAt: 'desc' }
-      })
-
-      // 3. Map verifications to a vendor-like structure for the frontend
-      const applicantVendors = pendingVerifications.map(v => ({
-        id: `temp-${v.id}`, // Mark as temp/applicant
-        userId: v.userId,
-        kycStatus: 'PENDING' as KycStatus,
-        isActive: false,
-        createdAt: v.submittedAt || v.createdAt,
-        user: {
-          ...v.user,
-          userVerifications: [v] // Attach the verification to the user object so it matches Vendor structure
-        },
-        isApplicant: true, // Helper flag for frontend
-        _count: { products: 0 }
-      }))
-
-      const allVendors = [...vendors, ...applicantVendors];
 
       // DECRYPTION LOGIC - OPTIMIZED
       // Only decrypt the latest verification to avoid massive performance penalty
       const { decryptAsync } = await import('@/lib/encryption');
 
-      const decryptedVendors = await Promise.all(allVendors.map(async (v) => {
+      const decryptedVendors = await Promise.all(vendors.map(async (v) => {
         const verifications = v.user?.userVerifications || [];
 
         // Clone the user/verifications structure to avoid mutation

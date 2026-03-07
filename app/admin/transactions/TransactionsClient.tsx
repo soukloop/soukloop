@@ -26,7 +26,7 @@ interface TransactionsClientProps {
     totalCount: number;
     page: number;
     limit: number;
-    activeTab: 'transactions' | 'payouts' | 'subscriptions';
+    activeTab: 'transactions' | 'payouts';
 }
 
 export default function TransactionsClient({
@@ -41,7 +41,7 @@ export default function TransactionsClient({
     const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
 
-    const handleTabChange = (tab: 'transactions' | 'payouts' | 'subscriptions') => {
+    const handleTabChange = (tab: 'transactions' | 'payouts') => {
         if (tab === activeTab) return;
 
         startTransition(() => {
@@ -245,16 +245,6 @@ export default function TransactionsClient({
                     >
                         Seller Payouts
                     </button>
-                    <button
-                        onClick={() => handleTabChange('subscriptions')}
-                        disabled={isPending}
-                        className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${activeTab === 'subscriptions'
-                            ? 'border-orange-500 text-orange-600'
-                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                            } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        Subscriptions
-                    </button>
                 </nav>
             </div>
 
@@ -279,7 +269,7 @@ export default function TransactionsClient({
                             <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
                         </div>
                     </>
-                ) : activeTab === 'payouts' ? (
+                ) : (
                     <>
                         <div className="rounded-xl border bg-white p-4 shadow-sm">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Payouts</p>
@@ -298,28 +288,13 @@ export default function TransactionsClient({
                             <p className="text-2xl font-bold text-blue-600">{stats.processing}</p>
                         </div>
                     </>
-                ) : (
-                    <>
-                        <div className="rounded-xl border bg-white p-4 shadow-sm">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Renewals</p>
-                            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                        </div>
-                        <div className="rounded-xl border bg-white p-4 shadow-sm">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Recurring</p>
-                            <p className="text-2xl font-bold text-green-600">${stats.completed?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</p>
-                        </div>
-                        <div className="rounded-xl border bg-white p-4 shadow-sm">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Failed Renewals</p>
-                            <p className="text-2xl font-bold text-red-600">{stats.failed}</p>
-                        </div>
-                    </>
                 )}
             </div>
 
             {/* Data Table */}
             <DataTable
                 data={data}
-                columns={activeTab === 'transactions' ? transactionColumns : activeTab === 'payouts' ? payoutColumns : subscriptionColumns}
+                columns={activeTab === 'transactions' ? transactionColumns : payoutColumns}
                 actions={activeTab === 'payouts' ? getPayoutActions : undefined}
                 pageSize={limit}
                 rowCount={totalCount}
@@ -327,15 +302,13 @@ export default function TransactionsClient({
                 manualPagination={true}
                 isLoading={isPending}
                 searchable
-                searchPlaceholder={activeTab === 'transactions' ? "Search transactions..." : activeTab === 'payouts' ? "Search payouts..." : "Search subscriptions..."}
+                searchPlaceholder={activeTab === 'transactions' ? "Search transactions..." : "Search payouts..."}
                 filterOptions={activeTab === 'transactions' ? [
                     { key: 'status', label: 'Status', options: [{ label: 'Completed', value: 'completed' }, { label: 'Pending', value: 'pending' }, { label: 'Failed', value: 'failed' }, { label: 'Refunded', value: 'refunded' }] },
                     { key: 'method', label: 'Payment Method', options: [{ label: 'Stripe', value: 'stripe' }, { label: 'Wallet', value: 'wallet' }, { label: 'Refund', value: 'refund' }] }
-                ] : activeTab === 'payouts' ? [
+                ] : [
                     { key: 'status', label: 'Status', options: [{ label: 'Completed', value: 'completed' }, { label: 'Pending', value: 'pending' }, { label: 'Processing', value: 'processing' }] },
                     { key: 'method', label: 'Payout Method', options: [{ label: 'Stripe Connect', value: 'stripe_connect' }, { label: 'Bank Transfer', value: 'BANK_TRANSFER' }] }
-                ] : [
-                    { key: 'status', label: 'Status', options: [{ label: 'Paid', value: 'succeeded' }, { label: 'Failed', value: 'failed' }] }
                 ]}
             />
 

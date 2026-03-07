@@ -22,7 +22,6 @@ const PUBLIC_PAGES = [
   '/about-us',
   '/contact-us',
   '/how-to-use-points',
-  '/pricing',
   '/privacy-policy',
   '/terms-and-conditions',
   '/refunds-and-returns',
@@ -118,14 +117,6 @@ export default auth(async (req) => {
 
       if (!hasRequiredRole) {
         return NextResponse.redirect(new URL("/", nextUrl));
-      }
-
-      // Check tier for seller routes
-      if (pathname.startsWith('/seller')) {
-        const planTier = req.auth?.user?.planTier;
-        if (planTier === 'BASIC') {
-          return NextResponse.redirect(new URL("/pricing", nextUrl));
-        }
       }
       break;
     }

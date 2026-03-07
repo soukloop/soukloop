@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteProductAction, updateProductStatusAction } from "@/src/features/seller/actions";
+import PublishBoostModal from "../components/PublishBoostModal";
 
 interface Product {
     id: string;
@@ -22,6 +23,11 @@ interface Product {
     createdAt: string;
     hasPendingStyle?: boolean;
     vendorId: string;
+    boosts?: {
+        packageType: string;
+        startDate: string | null;
+        endDate: string | null;
+    }[];
 }
 
 interface ListingListProps {
@@ -44,6 +50,9 @@ export default function ListingList({ products, totalPages, currentPage, userId 
     const [productToDelete, setProductToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Boost Modal State
+    const [boostModalData, setBoostModalData] = useState<{ productId: string, name: string } | null>(null);
+
     const [optimisticProducts, setOptimisticProducts] = useOptimistic(
         products,
         (state, action: OptimisticAction) => {
@@ -59,6 +68,10 @@ export default function ListingList({ products, totalPages, currentPage, userId 
 
     const handleEdit = (product: any) => {
         router.push(`/seller/post-new-product?edit=${product.id}`);
+    };
+
+    const handleBoost = (product: any) => {
+        setBoostModalData({ productId: product.id, name: product.name });
     };
 
     const handleDeleteClick = (productId: string) => {
@@ -137,7 +150,7 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                             price: `$${item.price}`,
                             originalPrice: item.comparePrice ? `$${item.comparePrice}` : undefined,
                             image: item.images?.[0]?.url || "/placeholder.svg",
-                            daysAgo: undefined, // Handled inside card usually or skip for now
+                            daysAgo: undefined,
                             description: item.description || "",
                             isWishlist: false,
                             vendorId: item.vendorId,
@@ -145,12 +158,15 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                             hasPendingStyle: item.hasPendingStyle,
                             status: item.status,
                             isActive: item.status !== 'INACTIVE' && item.status !== 'BLOCKED',
+                            activeBoost: item.boosts?.[0] || null,
                             images: item.images,
-                            createdAt: item.createdAt
+                            createdAt: item.createdAt,
+                            isFeatured: (item.boosts?.length ?? 0) > 0
                         } as any}
                         handleAddToCart={() => { }}
                         toggleWishlist={() => { }}
                         onEdit={() => handleEdit(item)}
+                        onBoost={() => handleBoost(item)}
                         onDelete={() => handleDeleteClick(item.id)}
                         onDeactivate={() => {
                             // Toggle: If currently inactive, activate; otherwise deactivate
@@ -164,6 +180,16 @@ export default function ListingList({ products, totalPages, currentPage, userId 
                     />
                 ))}
             </div>
+
+            {boostModalData && (
+                <PublishBoostModal
+                    isOpen={true}
+                    onClose={() => setBoostModalData(null)}
+                    clearPersistence={() => { }}
+                    saveActionOnly={true} // Add a prop to skip the saving part
+                    productId={boostModalData.productId}
+                />
+            )}
 
             {totalPages > 1 && (
                 <div className="mt-8 flex justify-center border-t border-gray-200 pt-6">

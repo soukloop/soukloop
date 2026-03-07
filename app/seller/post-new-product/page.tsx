@@ -10,6 +10,7 @@ import UploadPhotosStep from "../components/upload-photos-step";
 import AboutProductStep from "../components/about-product-step";
 import ProductDetailsStep from "../components/product-details-step";
 import UploadVideoStep from "../components/upload-video-step";
+import PublishBoostModal from "../components/PublishBoostModal";
 import { Button } from "@/components/ui/button";
 import { StatefulButton } from "@/components/ui/StatefulButton";
 import { ProductData, initialProductData, PhotoSlot } from "../components/types";
@@ -32,12 +33,14 @@ export default function PostNewProductPage() {
     const [productData, setProductData] = useState<ProductData>(initialProductData);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingProduct, setIsLoadingProduct] = useState(false);
+    const [boostModalData, setBoostModalData] = useState<{
+        payload: any;
+        isEditMode: boolean;
+        editProductId: string | null;
+    } | null>(null);
 
     const isSubmittingRef = useRef(false);
     const { isSeller, isLoading: isAuthLoading, session } = useSellerAuth();
-
-    const vendorPlanTier = (session?.user as any)?.planTier;
-    const isBasicSeller = !vendorPlanTier || vendorPlanTier === 'BASIC';
 
     useEffect(() => {
         async function fetchProduct() {
@@ -96,6 +99,12 @@ export default function PostNewProductPage() {
                         videoUploadUrl: null,
                         videoUploadError: null,
                         videoUploadProgress: 0,
+                        isFeatured: !!product.boosts?.[0], // If it has an active boost
+                        activeBoost: product.boosts?.[0] ? {
+                            packageType: product.boosts[0].packageType,
+                            startDate: product.boosts[0].startDate,
+                            endDate: product.boosts[0].endDate,
+                        } : null,
                     });
                 } else {
                     toast.error("Failed to load product");
@@ -305,34 +314,18 @@ export default function PostNewProductPage() {
                     dressStyleId: cleanProductData.dressStyleId || undefined,
                 };
 
-                const res = await fetch(isEditMode ? `/api/products/${editProductId}` : "/api/products", {
-                    method: isEditMode ? "PATCH" : "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => null);
-                    throw new Error(errorData?.details || errorData?.error || "Submission failed");
-                }
-                toast.success("Product saved!");
-                clearPersistence();
-                router.push("/seller/manage-listings");
+                // Instant Modal: Show the modal immediately
+                // We pass the payload and the current edit state to the modal
+                // The modal will then handle the "Proceed" which triggers the actual DB save
+                setBoostModalData({ payload, isEditMode, editProductId: editProductId || null });
             } catch (error: any) {
                 toast.error(error.message);
-            } finally {
-                isSubmittingRef.current = false;
                 setIsSubmitting(false);
             }
         }
     };
 
     const handleSaveDraft = async () => {
-        if (isBasicSeller) {
-            router.push("/pricing");
-            return;
-        }
-
         if (isSubmittingRef.current) return;
 
         // We still need at least a name
@@ -421,8 +414,8 @@ export default function PostNewProductPage() {
                     </div>
                     <div className="min-h-[350px] sm:min-h-[400px]">
                         {addProductStep === 1 && <UploadPhotosStep photos={productData.photos} onPhotosChange={handlePhotosChange} />}
-                        {addProductStep === 2 && <AboutProductStep data={productData} onUpdate={updateProductData} isBasicSeller={isBasicSeller} />}
-                        {addProductStep === 3 && <ProductDetailsStep data={productData} onUpdate={updateProductData} isBasicSeller={isBasicSeller} />}
+                        {addProductStep === 2 && <AboutProductStep data={productData} onUpdate={updateProductData} />}
+                        {addProductStep === 3 && <ProductDetailsStep data={productData} onUpdate={updateProductData} />}
                         {addProductStep === 4 && (
                             <UploadVideoStep
                                 video={productData.video}
@@ -449,11 +442,6 @@ export default function PostNewProductPage() {
                             className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold flex items-center justify-center gap-2"
                         >
                             Save as Draft
-                            {isBasicSeller && (
-                                <span className="bg-[#E87A3F] text-white text-[10px] leading-tight font-bold px-1.5 py-0.5 rounded shadow-sm">
-                                    UPGRADE
-                                </span>
-                            )}
                         </Button>
                         <StatefulButton
                             onClick={handleNext}
@@ -465,12 +453,23 @@ export default function PostNewProductPage() {
                             loadingText={isEditMode ? "Saving..." : "Creating..."}
                             className="h-[48px] sm:h-[52px] w-full sm:min-w-[140px] sm:w-auto rounded-[50px] text-sm sm:text-base font-semibold text-white bg-[#E87A3F] hover:bg-[#d96d34] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {addProductStep === 4 ? (isEditMode ? "Save Changes" : "Publish Product") : "Next"}
+                            {addProductStep === 4 ? (isEditMode ? "Publish" : "Publish Product") : "Next"}
                         </StatefulButton>
                     </div>
                 </div>
             </main>
             <FooterSection />
+
+            {/* Boost Modal — shown instantly upon Publish click */}
+            {boostModalData && (
+                <PublishBoostModal
+                    isOpen={true}
+                    saveData={boostModalData}
+                    initialPackage={productData.boostPackage as any}
+                    clearPersistence={clearPersistence}
+                    onClose={() => setBoostModalData(null)}
+                />
+            )}
         </div>
     );
 }

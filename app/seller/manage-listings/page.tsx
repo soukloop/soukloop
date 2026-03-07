@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import ListingList from "./listing-list";
+import { stripe } from "@/lib/stripe";
 
 interface ManageListingsPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -34,6 +35,85 @@ export default async function ManageListingsPage({ searchParams }: ManageListing
     }
 
     const params = await searchParams;
+
+    // --- STRIPE SESSION VERIFICATION (Synchronous Fallback for Boosts) ---
+    const sessionId = params.session_id as string;
+    if (sessionId) {
+        try {
+            const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+            if (stripeSession.payment_status === 'paid' && stripeSession.metadata?.boostId) {
+                const boostId = stripeSession.metadata.boostId;
+                const vendorId = stripeSession.metadata.vendorId;
+
+                const pendingBoost = await prisma.productBoost.findUnique({
+                    where: { id: boostId },
+                    include: {
+                        product: {
+                            select: {
+                                isActive: true,
+                                status: true,
+                                dressStyle: { select: { status: true } }
+                            }
+                        }
+                    }
+                });
+
+                if (pendingBoost && (pendingBoost.status === 'pending_payment' || pendingBoost.status === 'pending')) {
+                    // Start atomic sync transaction
+                    await prisma.$transaction(async (tx) => {
+                        // Idempotency check via transaction table
+                        const existingTransaction = await tx.boostTransaction.findUnique({
+                            where: { stripePaymentId: stripeSession.payment_intent as string }
+                        });
+
+                        if (!existingTransaction) {
+                            await tx.boostTransaction.create({
+                                data: {
+                                    boostId,
+                                    vendorId: vendorId as string,
+                                    stripePaymentId: stripeSession.payment_intent as string,
+                                    amount: stripeSession.amount_total ? stripeSession.amount_total / 100 : 0,
+                                    status: 'succeeded'
+                                }
+                            });
+
+                            const dressStyleApproved = !pendingBoost.product.dressStyle || pendingBoost.product.dressStyle.status === 'approved';
+                            const productIsLive = pendingBoost.product.isActive && pendingBoost.product.status !== 'DRAFT' && pendingBoost.product.status !== 'BLOCKED' && dressStyleApproved;
+
+                            if (productIsLive) {
+                                const startDate = new Date();
+                                let durationMs = 3 * 24 * 60 * 60 * 1000;
+                                if (pendingBoost.packageType === '7_DAYS') durationMs = 7 * 24 * 60 * 60 * 1000;
+                                else if (pendingBoost.packageType === '15_DAYS') durationMs = 15 * 24 * 60 * 60 * 1000;
+
+                                await tx.productBoost.update({
+                                    where: { id: boostId },
+                                    data: {
+                                        status: 'active',
+                                        stripeSessionId: stripeSession.id,
+                                        startDate,
+                                        endDate: new Date(startDate.getTime() + durationMs)
+                                    }
+                                });
+                            } else {
+                                await tx.productBoost.update({
+                                    where: { id: boostId },
+                                    data: {
+                                        status: 'paid',
+                                        stripeSessionId: stripeSession.id
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Stripe Sync Error for Boosts:', error);
+        }
+    }
+    // ---------------------------------------------------------------------
+
     const currentPage = parseInt((params.page as string) || "1");
     const limit = 6;
     const skip = (currentPage - 1) * limit;
@@ -47,6 +127,11 @@ export default async function ManageListingsPage({ searchParams }: ManageListing
                     select: {
                         userId: true
                     }
+                },
+                boosts: {
+                    where: { status: 'active' },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
                 }
             },
             orderBy: { createdAt: 'desc' },

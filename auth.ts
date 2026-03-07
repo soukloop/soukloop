@@ -54,10 +54,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 }
 
                 const { email, password } = parsedCredentials.data;
+                const normalizedEmail = email.toLowerCase().trim();
 
                 try {
                     const user = await prisma.user.findUnique({
-                        where: { email },
+                        where: { email: normalizedEmail },
                         include: { profile: true }
                     });
 
@@ -118,13 +119,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 token.picture = user.image;
                 token.tokenVersion = user.tokenVersion ?? 0;
                 token.isActive = user.isActive;
-
-                // ✅ FETCH PLAN TIER FOR SESSION
-                const vendor = await prisma.vendor.findUnique({
-                    where: { userId: user.id },
-                    select: { planTier: true }
-                });
-                token.planTier = vendor?.planTier || 'BASIC';
             }
 
             return token;
@@ -136,7 +130,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 session.user.image = token.picture;
                 session.user.tokenVersion = token.tokenVersion as number;
                 session.user.isActive = token.isActive as boolean;
-                session.user.planTier = token.planTier as string | undefined;
             }
             return session;
         },
@@ -146,7 +139,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (account?.provider === 'google' || account?.provider === 'apple') {
                 try {
                     const existingUser = await prisma.user.findUnique({
-                        where: { email: user.email! },
+                        where: { email: user.email!.toLowerCase().trim() },
                         include: { profile: true }
                     });
 

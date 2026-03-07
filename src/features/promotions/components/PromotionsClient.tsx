@@ -137,7 +137,7 @@ export function PromotionsClient({ initialBanners }: PromotionsClientProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold text-gray-900">
-                    Promotions <span className="text-gray-500 font-normal">[{banners.length}]</span>
+                    Banners <span className="text-gray-500 font-normal">[{banners.length}]</span>
                 </h1>
             </div>
 
@@ -181,8 +181,8 @@ export function PromotionsClient({ initialBanners }: PromotionsClientProps) {
                     setSelectedBanner(null);
                 }}
                 onConfirm={handleDelete}
-                title="Delete Promotion"
-                message="Are you sure you want to delete this promotion?"
+                title="Delete Banner"
+                message="Are you sure you want to delete this banner?"
                 confirmText="Remove Now"
                 type="danger"
                 isLoading={isDeleting}

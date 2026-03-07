@@ -24,25 +24,28 @@ export const PERMISSION_DEFINITIONS: Record<string, string[]> = {
     chats: ['view', 'delete'],
 
     // Seller Management & KYC
-    sellers: ['view', 'view_sensitive', 'view_documents', 'edit_profile', 'edit_address', 'kyc_approve', 'kyc_reject', 'suspend'],
+    sellers: ['view', 'view_sensitive', 'view_documents', 'edit_profile', 'edit_address', 'kyc_approve', 'kyc_reject', 'suspend', 'edit_commission'],
 
     // Orders Management
-    orders: ['view', 'manage'],
+    orders: ['view', 'manage', 'edit_status', 'edit_address', 'cancel'],
 
     // Returns & Refunds
-    refunds: ['view', 'edit'],
+    refunds: ['view', 'edit', 'process_refund', 'reject_refund'],
 
     // Analytics & Dashboard
     analytics: ['view'],
 
     // Product Management
-    products: ['view', 'edit', 'block', 'delete'],
+    products: ['view', 'edit', 'block', 'delete', 'approve', 'reject'],
+
+    // Attributes Management (New)
+    attributes: ['view', 'add', 'edit', 'delete'],
 
     // Reports
     reports: ['view', 'take_action', 'dismiss'],
 
     // Categories
-    categories: ['view', 'edit'],
+    categories: ['view', 'edit', 'add', 'delete', 'reorder'],
 
     // Dress Styles
     dress_styles: ['view', 'add', 'approve', 'reject', 'suspend'],
@@ -50,20 +53,134 @@ export const PERMISSION_DEFINITIONS: Record<string, string[]> = {
     // Promotions & Banners
     promotions: ['view', 'create', 'edit', 'delete'],
 
-    // Transactions
-    transactions: ['view', 'process_payout'],
+    // Testimonials
+    testimonials: ['view', 'add', 'edit', 'delete', 'approve'],
+
+    // Transactions / Payouts
+    transactions: ['view', 'process_payout', 'hold', 'reject_payout'],
 
     // System Settings
     settings: ['view', 'edit'],
 
     // Support Tickets
-    support: ['view', 'assign', 'respond'],
+    support: ['view', 'assign', 'respond', 'close_ticket'],
 
     // Help / FAQ
     help: ['view', 'edit'],
 
     // Sub-Admin Management (SuperAdmin only)
     subadmins: ['view', 'create', 'edit', 'delete'],
+
+    // Virtual role assignment resource
+    SYSTEM_ROLE: ['Manager', 'Content Moderator', 'Customer Support', 'Finance Manager', 'Custom']
+};
+
+// ==================== ROLE DEFINITIONS ====================
+
+export const ADMIN_ROLES = {
+    MANAGER: "Manager",
+    MODERATOR: "Content Moderator",
+    SUPPORT: "Customer Support",
+    FINANCE: "Finance Manager",
+    CUSTOM: "Custom" // Fallback if they have a weird legacy mix of permissions
+};
+
+export const ROLE_PERMISSIONS: Record<string, { resource: string, action: string }[]> = {
+    [ADMIN_ROLES.MANAGER]: [
+        { resource: 'SYSTEM_ROLE', action: ADMIN_ROLES.MANAGER },
+        { resource: 'dashboard', action: 'view' },
+        { resource: 'users', action: 'view' },
+        { resource: 'products', action: 'view' },
+        { resource: 'products', action: 'edit' },
+        { resource: 'products', action: 'block' },
+        { resource: 'products', action: 'delete' },
+        { resource: 'products', action: 'approve' },
+        { resource: 'products', action: 'reject' },
+        { resource: 'attributes', action: 'view' },
+        { resource: 'attributes', action: 'add' },
+        { resource: 'attributes', action: 'edit' },
+        { resource: 'attributes', action: 'delete' },
+        { resource: 'categories', action: 'view' },
+        { resource: 'categories', action: 'edit' },
+        { resource: 'categories', action: 'add' },
+        { resource: 'categories', action: 'delete' },
+        { resource: 'categories', action: 'reorder' },
+        { resource: 'dress_styles', action: 'view' },
+        { resource: 'dress_styles', action: 'add' },
+        { resource: 'dress_styles', action: 'approve' },
+        { resource: 'dress_styles', action: 'reject' },
+        { resource: 'dress_styles', action: 'suspend' },
+        { resource: 'promotions', action: 'view' },
+        { resource: 'promotions', action: 'create' },
+        { resource: 'promotions', action: 'edit' },
+        { resource: 'promotions', action: 'delete' },
+        { resource: 'testimonials', action: 'view' },
+        { resource: 'testimonials', action: 'add' },
+        { resource: 'testimonials', action: 'edit' },
+        { resource: 'testimonials', action: 'delete' },
+        { resource: 'testimonials', action: 'approve' },
+        { resource: 'reports', action: 'view' },
+        { resource: 'reports', action: 'take_action' },
+        { resource: 'reports', action: 'dismiss' },
+    ],
+    [ADMIN_ROLES.MODERATOR]: [
+        { resource: 'SYSTEM_ROLE', action: ADMIN_ROLES.MODERATOR },
+        { resource: 'dashboard', action: 'view' },
+        { resource: 'users', action: 'view' },
+        { resource: 'users', action: 'suspend' },
+        { resource: 'sellers', action: 'view' },
+        { resource: 'sellers', action: 'view_documents' },
+        { resource: 'sellers', action: 'kyc_approve' },
+        { resource: 'sellers', action: 'kyc_reject' },
+        { resource: 'sellers', action: 'suspend' },
+        { resource: 'products', action: 'view' },
+        { resource: 'products', action: 'approve' },
+        { resource: 'products', action: 'reject' },
+        { resource: 'products', action: 'block' },
+        { resource: 'dress_styles', action: 'view' },
+        { resource: 'dress_styles', action: 'approve' },
+        { resource: 'dress_styles', action: 'reject' },
+        { resource: 'reports', action: 'view' },
+        { resource: 'reports', action: 'take_action' },
+        { resource: 'reports', action: 'dismiss' },
+        { resource: 'testimonials', action: 'view' },
+        { resource: 'testimonials', action: 'approve' },
+    ],
+    [ADMIN_ROLES.SUPPORT]: [
+        { resource: 'SYSTEM_ROLE', action: ADMIN_ROLES.SUPPORT },
+        { resource: 'dashboard', action: 'view' },
+        { resource: 'users', action: 'view' },
+        { resource: 'users', action: 'edit_address' },
+        { resource: 'sellers', action: 'view' },
+        { resource: 'orders', action: 'view' },
+        { resource: 'orders', action: 'edit_address' },
+        { resource: 'support', action: 'view' },
+        { resource: 'support', action: 'assign' },
+        { resource: 'support', action: 'respond' },
+        { resource: 'support', action: 'close_ticket' },
+        { resource: 'chats', action: 'view' },
+    ],
+    [ADMIN_ROLES.FINANCE]: [
+        { resource: 'SYSTEM_ROLE', action: ADMIN_ROLES.FINANCE },
+        { resource: 'dashboard', action: 'view' },
+        { resource: 'sellers', action: 'view' },
+        { resource: 'sellers', action: 'view_sensitive' },
+        { resource: 'orders', action: 'view' },
+        { resource: 'orders', action: 'manage' },
+        { resource: 'orders', action: 'edit_status' },
+        { resource: 'orders', action: 'cancel' },
+        { resource: 'refunds', action: 'view' },
+        { resource: 'refunds', action: 'edit' },
+        { resource: 'refunds', action: 'process_refund' },
+        { resource: 'refunds', action: 'reject_refund' },
+        { resource: 'transactions', action: 'view' },
+        { resource: 'transactions', action: 'process_payout' },
+        { resource: 'transactions', action: 'hold' },
+        { resource: 'transactions', action: 'reject_payout' },
+        { resource: 'coupons', action: 'view' },
+        { resource: 'coupons', action: 'revoke' },
+        { resource: 'analytics', action: 'view' },
+    ],
 };
 
 /**
@@ -76,7 +193,7 @@ export const ROUTE_TO_RESOURCE: Record<string, string> = {
     '/admin/products': 'products',
     '/admin/reports': 'reports',
     '/admin/categories': 'categories',
-    '/admin/promotions': 'promotions',
+    '/admin/banners': 'promotions',
     '/admin/refunds': 'refunds',
     '/admin/transactions': 'transactions',
     '/admin/settings': 'settings',
@@ -333,37 +450,6 @@ export async function setAdminPermissions(
             }))
         })
     ]);
-}
-
-/**
- * Get the current admin user ID from the request session
- */
-export async function getAdminFromRequest(request: Request): Promise<string | null> {
-    try {
-        const { auth } = await import("@/auth");
-        const session = await auth();
-
-        if (!session?.user?.id) {
-            return null;
-        }
-
-        const userId = session.user.id;
-
-        // Check if user has an admin role
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { role: true }
-        });
-
-        if (isAtLeastAdminRole(user?.role as Role)) {
-            return userId;
-        }
-
-        return null;
-    } catch (error) {
-        console.error('[Permissions] Error getting admin from request:', error);
-        return null;
-    }
 }
 
 /**

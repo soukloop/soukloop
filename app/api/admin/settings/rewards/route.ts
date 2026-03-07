@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { z } from "zod";
 
 // Schema for validation
@@ -10,12 +11,13 @@ const RewardSettingsSchema = z.object({
     POINT_VALUE_USD: z.string().transform((v) => parseFloat(v)),
 });
 
-import { requirePermission, getAdminFromRequest } from "@/lib/admin/permissions";
+import { requirePermission } from "@/lib/admin/permissions";
 
 // GET: Fetch current settings
 export async function GET(req: Request) {
     try {
-        const adminId = await getAdminFromRequest(req as any);
+        const session = await auth();
+        const adminId = session?.user?.id;
         if (!adminId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         await requirePermission(adminId, 'settings', 'view');
@@ -52,7 +54,8 @@ export async function GET(req: Request) {
 // POST: Update settings
 export async function POST(req: Request) {
     try {
-        const adminId = await getAdminFromRequest(req as any);
+        const session = await auth();
+        const adminId = session?.user?.id;
         if (!adminId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         await requirePermission(adminId, 'settings', 'edit');

@@ -36,7 +36,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     { icon: MenuIcon, label: "Category Management", href: "/admin/categories", resource: "categories" },
     { icon: FileText, label: "Order Management", href: "/admin/orders", resource: "orders" },
     { icon: RotateCcw, label: "Returns & Refunds", href: "/admin/refunds", resource: "refunds" },
-    { icon: Tags, label: "Promotions", href: "/admin/promotions", resource: "promotions" },
+    { icon: Tags, label: "Banners", href: "/admin/banners", resource: "promotions" },
     { icon: CreditCard, label: "Transactions", href: "/admin/transactions", resource: "transactions" },
     { icon: Settings, label: "System Settings", href: "/admin/settings", resource: "settings" },
     { icon: MessageSquare, label: "Support Tickets", href: "/admin/support", resource: "support" },

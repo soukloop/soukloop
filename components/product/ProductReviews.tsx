@@ -9,8 +9,6 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea"; // Assuming we have this
 import { toast } from "sonner";
 import ProductSellerInfo from "./ProductSellerInfo";
-import { PremiumBadge } from "@/components/ui/premium-badge";
-
 interface ProductReviewsProps {
     productId: string;
 }
@@ -150,9 +148,6 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
                                         <div>
                                             <p className="font-bold text-gray-900 flex items-center gap-1.5">
                                                 {review.user?.name || "Anonymous"}
-                                                {review.user?.vendor?.planTier && (review.user.vendor.planTier === 'PRO' || review.user.vendor.planTier === 'STARTER') && (
-                                                    <PremiumBadge tier={review.user.vendor.planTier} iconClassName="size-3.5" />
-                                                )}
                                             </p>
                                             <div className="flex text-yellow-400 text-xs">
                                                 {[1, 2, 3, 4, 5].map((star) => (

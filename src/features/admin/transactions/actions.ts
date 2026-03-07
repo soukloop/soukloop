@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getAdminFromRequest } from "@/lib/admin/permissions";
+import { requirePermission } from "@/lib/admin/permissions";
 import { auth } from "@/auth";
 import { unstable_cache } from "next/cache";
 
@@ -170,82 +170,6 @@ export async function getAdminPayouts({
 
     return {
         payouts: JSON.parse(JSON.stringify(payouts)),
-        totalCount,
-        stats,
-        totalPages: Math.ceil(totalCount / limit)
-    };
-}
-
-export const getCachedSubscriptionStats = unstable_cache(
-    async () => {
-        const statsData = await prisma.subscriptionTransaction.groupBy({
-            by: ['status'],
-            _count: true,
-            _sum: { amount: true }
-        });
-
-        const completedTotal = statsData
-            .filter(s => s.status === 'succeeded' || s.status === 'PAID')
-            .reduce((sum, s) => sum + Number(s._sum.amount || 0), 0);
-
-        const failedCount = statsData.find(s => s.status === 'failed')?._count || 0;
-        const totalCount = statsData.reduce((sum, s) => sum + s._count, 0);
-
-        return { total: totalCount, completed: completedTotal, failed: failedCount };
-    },
-    ['admin-subscription-stats'],
-    { revalidate: 300, tags: ['admin-subscriptions'] }
-);
-
-export async function getAdminSubscriptions({
-    page = 1,
-    limit = 15,
-    search,
-    status
-}: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-}) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
-
-    await requirePermission(session.user.id, "transactions", "view");
-
-    const skip = (page - 1) * limit;
-
-    const where: any = {};
-
-    if (status && status !== 'all') {
-        where.status = status;
-    }
-
-    if (search) {
-        where.OR = [
-            { vendor: { user: { name: { contains: search, mode: 'insensitive' } } } },
-            { vendor: { user: { email: { contains: search, mode: 'insensitive' } } } },
-            { stripeInvoiceId: { contains: search, mode: 'insensitive' } }
-        ];
-    }
-
-    const [subscriptions, totalCount, stats] = await Promise.all([
-        prisma.subscriptionTransaction.findMany({
-            where,
-            include: {
-                vendor: { select: { user: { select: { name: true, email: true } } } },
-                subscription: { select: { stripeSubscriptionId: true } }
-            },
-            orderBy: { createdAt: 'desc' },
-            skip,
-            take: limit
-        }),
-        prisma.subscriptionTransaction.count({ where }),
-        getCachedSubscriptionStats()
-    ]);
-
-    return {
-        subscriptions: JSON.parse(JSON.stringify(subscriptions)),
         totalCount,
         stats,
         totalPages: Math.ceil(totalCount / limit)
